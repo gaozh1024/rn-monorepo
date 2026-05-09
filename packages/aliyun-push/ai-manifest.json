@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/aliyun-push",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "role": "integration-plugin",
   "summary": "Aliyun mobile push integration package with runtime service APIs, React provider, and Expo config plugin support.",
   "entrypoints": [
@@ -40,7 +40,8 @@
     "minimumSetup": [
       "Install aliyun-react-native-push alongside this package.",
       "If using Expo, configure the @gaozh1024/aliyun-push/plugin entry in app.json or app.config.ts.",
-      "Run expo prebuild and install iOS pods after plugin setup when native projects are involved."
+      "Run expo prebuild and install iOS pods after plugin setup when native projects are involved.",
+      "Keep the Expo config plugin configured even before runtime push is enabled so native dependency repositories are injected."
     ],
     "canonicalTemplate": "templates/expo-starter"
   },

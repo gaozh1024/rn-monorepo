@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/aliyun-push",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Aliyun mobile push package for Expo / React Native with service helpers, provider, and Expo config plugin.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

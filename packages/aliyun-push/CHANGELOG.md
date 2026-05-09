@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+### Patch Changes
+
+- Ensure the Expo config plugin injects Aliyun/Huawei/Honor Maven repositories and Aliyun iOS pod sources whenever the plugin is configured, even if `aliyunPush.config.js` is missing or push runtime is disabled.
+- Clarify that `enabled: true` controls full push native configuration, not dependency repository injection.
+
 ## 0.1.1
 
 ### Patch Changes

@@ -32,6 +32,7 @@ Aliyun mobile push integration package with runtime service APIs, React provider
 - Install aliyun-react-native-push alongside this package.
 - If using Expo, configure the @gaozh1024/aliyun-push/plugin entry in app.json or app.config.ts.
 - Run expo prebuild and install iOS pods after plugin setup when native projects are involved.
+- Keep the Expo config plugin configured even before runtime push is enabled so native dependency repositories are injected.
 
 ## Minimal Working Example
 
@@ -57,6 +58,7 @@ Aliyun mobile push integration package with runtime service APIs, React provider
 ## Common Failure Cases
 
 - Push initialization never completes because the native plugin/prebuild step was skipped.
+- Android build cannot resolve com.aliyun.ams artifacts when native dependency repositories were not injected by the plugin/prebuild step.
 - Notification callbacks appear inconsistent because callback registration and provider usage were mixed carelessly.
 - Expo plugin users forget to rerun prebuild or pod install after config changes.
 

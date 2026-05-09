@@ -64,9 +64,15 @@ npm install @gaozh1024/aliyun-push aliyun-react-native-push
 }
 ```
 
+> 插件会在被配置后始终注入 Android Maven 仓库和 iOS Pod source，用于解析
+> `aliyun-react-native-push` 的原生依赖；`aliyunPush.config.js` 中的
+> `enabled: true` 只控制权限、receiver、厂商通道、APNs entitlement、AppDelegate
+> 等完整推送能力配置。
+
 ## 2. 新建 `aliyunPush.config.js`
 
 > 建议加入 `.gitignore`，避免提交敏感密钥。
+> 如果文件不存在或 `enabled` 不是 `true`，插件仍会注入依赖仓库，但不会注入完整推送原生配置。
 
 ```js
 /** @type {import('@gaozh1024/aliyun-push').AliyunPushRuntimeConfig} */
@@ -263,6 +269,7 @@ setAliyunPushLogger({
 3. iOS 的 `aps-environment`、前台通知展示、远程通知后台模式都依赖插件写入原生配置
 4. 厂商通道参数不是必填；只有配置了对应字段，插件才会注入对应 metadata
 5. 如果修改了 `aliyunPush.config.js`，记得重新执行 `expo prebuild` / `pod install`
+6. 只安装依赖但暂不启用推送时，也应保留 `@gaozh1024/aliyun-push/plugin`，否则 Gradle/CocoaPods 可能找不到阿里云原生依赖仓库
 
 ## 🛠️ 本地开发
 

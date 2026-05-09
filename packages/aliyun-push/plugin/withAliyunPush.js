@@ -11,7 +11,7 @@ const {
 } = require('@expo/config-plugins');
 
 const PLUGIN_NAME = 'withAliyunPush';
-const PLUGIN_VERSION = '0.1.1';
+const PLUGIN_VERSION = '0.1.2';
 
 const ALIYUN_MAVEN_REPOSITORY =
   "        maven { url 'https://maven.aliyun.com/nexus/content/repositories/releases/' }";
@@ -204,15 +204,8 @@ function patchSwiftAppDelegate(content) {
   return next;
 }
 
-function withAliyunPush(config, options = {}) {
-  const projectRoot = config._internal?.projectRoot ?? process.cwd();
-  const pushConfig = resolveAliyunPushConfig(projectRoot, options.configFile);
-
-  if (!pushConfig.enabled) {
-    return config;
-  }
-
-  config = withProjectBuildGradle(config, gradleConfig => {
+function withAliyunPushAndroidRepositories(config) {
+  return withProjectBuildGradle(config, gradleConfig => {
     let contents = gradleConfig.modResults.contents;
     contents = ensureLine(
       contents,
@@ -232,6 +225,40 @@ function withAliyunPush(config, options = {}) {
     gradleConfig.modResults.contents = contents;
     return gradleConfig;
   });
+}
+
+function withAliyunPushIosPodSources(config) {
+  return withDangerousMod(config, [
+    'ios',
+    async modConfig => {
+      const iosRoot = modConfig.modRequest.platformProjectRoot;
+      const podfilePath = path.join(iosRoot, 'Podfile');
+      if (fs.existsSync(podfilePath)) {
+        let podfile = fs.readFileSync(podfilePath, 'utf8');
+        if (!podfile.includes("source 'https://github.com/aliyun/aliyun-specs.git'")) {
+          podfile = `source 'https://github.com/aliyun/aliyun-specs.git'\n${podfile}`;
+        }
+        if (!podfile.includes("source 'https://github.com/CocoaPods/Specs.git'")) {
+          podfile = `source 'https://github.com/CocoaPods/Specs.git'\n${podfile}`;
+        }
+        fs.writeFileSync(podfilePath, podfile);
+      }
+
+      return modConfig;
+    },
+  ]);
+}
+
+function withAliyunPush(config, options = {}) {
+  const projectRoot = config._internal?.projectRoot ?? process.cwd();
+  const pushConfig = resolveAliyunPushConfig(projectRoot, options.configFile);
+
+  config = withAliyunPushAndroidRepositories(config);
+  config = withAliyunPushIosPodSources(config);
+
+  if (!pushConfig.enabled) {
+    return config;
+  }
 
   config = withAndroidManifest(config, manifestConfig => {
     const androidManifest = manifestConfig.modResults;
@@ -322,18 +349,6 @@ function withAliyunPush(config, options = {}) {
     'ios',
     async modConfig => {
       const iosRoot = modConfig.modRequest.platformProjectRoot;
-      const podfilePath = path.join(iosRoot, 'Podfile');
-      if (fs.existsSync(podfilePath)) {
-        let podfile = fs.readFileSync(podfilePath, 'utf8');
-        if (!podfile.includes("source 'https://github.com/aliyun/aliyun-specs.git'")) {
-          podfile = `source 'https://github.com/aliyun/aliyun-specs.git'\n${podfile}`;
-        }
-        if (!podfile.includes("source 'https://github.com/CocoaPods/Specs.git'")) {
-          podfile = `source 'https://github.com/CocoaPods/Specs.git'\n${podfile}`;
-        }
-        fs.writeFileSync(podfilePath, podfile);
-      }
-
       const swiftAppDelegatePath = findFirstChildFile(iosRoot, 'AppDelegate.swift');
       if (swiftAppDelegatePath && fs.existsSync(swiftAppDelegatePath)) {
         const content = fs.readFileSync(swiftAppDelegatePath, 'utf8');
