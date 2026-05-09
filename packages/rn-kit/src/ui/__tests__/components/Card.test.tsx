@@ -74,4 +74,70 @@ describe('Card', () => {
     expect(style.borderRadius).toBe(16);
     expect(style.flex).toBe(1);
   });
+
+  it('应该保持默认 elevated 风格行为', () => {
+    const { getByTestId } = render(
+      <Card testID="card">
+        <AppText>内容</AppText>
+      </Card>
+    );
+
+    const card = getByTestId('card');
+    const style = flattenStyle(card.props.style);
+    expect(card.props.className).toContain('shadow-sm');
+    expect(style.borderWidth).toBe(0.5);
+  });
+
+  it('variant="flat" 应该关闭阴影和边框', () => {
+    const { getByTestId } = render(
+      <Card testID="card" variant="flat">
+        <AppText>内容</AppText>
+      </Card>
+    );
+
+    const card = getByTestId('card');
+    const style = flattenStyle(card.props.style);
+    expect(card.props.className).not.toContain('shadow-sm');
+    expect(style.borderWidth).toBeUndefined();
+    expect(style.borderColor).toBeUndefined();
+  });
+
+  it('variant="outlined" 应该关闭阴影但保留边框', () => {
+    const { getByTestId } = render(
+      <Card testID="card" variant="outlined">
+        <AppText>内容</AppText>
+      </Card>
+    );
+
+    const card = getByTestId('card');
+    const style = flattenStyle(card.props.style);
+    expect(card.props.className).not.toContain('shadow-sm');
+    expect(style.borderWidth).toBe(0.5);
+  });
+
+  it('variant="elevated" 应该启用阴影和边框', () => {
+    const { getByTestId } = render(
+      <Card testID="card" variant="elevated">
+        <AppText>内容</AppText>
+      </Card>
+    );
+
+    const card = getByTestId('card');
+    const style = flattenStyle(card.props.style);
+    expect(card.props.className).toContain('shadow-sm');
+    expect(style.borderWidth).toBe(0.5);
+  });
+
+  it('noShadow/noBorder 应该在 disable 方向覆盖 variant 默认值', () => {
+    const { getByTestId } = render(
+      <Card testID="card" variant="elevated" noShadow noBorder>
+        <AppText>内容</AppText>
+      </Card>
+    );
+
+    const card = getByTestId('card');
+    const style = flattenStyle(card.props.style);
+    expect(card.props.className).not.toContain('shadow-sm');
+    expect(style.borderWidth).toBeUndefined();
+  });
 });

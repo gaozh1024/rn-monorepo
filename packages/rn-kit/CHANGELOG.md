@@ -1,11 +1,14 @@
 # @gaozh1024/rn-kit
 
-## Unreleased
+## 0.5.1
 
 ### Patch Changes
 
 - Harden `AppInput` Web/mobile parity by moving built-in input layout, padding, radius and font-size styles off NativeWind-only `className` paths; document the Web focus-outline reset and style override guidance.
 - Make `Presence`, `MotionView`, `StaggerItem`, Toast and Alert presence surfaces safe on React Native Web by using CSS-backed Web transitions and dropping Reanimated-only layout animation props from Web host components.
+- Stabilize overlay and theme context values so toast/loading/alert state changes do not create new hook API object references for consumers.
+- Add an `AppPressable` no-motion fast path backed by plain React Native `Pressable`, and add `Card` surface variants for scroll-heavy list/grid screens.
+- Add plain no-animation paths for `Progress`, `SegmentedTabs`, `Switch`, `Checkbox`, and `Radio` so explicit non-animated/reduced-motion usage avoids Reanimated hook setup.
 
 ## 0.5.0
 

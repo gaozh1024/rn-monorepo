@@ -13,6 +13,19 @@ describe('createTheme', () => {
     expect(theme.colors.primary[500]).toBe('#f38b32');
   });
 
+  it('应该从hex字符串生成有效hex色阶', () => {
+    const theme = createTheme({
+      colors: {
+        primary: '#2a3442',
+      },
+    });
+
+    expect(Object.values(theme.colors.primary).every(color => /^#[0-9a-f]{6}$/.test(color))).toBe(
+      true
+    );
+    expect(theme.colors.primary[600]).not.toContain('.');
+  });
+
   it('应该接受完整色阶配置', () => {
     const customPalette: ColorPalette = {
       0: '#fff',

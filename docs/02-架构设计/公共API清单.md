@@ -224,6 +224,7 @@ UI 组件库，所有组件均为**稳定公共 API**。
 | `ProgressProps`            | type      | ✅ 稳定 | Props 类型                               |
 | `Card`                     | component | ✅ 稳定 | 卡片                                     |
 | `CardProps`                | type      | ✅ 稳定 | Props 类型                               |
+| `CardVariant`              | type      | ✅ 稳定 | 卡片表面重量：flat / outlined / elevated |
 | `Icon`                     | component | ✅ 稳定 | 图标组件                                 |
 | `IconProps`                | type      | ✅ 稳定 | Props 类型                               |
 | `IconSize`                 | type      | ✅ 稳定 | 图标尺寸                                 |
@@ -243,6 +244,13 @@ UI 组件库，所有组件均为**稳定公共 API**。
 | `SegmentedTabsProps`       | type      | ✅ 稳定 | Props 类型                               |
 | `SegmentedTabOption`       | type      | ✅ 稳定 | 选项类型                                 |
 | `SegmentedTabsRenderState` | type      | ✅ 稳定 | 自定义渲染状态类型                       |
+
+#### 0.5.1 轻量渲染与无动画路径
+
+- `AppPressable` 默认 `motionPreset="none"`，使用原生 `Pressable` 快路径；需要按压反馈时显式传入 `motionPreset="soft" | "strong"`。
+- `Card` 新增 `variant="flat" | "outlined" | "elevated"`：长列表/网格优先使用 `flat`，需要边界但不需要阴影时使用 `outlined`。
+- `Progress`、`SegmentedTabs`、`Switch`、`Checkbox`、`Radio` 支持 `animated={false}` / `motionReduceMotion` 的普通视图更新路径，用于减少密集列表与 Web 场景中的 Reanimated 初始化成本。
+- Toast / Loading / Alert 与 Theme Provider 的 Hook API 对象引用保持稳定，避免纯状态变化触发消费者误判为 API 变更。
 
 #### AppList 可本地化文案参数（可选）
 

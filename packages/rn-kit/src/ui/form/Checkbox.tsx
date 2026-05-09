@@ -49,6 +49,50 @@ export interface CheckboxProps
   testID?: string;
 }
 
+interface CheckboxIndicatorProps extends Pick<
+  ToggleMotionProps,
+  'motionDuration' | 'motionSpringPreset'
+> {
+  checked: boolean;
+  testID?: string;
+}
+
+function PlainCheckboxIndicator({ checked, testID }: CheckboxIndicatorProps) {
+  if (!checked) return null;
+
+  return (
+    <AppView pointerEvents="none" style={styles.iconContainer} testID={`${testID}-icon`}>
+      <Icon name="check" size={14} color="white" style={styles.icon} />
+    </AppView>
+  );
+}
+
+function MotionCheckboxIndicator({
+  checked,
+  motionDuration,
+  motionSpringPreset,
+  testID,
+}: CheckboxIndicatorProps) {
+  const toggleMotion = useToggleMotion({
+    value: checked,
+    preset: 'checkbox',
+    duration: motionDuration,
+    spring: motionSpringPreset,
+  });
+
+  if (!checked) return null;
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.iconContainer, toggleMotion.indicatorStyle]}
+      testID={`${testID}-icon`}
+    >
+      <Icon name="check" size={14} color="white" style={styles.icon} />
+    </Animated.View>
+  );
+}
+
 export function Checkbox({
   flex,
   p,
@@ -82,6 +126,7 @@ export function Checkbox({
   bg,
   surface,
   testID,
+  animated = true,
   motionDuration,
   motionSpringPreset,
   motionReduceMotion,
@@ -89,13 +134,7 @@ export function Checkbox({
   const colors = useThemeColors();
   const [internalChecked, setInternalChecked] = useState(defaultChecked || false);
   const isChecked = checked !== undefined ? checked : internalChecked;
-  const toggleMotion = useToggleMotion({
-    value: isChecked,
-    preset: 'checkbox',
-    duration: motionDuration,
-    spring: motionSpringPreset,
-    reduceMotion: motionReduceMotion,
-  });
+  const shouldAnimateToggle = animated && motionReduceMotion !== true;
 
   const toggle = () => {
     if (disabled) return;
@@ -156,14 +195,15 @@ export function Checkbox({
           },
         ]}
       >
-        {isChecked && (
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.iconContainer, toggleMotion.indicatorStyle]}
-            testID={`${testID}-icon`}
-          >
-            <Icon name="check" size={14} color="white" style={styles.icon} />
-          </Animated.View>
+        {shouldAnimateToggle ? (
+          <MotionCheckboxIndicator
+            checked={isChecked}
+            motionDuration={motionDuration}
+            motionSpringPreset={motionSpringPreset}
+            testID={testID}
+          />
+        ) : (
+          <PlainCheckboxIndicator checked={isChecked} testID={testID} />
         )}
       </AppView>
       {children && (

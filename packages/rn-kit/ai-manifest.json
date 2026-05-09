@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-kit",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "role": "core-framework",
   "summary": "Panther Expo Framework core package for app bootstrap, theme, UI, navigation helpers, overlays, and API factory usage in Expo or React Native apps.",
   "entrypoints": [
@@ -52,12 +52,20 @@
     "createAPI",
     "useToggle",
     "SegmentedTabs",
+    "AppPressable",
+    "Card",
+    "Progress",
+    "Switch",
+    "Checkbox",
+    "Radio",
     "createTelemetryClient"
   ],
   "compatibilityNotes": [
     "Current compatibility guidance targets Expo >=53 <55 and React Native >=0.79 <0.82.",
     "Expo SDK 54 maps to React Native 0.81.",
-    "AppImage is based on expo-image in rn-kit >= 0.4.6."
+    "AppImage is based on expo-image in rn-kit >= 0.4.6.",
+    "AppPressable defaults to a no-motion native Pressable path; opt into motionPreset when animated press feedback is required.",
+    "Progress, SegmentedTabs, Switch, Checkbox and Radio support explicit no-animation/reduced-motion paths that avoid Reanimated hook setup."
   ],
   "antiPatterns": [
     "Installing Expo-native peer dependencies with plain npm latest versions instead of expo install.",

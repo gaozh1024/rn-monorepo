@@ -3,11 +3,11 @@
  * @module overlay/toast/provider
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ToastContext } from './context';
 import { ToastItemView } from './component';
-import type { ToastItem, ToastType } from './types';
+import type { ToastContextType, ToastItem, ToastType } from './types';
 
 /**
  * Toast Provider
@@ -55,8 +55,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [show]
   );
 
+  const contextValue = useMemo<ToastContextType>(
+    () => ({ show, success, error, info, warning }),
+    [error, info, show, success, warning]
+  );
+
   return (
-    <ToastContext.Provider value={{ show, success, error, info, warning }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <View style={styles.toastContainer} pointerEvents="none">
         {toasts.map(toast => (

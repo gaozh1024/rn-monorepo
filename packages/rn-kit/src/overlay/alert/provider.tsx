@@ -3,10 +3,10 @@
  * @module overlay/alert/provider
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { AlertContext } from './context';
 import { AlertModal } from './component';
-import type { AlertOptions } from './types';
+import type { AlertContextType, AlertOptions } from './types';
 
 type AlertState = (AlertOptions & { visible: boolean }) | null;
 
@@ -41,8 +41,13 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     hide();
   }, [alert, hide]);
 
+  const contextValue = useMemo<AlertContextType>(
+    () => ({ alert: showAlert, confirm }),
+    [confirm, showAlert]
+  );
+
   return (
-    <AlertContext.Provider value={{ alert: showAlert, confirm }}>
+    <AlertContext.Provider value={contextValue}>
       {children}
       <AlertModal
         visible={alert?.visible ?? false}

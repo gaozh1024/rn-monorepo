@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useState, useMemo } from 'react';
 import type { Theme, ThemeConfig } from './types';
 import { createTheme } from './create-theme';
 
@@ -57,17 +57,20 @@ export function ThemeProvider({
     return createTheme(config);
   }, [isDark, light, dark]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     const nextIsDark = !isDark;
     if (controlledIsDark === undefined) {
       setInternalIsDark(nextIsDark);
     }
     onThemeChange?.(nextIsDark);
-  };
+  }, [controlledIsDark, isDark, onThemeChange]);
 
-  return (
-    <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>{children}</ThemeContext.Provider>
+  const contextValue = useMemo<ThemeContextValue>(
+    () => ({ theme, isDark, toggleTheme }),
+    [isDark, theme, toggleTheme]
   );
+
+  return <ThemeContext.Provider value={contextValue}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme(): ThemeContextValue {

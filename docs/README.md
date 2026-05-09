@@ -50,6 +50,7 @@
 
 版本发布记录：
 
+- [rn-kit 0.5.1 Release Notes](./release-notes/rn-kit-0.5.1.md)
 - [rn-kit 0.5.0 Release Notes](./release-notes/rn-kit-0.5.0.md)
 - [expo-starter 0.2.16 Release Notes](./release-notes/expo-starter-0.2.16.md)
 - [rn-kit 0.4.20 Release Notes](./release-notes/rn-kit-0.4.20.md)

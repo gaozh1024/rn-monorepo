@@ -48,6 +48,43 @@ export interface RadioProps
   testID?: string;
 }
 
+interface RadioIndicatorProps extends Pick<
+  ToggleMotionProps,
+  'motionDuration' | 'motionSpringPreset'
+> {
+  checked: boolean;
+  color: string;
+}
+
+function PlainRadioIndicator({ checked, color }: RadioIndicatorProps) {
+  if (!checked) return null;
+
+  return <AppView className="rounded-full" style={[styles.inner, { backgroundColor: color }]} />;
+}
+
+function MotionRadioIndicator({
+  checked,
+  color,
+  motionDuration,
+  motionSpringPreset,
+}: RadioIndicatorProps) {
+  const toggleMotion = useToggleMotion({
+    value: checked,
+    preset: 'radio',
+    duration: motionDuration,
+    spring: motionSpringPreset,
+  });
+
+  if (!checked) return null;
+
+  return (
+    <Animated.View
+      className="rounded-full"
+      style={[styles.inner, { backgroundColor: color }, toggleMotion.indicatorStyle]}
+    />
+  );
+}
+
 export function Radio({
   flex,
   p,
@@ -81,6 +118,7 @@ export function Radio({
   bg,
   surface,
   testID,
+  animated = true,
   motionDuration,
   motionSpringPreset,
   motionReduceMotion,
@@ -88,13 +126,7 @@ export function Radio({
   const colors = useThemeColors();
   const [internalChecked, setInternalChecked] = useState(defaultChecked || false);
   const isChecked = checked !== undefined ? checked : internalChecked;
-  const toggleMotion = useToggleMotion({
-    value: isChecked,
-    preset: 'radio',
-    duration: motionDuration,
-    spring: motionSpringPreset,
-    reduceMotion: motionReduceMotion,
-  });
+  const shouldAnimateToggle = animated && motionReduceMotion !== true;
 
   const toggle = () => {
     if (disabled) return;
@@ -153,11 +185,15 @@ export function Radio({
           },
         ]}
       >
-        {isChecked && (
-          <Animated.View
-            className="rounded-full"
-            style={[styles.inner, { backgroundColor: colors.primary }, toggleMotion.indicatorStyle]}
+        {shouldAnimateToggle ? (
+          <MotionRadioIndicator
+            checked={isChecked}
+            color={colors.primary}
+            motionDuration={motionDuration}
+            motionSpringPreset={motionSpringPreset}
           />
+        ) : (
+          <PlainRadioIndicator checked={isChecked} color={colors.primary} />
         )}
       </AppView>
       {children && (

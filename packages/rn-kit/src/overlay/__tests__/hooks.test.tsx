@@ -5,7 +5,8 @@
 
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook } from '@testing-library/react-native';
+import { act } from 'react-test-renderer';
 import { OverlayProvider } from '../provider';
 import { LoadingProvider } from '../loading/provider';
 import { ToastProvider } from '../toast/provider';
@@ -26,6 +27,21 @@ describe('useLoading', () => {
     const { result } = renderHook(() => useLoading(), { wrapper });
     expect(typeof result.current.show).toBe('function');
     expect(typeof result.current.hide).toBe('function');
+  });
+
+  it('loading 状态变化不应该改变 useLoading 返回对象引用', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <LoadingProvider>{children}</LoadingProvider>
+    );
+
+    const { result } = renderHook(() => useLoading(), { wrapper });
+    const firstLoadingApi = result.current;
+
+    act(() => {
+      result.current.show('加载中...');
+    });
+
+    expect(result.current).toBe(firstLoadingApi);
   });
 
   it('应该在完整的 OverlayProvider 内工作', () => {
@@ -52,6 +68,21 @@ describe('useToast', () => {
     expect(typeof result.current.info).toBe('function');
     expect(typeof result.current.warning).toBe('function');
   });
+
+  it('toast 状态变化不应该改变 useToast 返回对象引用', () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <ToastProvider>{children}</ToastProvider>
+    );
+
+    const { result } = renderHook(() => useToast(), { wrapper });
+    const firstToastApi = result.current;
+
+    act(() => {
+      result.current.success('操作成功', 3000);
+    });
+
+    expect(result.current).toBe(firstToastApi);
+  });
 });
 
 describe('useAlert', () => {
@@ -63,6 +94,22 @@ describe('useAlert', () => {
     const { result } = renderHook(() => useAlert(), { wrapper });
     expect(typeof result.current.alert).toBe('function');
     expect(typeof result.current.confirm).toBe('function');
+  });
+
+  it('alert 状态变化不应该改变 useAlert 返回对象引用', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AlertProvider>{children}</AlertProvider>
+    );
+
+    const { result } = renderHook(() => useAlert(), { wrapper });
+    const firstAlertApi = result.current;
+
+    await act(async () => {
+      result.current.alert({ title: '提示', message: '操作成功', motionReduceMotion: true });
+      await Promise.resolve();
+    });
+
+    expect(result.current).toBe(firstAlertApi);
   });
 });
 

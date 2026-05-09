@@ -6,7 +6,9 @@
     "Use AppProvider when you need a ready-made app bootstrap that includes theme, navigation, overlays, status bar, and development-time observability.",
     "Use createAPI when you want the framework's typed API factory and its observability integration.",
     "Use createTelemetryClient when you need to forward sanitized production telemetry to an app-owned collector.",
-    "Use SegmentedTabs for page-local menu/status/category switching when the selected background should slide horizontally between options."
+    "Use SegmentedTabs for page-local menu/status/category switching when the selected background should slide horizontally between options.",
+    "Use Card variant=\"flat\" and AppPressable motionPreset=\"none\" for high-density list/grid interactions where press feedback should stay lightweight.",
+    "Use animated={false} or motionReduceMotion on Progress, SegmentedTabs, Switch, Checkbox and Radio when reduced motion or Reanimated-free render paths are required."
   ],
   "whenNotToUse": [
     "Do not use this package if you only need a single isolated capability that already exists as a smaller dedicated package.",
@@ -33,6 +35,12 @@
     "createAPI",
     "useToggle",
     "SegmentedTabs",
+    "AppPressable",
+    "Card",
+    "Progress",
+    "Switch",
+    "Checkbox",
+    "Radio",
     "createTelemetryClient"
   ],
   "antiPatterns": [
@@ -45,12 +53,15 @@
     "AppView, AppButton, or AppHeader render without styles because NativeWind Babel config, Tailwind content paths, or safelist are incomplete.",
     "Expo projects resolve incompatible native package versions because dependencies were installed without expo install.",
     "AppImage usage fails in older projects upgraded to newer rn-kit because expo-image was not added.",
-    "SegmentedTabs appears not to move its selected indicator if the container has not measured yet; ensure it is rendered with a non-zero width via layout, w, or style.width."
+    "SegmentedTabs appears not to move its selected indicator if the container has not measured yet; ensure it is rendered with a non-zero width via layout, w, or style.width.",
+    "Reanimated-related warnings in dense lists can often be avoided by choosing AppPressable/Card no-motion paths and no-animation form/display controls where animated feedback is not needed."
   ],
   "compatibilityNotes": [
     "Current compatibility guidance targets Expo >=53 <55 and React Native >=0.79 <0.82.",
     "Expo SDK 54 maps to React Native 0.81.",
-    "AppImage is based on expo-image in rn-kit >= 0.4.6."
+    "AppImage is based on expo-image in rn-kit >= 0.4.6.",
+    "AppPressable defaults to a no-motion native Pressable path; opt into motionPreset when animated press feedback is required.",
+    "Progress, SegmentedTabs, Switch, Checkbox and Radio support explicit no-animation/reduced-motion paths that avoid Reanimated hook setup."
   ],
   "canonicalExamples": [
     {

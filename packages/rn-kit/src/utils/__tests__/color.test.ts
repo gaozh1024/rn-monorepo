@@ -15,6 +15,14 @@ describe('rgbToHex', () => {
     expect(rgbToHex({ r: 0, g: 0, b: 0 })).toBe('#000000');
     expect(rgbToHex({ r: 255, g: 255, b: 255 })).toBe('#ffffff');
   });
+
+  it('应该将小数通道规范化为有效hex', () => {
+    expect(rgbToHex({ r: 37.8, g: 46.8, b: 59.4 })).toBe('#262f3b');
+  });
+
+  it('应该将越界通道限制到有效范围', () => {
+    expect(rgbToHex({ r: -1, g: 300, b: 0 })).toBe('#00ff00');
+  });
 });
 
 describe('adjustBrightness', () => {
@@ -58,6 +66,13 @@ describe('generateColorPalette', () => {
     expect(palette).toHaveProperty('800');
     expect(palette).toHaveProperty('900');
     expect(palette).toHaveProperty('950');
+  });
+
+  it('应该为小数亮度结果生成有效hex色阶', () => {
+    const palette = generateColorPalette('#2a3442');
+
+    expect(Object.values(palette).every(color => /^#[0-9a-f]{6}$/.test(color))).toBe(true);
+    expect(palette[600]).not.toContain('.');
   });
 
   it('500应该是原色', () => {

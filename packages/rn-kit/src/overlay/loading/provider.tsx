@@ -3,10 +3,10 @@
  * @module overlay/loading/provider
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { LoadingContext } from './context';
 import { LoadingModal } from './component';
-import type { LoadingState } from './types';
+import type { LoadingContextType, LoadingState } from './types';
 
 const MIN_VISIBLE_DURATION = 500;
 
@@ -64,8 +64,10 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => () => clearHideTimer(), [clearHideTimer]);
 
+  const contextValue = useMemo<LoadingContextType>(() => ({ show, hide }), [hide, show]);
+
   return (
-    <LoadingContext.Provider value={{ show, hide }}>
+    <LoadingContext.Provider value={contextValue}>
       {children}
       <LoadingModal {...state} onRequestClose={hide} />
     </LoadingContext.Provider>

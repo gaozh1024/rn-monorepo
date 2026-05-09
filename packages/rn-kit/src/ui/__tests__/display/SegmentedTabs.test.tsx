@@ -21,6 +21,13 @@ const options = [
   { label: '已完成', value: 'done' },
 ];
 
+function flattenStyleEntries(style: unknown): Array<Record<string, unknown>> {
+  if (!style) return [];
+  if (Array.isArray(style)) return style.flatMap(flattenStyleEntries);
+  if (typeof style === 'object') return [style as Record<string, unknown>];
+  return [];
+}
+
 describe('SegmentedTabs', () => {
   beforeEach(() => {
     vi.mocked(withTiming).mockClear();
@@ -94,6 +101,35 @@ describe('SegmentedTabs', () => {
     );
 
     expect(withSpring).toHaveBeenCalledWith(103, { damping: 22, stiffness: 180, mass: 1 });
+  });
+
+  it('animated=false 时应该使用普通滑块并跳过 timing/spring 动画', () => {
+    const { getByTestId } = render(
+      <ThemeProvider light={theme}>
+        <SegmentedTabs testID="tabs" options={options} value="done" animated={false} />
+      </ThemeProvider>
+    );
+
+    act(() => {
+      getByTestId('tabs').props.onLayout({
+        nativeEvent: { layout: { width: 300, height: 40, x: 0, y: 0 } },
+      });
+    });
+
+    const indicator = getByTestId('tabs-indicator');
+    const indicatorStyles = flattenStyleEntries(indicator.props.style);
+
+    expect(indicator.type).not.toBe('Animated.View');
+    expect(indicatorStyles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          width: 94,
+          transform: [{ translateX: 203 }],
+        }),
+      ])
+    );
+    expect(withTiming).not.toHaveBeenCalled();
+    expect(withSpring).not.toHaveBeenCalled();
   });
 
   it('应该支持禁用选项', () => {

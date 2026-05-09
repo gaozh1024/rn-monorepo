@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useOptionalTheme } from '@/theme';
 import { cn } from '@/utils';
-import type { MotionAnimatedViewStyle, PressMotionProps } from '../motion';
+import type { MotionAnimatedViewStyle, PressMotionPreset, PressMotionProps } from '../motion';
 import { useMotionConfig } from '../motion/context';
 import { usePressMotion } from '../motion/hooks/usePressMotion';
 import { resolveNamedColor, resolveSurfaceColor } from '../utils/theme-color';
@@ -34,7 +34,52 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 type AppPressableResolvedStyleItem = StyleProp<ViewStyle> | MotionAnimatedViewStyle | undefined;
 type AppPressableResolvedStyle = AppPressableResolvedStyleItem[];
 
-export function AppPressable({
+type ResolvedAppPressableProps = AppPressableProps & {
+  resolvedMotionPreset: PressMotionPreset;
+};
+
+type ResolvedAppPressableStyleOptions = Pick<
+  AppPressableProps,
+  | 'between'
+  | 'bg'
+  | 'center'
+  | 'className'
+  | 'flex'
+  | 'gap'
+  | 'h'
+  | 'items'
+  | 'justify'
+  | 'm'
+  | 'maxH'
+  | 'maxW'
+  | 'mb'
+  | 'minH'
+  | 'minW'
+  | 'ml'
+  | 'mr'
+  | 'mt'
+  | 'mx'
+  | 'my'
+  | 'p'
+  | 'pb'
+  | 'pl'
+  | 'pr'
+  | 'pressedClassName'
+  | 'pt'
+  | 'px'
+  | 'py'
+  | 'rounded'
+  | 'row'
+  | 'style'
+  | 'surface'
+  | 'w'
+  | 'wrap'
+> & {
+  isPressed: boolean;
+  motionAnimatedStyle?: MotionAnimatedViewStyle;
+};
+
+function useResolvedAppPressableStyle({
   flex,
   row,
   wrap,
@@ -68,28 +113,20 @@ export function AppPressable({
   surface,
   className,
   pressedClassName,
-  motionPreset,
-  motionDuration,
-  motionReduceMotion,
-  children,
+  isPressed,
   style,
-  onPressIn,
-  onPressOut,
-  ...props
-}: AppPressableProps) {
-  const [isPressed, setIsPressed] = React.useState(false);
-  const motionConfig = useMotionConfig();
+  motionAnimatedStyle,
+}: ResolvedAppPressableStyleOptions) {
   const { theme, isDark } = useOptionalTheme();
-  const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'none';
   const resolvedBgColor =
     resolveSurfaceColor(surface, theme, isDark) ?? resolveNamedColor(bg, theme, isDark);
   const shouldUseClassBg = !!bg && !resolvedBgColor;
-  const pressMotion = usePressMotion({
-    preset: resolvedMotionPreset,
-    duration: motionDuration,
-    disabled: props.disabled === true,
-    reduceMotion: motionReduceMotion,
-  });
+  const resolvedClassName = cn(
+    shouldUseClassBg && `bg-${bg}`,
+    className,
+    isPressed && pressedClassName
+  );
+
   const baseStyle = React.useMemo<AppPressableResolvedStyle>(
     () => [
       resolvedBgColor ? { backgroundColor: resolvedBgColor } : undefined,
@@ -128,7 +165,7 @@ export function AppPressable({
         maxH,
       }),
       resolveRoundedStyle(rounded),
-      pressMotion.animatedStyle,
+      motionAnimatedStyle,
     ],
     [
       between,
@@ -146,6 +183,7 @@ export function AppPressable({
       minW,
       ml,
       mr,
+      motionAnimatedStyle,
       mt,
       mx,
       my,
@@ -153,7 +191,6 @@ export function AppPressable({
       pb,
       pl,
       pr,
-      pressMotion.animatedStyle,
       pt,
       px,
       py,
@@ -164,6 +201,7 @@ export function AppPressable({
       wrap,
     ]
   );
+
   const resolvedStyle =
     typeof style === 'function'
       ? React.useCallback(
@@ -175,10 +213,167 @@ export function AppPressable({
         )
       : ([...(baseStyle as any[]), style] as AppPressableResolvedStyle);
 
+  return { className: resolvedClassName, style: resolvedStyle };
+}
+
+type AppPressableParts = {
+  styleOptions: Omit<ResolvedAppPressableStyleOptions, 'isPressed' | 'motionAnimatedStyle'>;
+  motionDuration?: number;
+  motionReduceMotion?: boolean;
+  resolvedMotionPreset: PressMotionPreset;
+  children: PressableProps['children'];
+  onPressIn: PressableProps['onPressIn'];
+  onPressOut: PressableProps['onPressOut'];
+  pressableProps: PressableProps;
+};
+
+function splitAppPressableProps({
+  flex,
+  row,
+  wrap,
+  center,
+  between,
+  items,
+  justify,
+  p,
+  px,
+  py,
+  pt,
+  pb,
+  pl,
+  pr,
+  m,
+  mx,
+  my,
+  mt,
+  mb,
+  ml,
+  mr,
+  gap,
+  rounded,
+  w,
+  h,
+  minW,
+  minH,
+  maxW,
+  maxH,
+  bg,
+  surface,
+  className,
+  pressedClassName,
+  motionPreset: _motionPreset,
+  motionDuration,
+  motionReduceMotion,
+  resolvedMotionPreset,
+  children,
+  style,
+  onPressIn,
+  onPressOut,
+  ...pressableProps
+}: ResolvedAppPressableProps): AppPressableParts {
+  return {
+    styleOptions: {
+      flex,
+      row,
+      wrap,
+      center,
+      between,
+      items,
+      justify,
+      p,
+      px,
+      py,
+      pt,
+      pb,
+      pl,
+      pr,
+      m,
+      mx,
+      my,
+      mt,
+      mb,
+      ml,
+      mr,
+      gap,
+      rounded,
+      w,
+      h,
+      minW,
+      minH,
+      maxW,
+      maxH,
+      bg,
+      surface,
+      className,
+      pressedClassName,
+      style,
+    },
+    motionDuration,
+    motionReduceMotion,
+    resolvedMotionPreset,
+    children,
+    onPressIn,
+    onPressOut,
+    pressableProps,
+  };
+}
+
+function PlainAppPressable(props: ResolvedAppPressableProps) {
+  const [isPressed, setIsPressed] = React.useState(false);
+  const { styleOptions, children, onPressIn, onPressOut, pressableProps } =
+    splitAppPressableProps(props);
+  const resolved = useResolvedAppPressableStyle({
+    ...styleOptions,
+    isPressed,
+  });
+
+  return (
+    <Pressable
+      className={resolved.className}
+      style={resolved.style as PressableProps['style']}
+      onPressIn={e => {
+        setIsPressed(true);
+        onPressIn?.(e);
+      }}
+      onPressOut={e => {
+        setIsPressed(false);
+        onPressOut?.(e);
+      }}
+      {...pressableProps}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
+function MotionAppPressable(props: ResolvedAppPressableProps) {
+  const [isPressed, setIsPressed] = React.useState(false);
+  const {
+    styleOptions,
+    motionDuration,
+    motionReduceMotion,
+    resolvedMotionPreset,
+    children,
+    onPressIn,
+    onPressOut,
+    pressableProps,
+  } = splitAppPressableProps(props);
+  const pressMotion = usePressMotion({
+    preset: resolvedMotionPreset,
+    duration: motionDuration,
+    disabled: pressableProps.disabled === true,
+    reduceMotion: motionReduceMotion,
+  });
+  const resolved = useResolvedAppPressableStyle({
+    ...styleOptions,
+    isPressed,
+    motionAnimatedStyle: pressMotion.animatedStyle,
+  });
+
   return (
     <AnimatedPressable
-      className={cn(shouldUseClassBg && `bg-${bg}`, className, isPressed && pressedClassName)}
-      style={resolvedStyle}
+      className={resolved.className}
+      style={resolved.style}
       onPressIn={e => {
         setIsPressed(true);
         pressMotion.onPressIn();
@@ -189,9 +384,21 @@ export function AppPressable({
         pressMotion.onPressOut();
         onPressOut?.(e);
       }}
-      {...props}
+      {...pressableProps}
     >
       {children}
     </AnimatedPressable>
   );
+}
+
+export function AppPressable(props: AppPressableProps) {
+  const motionConfig = useMotionConfig();
+  const resolvedMotionPreset = props.motionPreset ?? motionConfig.defaultPressPreset ?? 'none';
+  const resolvedProps = { ...props, resolvedMotionPreset };
+
+  if (resolvedMotionPreset === 'none') {
+    return <PlainAppPressable {...resolvedProps} />;
+  }
+
+  return <MotionAppPressable {...resolvedProps} />;
 }

@@ -134,6 +134,147 @@ const sizeConfig = {
   lg: { height: 48, labelSize: 'md' as const, itemPaddingHorizontal: 14 },
 };
 
+interface SegmentedTabsIndicatorProps extends Pick<
+  SegmentedTabsProps,
+  | 'indicatorClassName'
+  | 'indicatorStyle'
+  | 'motionDuration'
+  | 'motionReduceMotion'
+  | 'motionSpringPreset'
+> {
+  indicatorInset: number;
+  resolvedHeight: number;
+  resolvedIndicatorColor: string;
+  roundedStyle: ReturnType<typeof resolveRoundedStyle>;
+  targetWidth: number;
+  targetX: number;
+  testID?: string;
+  visible: boolean;
+}
+
+function getIndicatorBaseStyle({
+  indicatorInset,
+  resolvedHeight,
+  resolvedIndicatorColor,
+  visible,
+}: Pick<
+  SegmentedTabsIndicatorProps,
+  'indicatorInset' | 'resolvedHeight' | 'resolvedIndicatorColor' | 'visible'
+>): ViewStyle {
+  return {
+    top: indicatorInset,
+    height: Math.max(resolvedHeight - indicatorInset * 2, 0),
+    backgroundColor: resolvedIndicatorColor,
+    opacity: visible ? 1 : 0,
+  };
+}
+
+function PlainSegmentedTabsIndicator({
+  indicatorClassName,
+  indicatorInset,
+  indicatorStyle,
+  resolvedHeight,
+  resolvedIndicatorColor,
+  roundedStyle,
+  targetWidth,
+  targetX,
+  testID,
+  visible,
+}: SegmentedTabsIndicatorProps) {
+  return (
+    <AppView
+      testID={testID}
+      className={cn(indicatorClassName)}
+      pointerEvents="none"
+      style={[
+        styles.indicator,
+        roundedStyle,
+        getIndicatorBaseStyle({
+          indicatorInset,
+          resolvedHeight,
+          resolvedIndicatorColor,
+          visible,
+        }),
+        {
+          width: targetWidth,
+          transform: [{ translateX: targetX }],
+        },
+        indicatorStyle,
+      ]}
+    />
+  );
+}
+
+function MotionSegmentedTabsIndicator({
+  indicatorClassName,
+  indicatorInset,
+  indicatorStyle,
+  motionDuration,
+  motionReduceMotion,
+  motionSpringPreset,
+  resolvedHeight,
+  resolvedIndicatorColor,
+  roundedStyle,
+  targetWidth,
+  targetX,
+  testID,
+  visible,
+}: SegmentedTabsIndicatorProps) {
+  const { reduceMotion: systemReduceMotion, durationScale } = useReducedMotion();
+  const reduceMotion = motionReduceMotion ?? systemReduceMotion;
+  const duration = resolveDuration(
+    motionDuration,
+    motionSpringPreset ? motionDurations.medium : motionDurations.normal,
+    reduceMotion,
+    durationScale
+  );
+  const translateX = useSharedValue(targetX);
+  const indicatorWidth = useSharedValue(targetWidth);
+
+  const animateValue = React.useCallback(
+    (nextValue: number) => {
+      if (duration === 0) return nextValue;
+      if (motionSpringPreset) return withSpring(nextValue, resolveSpringConfig(motionSpringPreset));
+      return withTiming(nextValue, { duration });
+    },
+    [duration, motionSpringPreset]
+  );
+
+  React.useEffect(() => {
+    translateX.value = animateValue(targetX);
+    indicatorWidth.value = animateValue(targetWidth);
+  }, [animateValue, indicatorWidth, targetWidth, targetX, translateX]);
+
+  const animatedIndicatorStyle = useAnimatedStyle(
+    () =>
+      ({
+        width: indicatorWidth.value,
+        transform: [{ translateX: translateX.value }],
+      }) satisfies MotionAnimatedViewStyle,
+    []
+  );
+
+  return (
+    <Animated.View
+      testID={testID}
+      className={cn(indicatorClassName)}
+      pointerEvents="none"
+      style={[
+        styles.indicator,
+        roundedStyle,
+        getIndicatorBaseStyle({
+          indicatorInset,
+          resolvedHeight,
+          resolvedIndicatorColor,
+          visible,
+        }),
+        animatedIndicatorStyle,
+        indicatorStyle,
+      ]}
+    />
+  );
+}
+
 function findValueIndex<Value extends string | number>(
   options: Array<SegmentedTabOption<Value>>,
   value?: Value
@@ -198,7 +339,6 @@ export function SegmentedTabs<Value extends string | number = string>({
   activeLabelClassName,
 }: SegmentedTabsProps<Value>) {
   const colors = useThemeColors();
-  const { reduceMotion: systemReduceMotion, durationScale } = useReducedMotion();
   const [containerWidth, setContainerWidth] = React.useState(0);
   const [internalValue, setInternalValue] = React.useState<Value | undefined>(
     defaultValue ?? options[0]?.value
@@ -213,41 +353,9 @@ export function SegmentedTabs<Value extends string | number = string>({
   const config = sizeConfig[size];
   const resolvedHeight = typeof h === 'number' ? h : config.height;
   const roundedStyle = resolveRoundedStyle(rounded);
-  const reduceMotion = motionReduceMotion ?? systemReduceMotion;
-  const duration = resolveDuration(
-    motionDuration,
-    motionSpringPreset ? motionDurations.medium : motionDurations.normal,
-    reduceMotion,
-    durationScale
-  );
   const itemWidth = options.length > 0 && containerWidth > 0 ? containerWidth / options.length : 0;
   const targetWidth = Math.max(itemWidth - indicatorInset * 2, 0);
   const targetX = selectedIndex * itemWidth + indicatorInset;
-  const translateX = useSharedValue(targetX);
-  const indicatorWidth = useSharedValue(targetWidth);
-
-  const animateValue = React.useCallback(
-    (nextValue: number) => {
-      if (!animated || duration === 0) return nextValue;
-      if (motionSpringPreset) return withSpring(nextValue, resolveSpringConfig(motionSpringPreset));
-      return withTiming(nextValue, { duration });
-    },
-    [animated, duration, motionSpringPreset]
-  );
-
-  React.useEffect(() => {
-    translateX.value = animateValue(targetX);
-    indicatorWidth.value = animateValue(targetWidth);
-  }, [animateValue, indicatorWidth, targetWidth, targetX, translateX]);
-
-  const animatedIndicatorStyle = useAnimatedStyle(
-    () =>
-      ({
-        width: indicatorWidth.value,
-        transform: [{ translateX: translateX.value }],
-      }) satisfies MotionAnimatedViewStyle,
-    []
-  );
 
   if (options.length === 0) return null;
 
@@ -266,6 +374,8 @@ export function SegmentedTabs<Value extends string | number = string>({
   const resolvedActiveTintColor = activeTintColor ?? colors.textInverse;
   const resolvedInactiveTintColor = inactiveTintColor ?? colors.textMuted;
   const resolvedDisabledTintColor = disabledTintColor ?? colors.iconMuted;
+  const indicatorTestID = testID ? `${testID}-indicator` : undefined;
+  const shouldAnimateIndicator = animated && motionReduceMotion !== true;
 
   return (
     <AppView
@@ -296,23 +406,39 @@ export function SegmentedTabs<Value extends string | number = string>({
         style,
       ]}
     >
-      <Animated.View
-        testID={testID ? `${testID}-indicator` : undefined}
-        className={cn(indicatorClassName)}
-        pointerEvents="none"
-        style={[
-          styles.indicator,
-          roundedStyle,
-          {
-            top: indicatorInset,
-            height: Math.max(resolvedHeight - indicatorInset * 2, 0),
-            backgroundColor: resolvedIndicatorColor,
-            opacity: containerWidth > 0 ? 1 : 0,
-          },
-          animatedIndicatorStyle,
-          indicatorStyle,
-        ]}
-      />
+      {shouldAnimateIndicator ? (
+        <MotionSegmentedTabsIndicator
+          indicatorClassName={indicatorClassName}
+          indicatorInset={indicatorInset}
+          indicatorStyle={indicatorStyle}
+          motionDuration={motionDuration}
+          motionReduceMotion={motionReduceMotion}
+          motionSpringPreset={motionSpringPreset}
+          resolvedHeight={resolvedHeight}
+          resolvedIndicatorColor={resolvedIndicatorColor}
+          roundedStyle={roundedStyle}
+          targetWidth={targetWidth}
+          targetX={targetX}
+          testID={indicatorTestID}
+          visible={containerWidth > 0}
+        />
+      ) : (
+        <PlainSegmentedTabsIndicator
+          indicatorClassName={indicatorClassName}
+          indicatorInset={indicatorInset}
+          indicatorStyle={indicatorStyle}
+          motionDuration={motionDuration}
+          motionReduceMotion={motionReduceMotion}
+          motionSpringPreset={motionSpringPreset}
+          resolvedHeight={resolvedHeight}
+          resolvedIndicatorColor={resolvedIndicatorColor}
+          roundedStyle={roundedStyle}
+          targetWidth={targetWidth}
+          targetX={targetX}
+          testID={indicatorTestID}
+          visible={containerWidth > 0}
+        />
+      )}
 
       {options.map((option, index) => {
         const selected = index === selectedIndex;

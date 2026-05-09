@@ -72,6 +72,62 @@ const colorMap = {
   error: 'bg-error-500',
 };
 
+interface ProgressBarProps extends Pick<
+  ProgressProps,
+  'barClassName' | 'color' | 'max' | 'motionDuration' | 'motionReduceMotion' | 'motionSpringPreset'
+> {
+  percentage: number;
+  resolvedRounded: ReturnType<typeof resolveRoundedStyle>;
+  roundedClassName?: string;
+  size: NonNullable<ProgressProps['size']>;
+  value: number;
+}
+
+function PlainProgressBar({
+  barClassName,
+  color = 'primary',
+  percentage,
+  resolvedRounded,
+  roundedClassName,
+  size,
+}: ProgressBarProps) {
+  return (
+    <AppView
+      className={cn(roundedClassName, sizeMap[size], colorMap[color], barClassName)}
+      style={[resolvedRounded, { width: `${percentage}%` }]}
+    />
+  );
+}
+
+function MotionProgressBar({
+  barClassName,
+  color = 'primary',
+  max = 100,
+  motionDuration,
+  motionReduceMotion,
+  motionSpringPreset,
+  resolvedRounded,
+  roundedClassName,
+  size,
+  value,
+}: ProgressBarProps) {
+  const progressMotion = useProgressMotion({
+    value,
+    min: 0,
+    max,
+    duration: motionDuration,
+    spring: motionSpringPreset,
+    reduceMotion: motionReduceMotion,
+  });
+
+  return (
+    <Animated.View
+      className={cn(roundedClassName, sizeMap[size], colorMap[color], barClassName)}
+      style={[resolvedRounded, progressMotion.barStyle]}
+    />
+  );
+}
+
 export function Progress({
   flex,
   m,
@@ -104,14 +160,6 @@ export function Progress({
 }: ProgressProps) {
   const { theme, isDark } = useTheme();
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
-  const progressMotion = useProgressMotion({
-    value,
-    min: 0,
-    max,
-    duration: motionDuration,
-    spring: motionSpringPreset,
-    reduceMotion: motionReduceMotion,
-  });
 
   const trackBgColor =
     resolveSurfaceColor(surface, theme, isDark) ??
@@ -131,15 +179,35 @@ export function Progress({
       ]}
       testID={testID}
     >
-      <Animated.View
-        className={cn(
-          rounded === undefined && 'rounded-full',
-          sizeMap[size],
-          colorMap[color],
-          barClassName
-        )}
-        style={[resolvedRounded, animated ? progressMotion.barStyle : { width: `${percentage}%` }]}
-      />
+      {animated ? (
+        <MotionProgressBar
+          barClassName={barClassName}
+          color={color}
+          max={max}
+          motionDuration={motionDuration}
+          motionReduceMotion={motionReduceMotion}
+          motionSpringPreset={motionSpringPreset}
+          percentage={percentage}
+          resolvedRounded={resolvedRounded}
+          roundedClassName={rounded === undefined ? 'rounded-full' : undefined}
+          size={size}
+          value={value}
+        />
+      ) : (
+        <PlainProgressBar
+          barClassName={barClassName}
+          color={color}
+          max={max}
+          motionDuration={motionDuration}
+          motionReduceMotion={motionReduceMotion}
+          motionSpringPreset={motionSpringPreset}
+          percentage={percentage}
+          resolvedRounded={resolvedRounded}
+          roundedClassName={rounded === undefined ? 'rounded-full' : undefined}
+          size={size}
+          value={value}
+        />
+      )}
     </AppView>
   );
 }

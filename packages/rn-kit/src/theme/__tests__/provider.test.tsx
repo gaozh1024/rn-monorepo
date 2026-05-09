@@ -3,11 +3,11 @@ import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { ThemeProvider, useTheme } from '../provider';
 
+const lightTheme = { colors: { primary: '#f38b32' } };
+const darkTheme = { colors: { primary: '#1a1a1a' } };
+
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <ThemeProvider
-    light={{ colors: { primary: '#f38b32' } }}
-    dark={{ colors: { primary: '#1a1a1a' } }}
-  >
+  <ThemeProvider light={lightTheme} dark={darkTheme}>
     {children}
   </ThemeProvider>
 );
@@ -35,6 +35,15 @@ describe('ThemeProvider', () => {
     await waitFor(() => {
       expect(result.current.isDark).toBe(true);
     });
+  });
+
+  it('父级使用相同主题配置重新渲染时应该保持 useTheme 返回对象引用稳定', () => {
+    const { result, rerender } = renderHook(() => useTheme(), { wrapper });
+    const firstThemeApi = result.current;
+
+    rerender();
+
+    expect(result.current).toBe(firstThemeApi);
   });
 
   it('应该支持受控暗色模式', () => {

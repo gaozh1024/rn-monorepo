@@ -30,7 +30,7 @@ describe('toggle motion props', () => {
   it('Switch 应该透传自定义切换动画配置', () => {
     render(
       <ThemeProvider light={theme}>
-        <Switch checked motionDuration={260} motionSpringPreset="snappy" motionReduceMotion />
+        <Switch checked motionDuration={260} motionSpringPreset="snappy" />
       </ThemeProvider>
     );
 
@@ -40,7 +40,6 @@ describe('toggle motion props', () => {
         preset: 'switch',
         duration: 260,
         spring: 'snappy',
-        reduceMotion: true,
       })
     );
   });
@@ -48,7 +47,7 @@ describe('toggle motion props', () => {
   it('Checkbox 应该透传自定义切换动画配置', () => {
     render(
       <ThemeProvider light={theme}>
-        <Checkbox checked motionDuration={180} motionSpringPreset="smooth" motionReduceMotion />
+        <Checkbox checked motionDuration={180} motionSpringPreset="smooth" />
       </ThemeProvider>
     );
 
@@ -58,7 +57,6 @@ describe('toggle motion props', () => {
         preset: 'checkbox',
         duration: 180,
         spring: 'smooth',
-        reduceMotion: true,
       })
     );
   });
@@ -66,7 +64,7 @@ describe('toggle motion props', () => {
   it('Radio 应该透传自定义切换动画配置', () => {
     render(
       <ThemeProvider light={theme}>
-        <Radio checked motionDuration={200} motionSpringPreset="bouncy" motionReduceMotion />
+        <Radio checked motionDuration={200} motionSpringPreset="bouncy" />
       </ThemeProvider>
     );
 
@@ -76,8 +74,35 @@ describe('toggle motion props', () => {
         preset: 'radio',
         duration: 200,
         spring: 'bouncy',
-        reduceMotion: true,
       })
     );
+  });
+
+  it('animated=false 时不应该调用切换动画 hook', () => {
+    render(
+      <ThemeProvider light={theme}>
+        <>
+          <Switch checked animated={false} />
+          <Checkbox checked animated={false} />
+          <Radio checked animated={false} />
+        </>
+      </ThemeProvider>
+    );
+
+    expect(useToggleMotionMock).not.toHaveBeenCalled();
+  });
+
+  it('motionReduceMotion=true 时不应该调用切换动画 hook', () => {
+    render(
+      <ThemeProvider light={theme}>
+        <>
+          <Switch checked motionReduceMotion />
+          <Checkbox checked motionReduceMotion />
+          <Radio checked motionReduceMotion />
+        </>
+      </ThemeProvider>
+    );
+
+    expect(useToggleMotionMock).not.toHaveBeenCalled();
   });
 });

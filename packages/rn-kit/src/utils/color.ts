@@ -76,7 +76,13 @@ export function hexToRgb(hex: string): RgbObject {
  * ```
  */
 export function rgbToHex(rgb: RgbObject): string {
-  return '#' + [rgb.r, rgb.g, rgb.b].map(x => x.toString(16).padStart(2, '0')).join('');
+  const normalizeChannel = (channel: number) => Math.round(Math.max(0, Math.min(255, channel)));
+  return (
+    '#' +
+    [rgb.r, rgb.g, rgb.b]
+      .map(channel => normalizeChannel(channel).toString(16).padStart(2, '0'))
+      .join('')
+  );
 }
 
 /**

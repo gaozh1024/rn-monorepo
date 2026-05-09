@@ -77,6 +77,8 @@ export interface ProgressMotionProps {
 }
 
 export interface ToggleMotionProps {
+  /** 是否启用状态切换动画，默认 true */
+  animated?: boolean;
   /** 状态切换动画时长 */
   motionDuration?: number;
   /** 状态切换动画 spring 预设 */

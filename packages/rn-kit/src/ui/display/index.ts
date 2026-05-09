@@ -1,5 +1,5 @@
 export { Progress, type ProgressProps } from './Progress';
-export { Card, type CardProps } from './Card';
+export { Card, type CardProps, type CardVariant } from './Card';
 export {
   Icon,
   type IconProps,

@@ -42,4 +42,14 @@ describe('Progress motion props', () => {
       })
     );
   });
+
+  it('animated=false 时不应该调用 progress motion hook', () => {
+    render(
+      <ThemeProvider light={theme}>
+        <Progress value={50} animated={false} />
+      </ThemeProvider>
+    );
+
+    expect(useProgressMotionMock).not.toHaveBeenCalled();
+  });
 });

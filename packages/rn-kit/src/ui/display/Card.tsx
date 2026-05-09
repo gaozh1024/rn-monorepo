@@ -14,6 +14,8 @@ import {
 import { useOptionalTheme } from '@/theme';
 import { resolveNamedColor, resolveSurfaceColor } from '../utils/theme-color';
 
+export type CardVariant = 'flat' | 'outlined' | 'elevated';
+
 /**
  * Card 组件属性接口
  */
@@ -24,6 +26,8 @@ export interface CardProps extends ViewProps, CommonLayoutProps, PressMotionProp
   surface?: LayoutSurface;
   /** Tailwind / NativeWind 类名 */
   className?: string;
+  /** 视觉变体：flat 适合长列表/网格，outlined 适合轻边框卡片，elevated 保持默认阴影卡片 */
+  variant?: CardVariant;
   /** 是否禁用阴影 */
   noShadow?: boolean;
   /** 是否禁用边框 */
@@ -75,6 +79,7 @@ export function Card({
   bg,
   surface,
   className,
+  variant,
   style,
   noShadow = false,
   noBorder = false,
@@ -93,11 +98,13 @@ export function Card({
   const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'soft';
   const resolvedBgColor =
     resolveSurfaceColor(surface, theme, isDark) ?? resolveNamedColor(bg, theme, isDark);
-  const sharedClassName = cn(!noShadow && 'shadow-sm', 'overflow-hidden', className);
+  const shouldUseShadow = !noShadow && variant !== 'flat' && variant !== 'outlined';
+  const shouldUseBorder = !noBorder && variant !== 'flat';
+  const sharedClassName = cn(shouldUseShadow && 'shadow-sm', 'overflow-hidden', className);
   const sharedStyle = [
     {
       backgroundColor: resolvedBgColor ?? colors.card,
-      ...(noBorder ? {} : { borderWidth: 0.5, borderColor: colors.divider }),
+      ...(shouldUseBorder ? { borderWidth: 0.5, borderColor: colors.divider } : {}),
     },
     resolveLayoutStyle({
       flex,

@@ -19,6 +19,8 @@ This matrix is the maintained contract for Expo Web / React Native Web support.
   - `AppInput` resets the browser's native `input:focus` outline on Web and keeps rn-kit's outer focus border as the single visible focus treatment.
   - `AppInput` built-in container padding, radius, text padding and font size are resolved through shortcut props / explicit styles instead of relying on NativeWind `className` injection.
 - `Skeleton`, `SkeletonText`, `SkeletonCircle`
+- `AppPressable`: default `motionPreset="none"` uses the native `Pressable` path and avoids Reanimated hook setup on Web.
+- `Progress`, `SegmentedTabs`, `Switch`, `Checkbox`, `Radio`: `animated={false}` and reduced-motion paths render with plain static styles instead of animated shared values.
 - `useToggle`, `useDebounce`, `useThrottle`, `useDimensions`, `useOrientation`
 
 ## Web variant
@@ -36,6 +38,7 @@ This matrix is the maintained contract for Expo Web / React Native Web support.
 ## Conditional
 
 - Reanimated-based components require the Expo/Web app to include `react-native-worklets/plugin` or equivalent Reanimated Web setup. `Presence` / `MotionView` / `StaggerItem` visibility on Web is the exception: it uses CSS-backed presence transitions and works without Reanimated Web shared-value progression.
+- Components that explicitly choose `animated={false}` or `motionReduceMotion` for the supported no-animation paths do not require Reanimated shared-value progression for that visual state update.
 - Reanimated layout animation props (`motionEntering`, `motionExiting`, `motionLayout` and layout presets) are native/Reanimated-only on Web presence surfaces; rn-kit drops those objects before they reach the React Native Web host component.
 - Gesture-based components require `GestureHandlerRootView`; `AppProvider` now supplies it by default.
 - React Navigation Web requires app-level linking configuration for URL parity.

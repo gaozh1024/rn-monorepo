@@ -25,6 +25,73 @@ export interface SwitchProps
   style?: StyleProp<ViewStyle>;
 }
 
+interface SwitchThumbProps extends Pick<
+  ToggleMotionProps,
+  'motionDuration' | 'motionSpringPreset'
+> {
+  checked: boolean;
+  config: { width: number; height: number; thumb: number; padding: number };
+  thumbBackgroundColor: string;
+}
+
+function getSwitchThumbStyle(
+  config: SwitchThumbProps['config'],
+  thumbBackgroundColor: string
+): ViewStyle {
+  return {
+    width: config.thumb,
+    height: config.thumb,
+    borderRadius: config.thumb / 2,
+    backgroundColor: thumbBackgroundColor,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 1,
+  };
+}
+
+function PlainSwitchThumb({ checked, config, thumbBackgroundColor }: SwitchThumbProps) {
+  const maxTranslateX = Math.max(0, config.width - config.thumb - config.padding * 2);
+
+  return (
+    <AppView
+      style={[
+        styles.thumb,
+        getSwitchThumbStyle(config, thumbBackgroundColor),
+        { transform: [{ translateX: checked ? maxTranslateX : 0 }] },
+      ]}
+    />
+  );
+}
+
+function MotionSwitchThumb({
+  checked,
+  config,
+  motionDuration,
+  motionSpringPreset,
+  thumbBackgroundColor,
+}: SwitchThumbProps) {
+  const toggleMotion = useToggleMotion({
+    value: checked,
+    preset: 'switch',
+    duration: motionDuration,
+    spring: motionSpringPreset,
+    trackWidth: config.width,
+    thumbSize: config.thumb,
+    trackPadding: config.padding,
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.thumb,
+        getSwitchThumbStyle(config, thumbBackgroundColor),
+        toggleMotion.thumbStyle,
+      ]}
+    />
+  );
+}
+
 export function Switch({
   flex,
   m,
@@ -43,6 +110,7 @@ export function Switch({
   className,
   testID,
   style,
+  animated = true,
   motionDuration,
   motionSpringPreset,
   motionReduceMotion,
@@ -53,10 +121,11 @@ export function Switch({
   const [isInteractionLocked, setIsInteractionLocked] = useState(false);
   const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion = motionReduceMotion ?? systemReduceMotion;
+  const shouldAnimateToggle = animated && motionReduceMotion !== true;
   const interactionLockDuration = resolveDuration(
     motionDuration,
     motionSpringPreset ? motionDurations.medium : motionDurations.normal,
-    reduceMotion,
+    !shouldAnimateToggle || reduceMotion,
     durationScale
   );
 
@@ -69,16 +138,6 @@ export function Switch({
   };
 
   const config = sizes[size];
-  const toggleMotion = useToggleMotion({
-    value: isChecked,
-    preset: 'switch',
-    duration: motionDuration,
-    spring: motionSpringPreset,
-    reduceMotion,
-    trackWidth: config.width,
-    thumbSize: config.thumb,
-    trackPadding: config.padding,
-  });
 
   const clearUnlockTimer = () => {
     if (!unlockTimerRef.current) return;
@@ -168,22 +227,21 @@ export function Switch({
           style,
         ]}
       >
-        <Animated.View
-          style={[
-            styles.thumb,
-            {
-              width: config.thumb,
-              height: config.thumb,
-              borderRadius: config.thumb / 2,
-              backgroundColor: thumbBackgroundColor,
-              shadowColor: '#000000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.25,
-              shadowRadius: 1,
-            },
-            toggleMotion.thumbStyle,
-          ]}
-        />
+        {shouldAnimateToggle ? (
+          <MotionSwitchThumb
+            checked={isChecked}
+            config={config}
+            motionDuration={motionDuration}
+            motionSpringPreset={motionSpringPreset}
+            thumbBackgroundColor={thumbBackgroundColor}
+          />
+        ) : (
+          <PlainSwitchThumb
+            checked={isChecked}
+            config={config}
+            thumbBackgroundColor={thumbBackgroundColor}
+          />
+        )}
       </AppView>
     </AppPressable>
   );

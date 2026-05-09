@@ -318,7 +318,7 @@ import {
 | `AppImage`      | 图片组件                         | 外层支持：`flex` / 外边距 / 尺寸 / `rounded` / `bg` / `surface`                                    | 保留 `width/height/borderRadius` 兼容写法，并新增快捷别名；`style` 中的宽高也会自动提取到外层容器  |
 | `Icon`          | 图标组件                         | 外层支持：`flex` / 间距 / 尺寸 / `rounded` / `bg` / `surface`                                      | 适合做图标按钮、徽标入口、状态图标容器                                                             |
 | `AppButton`     | 按钮                             | `flex` / 外边距 / 尺寸 / `rounded`                                                                 | `size` 继续控制默认内边距；快捷参数主要用于外层排版                                                |
-| `Card`          | 卡片容器                         | 布局 / 间距 / 尺寸 / `bg` / `surface` / `rounded` / `className`                                    | 另有 `noShadow` / `noBorder` / `noRadius`                                                          |
+| `Card`          | 卡片容器                         | 布局 / 间距 / 尺寸 / `bg` / `surface` / `rounded` / `className`                                    | 另有 `variant` / `noShadow` / `noBorder` / `noRadius`；长列表推荐 `variant="flat"`                 |
 | `AppList`       | 高级列表组件                     | 外层支持：`flex` / 外边距 / 尺寸 / `bg` / `surface` / `rounded`；内容区支持：布局 / 内边距 / `gap` | 和 `AppFlatList` 保持一致，适合直接承载业务空态/错态/骨架                                          |
 | `SegmentedTabs` | 滑块式 Tab/Menu 切换条           | 外层支持：`flex` / 外边距 / 尺寸；滑块支持 `indicatorStyle` / `indicatorInset`                     | 适合页面内分类、状态筛选；点击后底层 `Animated.View` 会左右滑动到选中项                            |
 | `AppInput`      | 输入框                           | 外层支持：`flex` / 外边距 / `w`；输入容器支持：尺寸 / `rounded` / `bg` / `surface`                 | 内置布局、内边距、圆角和字号不依赖 `className`；更细粒度仍推荐配合 `containerStyle` / `inputStyle` |
@@ -395,6 +395,22 @@ const tabs = [
 > 说明：`className` 依然走 NativeWind；上表中的快捷参数本身已经由框架直接转换为内联 `style`。
 >
 > Web / App 样式一致性约定：框架内置组件的关键布局、点击热区、输入框内边距、圆角和字号不应只依赖 `className`。`className` 仍可用于业务侧追加装饰样式；如果该样式影响可用性或移动端 Web 首屏体验，请优先使用快捷参数、`style`、`containerStyle` 或 `inputStyle`。
+
+#### Card 轻量表面
+
+`Card` 支持 `variant` 来表达列表/网格中的表面重量：
+
+- `variant="flat"`：无阴影、无边框，推荐商品列表、Feed、瀑布流等高密度滚动场景。
+- `variant="outlined"`：无阴影、有细边框，适合需要边界但不需要 elevation 的列表卡片。
+- `variant="elevated"`：保持默认阴影 + 边框视觉；不传 `variant` 时也保持现有默认行为。
+
+`noShadow` / `noBorder` / `noRadius` 仍可作为关闭型覆盖项使用。长列表里的可点击卡片建议同时关闭按压动画：
+
+```tsx
+<Card variant="flat" motionPreset="none" onPress={goDetail}>
+  <AppText>商品标题</AppText>
+</Card>
+```
 
 #### Button 颜色语义
 
@@ -929,7 +945,7 @@ import {
 
 默认策略：
 
-- `AppPressable` 默认 `motionPreset="none"`，更适合做基础可点击容器
+- `AppPressable` 默认 `motionPreset="none"`，更适合做基础可点击容器；该默认路径使用原生 `Pressable`，不会初始化 `usePressMotion` / Reanimated shared value
 - `MotionPressable` 默认 `motionPreset="soft"`
 - `AppButton` / `Card` / `Select` / `Picker` / `DatePicker` / `PageDrawer` 等语义组件默认按压反馈为 `soft`
 
@@ -948,7 +964,10 @@ import {
 ```tsx
 <AppButton>保存</AppButton>
 <AppButton motionDuration={180}>保存</AppButton>
+<AppPressable onPress={goNext}>基础跳转项</AppPressable> // 默认轻量 Pressable 路径
+<AppPressable motionPreset="soft" onPress={submit}>需要按压反馈的操作</AppPressable>
 <Card onPress={() => {}} motionPreset="strong" />
+<Card variant="flat" motionPreset="none" onPress={goDetail}>长列表商品卡片</Card>
 ```
 
 可选值：
@@ -1291,21 +1310,25 @@ const headerMotion = useCollapsibleHeaderMotion({
 
 `Progress` 也支持：
 
+- `animated={false}`：使用普通 `AppView` 渲染进度条，不初始化 `useProgressMotion`
 - `motionDuration`
 - `motionSpringPreset`
 - `motionReduceMotion`
 
 `Switch` / `Checkbox` / `Radio` 也支持：
 
+- `animated={false}`：使用普通视图更新状态，不初始化 `useToggleMotion`
 - `motionDuration`
 - `motionSpringPreset`
-- `motionReduceMotion`
+- `motionReduceMotion`：显式关闭状态切换动画，并走普通视图路径
 
 `AppButton` / `Card` / `Select` / `Picker` / `DatePicker` / `PageDrawer` 也统一支持：
 
 - `motionPreset`
 - `motionDuration`
 - `motionReduceMotion`
+
+`SegmentedTabs` 也支持 `animated={false}` / `motionReduceMotion`。这两种场景下，选中滑块会直接使用静态 `width + translateX` 样式定位，不初始化 Reanimated shared value / animated style；默认 `animated` 仍保持 timing/spring 滑动体验。
 
 `AppList` 错峰 / 列表项动画还支持：
 
