@@ -41,6 +41,8 @@ type AliyunPushModule = {
   removePushCallback(): void;
 };
 
+const ALIYUN_PUSH_ALREADY_REGISTERED_CODE = 'PUSH_20110';
+
 let cachedAliyunModule: AliyunPushModule | null | undefined;
 let cachedDeviceId: string | null = null;
 let cachedApnsDeviceToken: string | null = null;
@@ -121,9 +123,16 @@ function getConfigSignature(config: AliyunPushRuntimeConfig) {
   return JSON.stringify(config);
 }
 
-function assertPushSuccess(mod: AliyunPushModule, result: PushResult, action: string) {
-  if (result.code !== mod.kAliyunPushSuccessCode) {
-    throw new Error(`[AliyunPush] ${action}失败: ${result.errorMsg ?? result.code}`);
+function isInitPushSuccess(mod: AliyunPushModule, result: PushResult) {
+  return (
+    result.code === mod.kAliyunPushSuccessCode ||
+    result.code === ALIYUN_PUSH_ALREADY_REGISTERED_CODE
+  );
+}
+
+function assertInitPushSuccess(mod: AliyunPushModule, result: PushResult) {
+  if (!isInitPushSuccess(mod, result)) {
+    throw new Error(`[AliyunPush] 初始化失败: ${result.errorMsg ?? result.code}`);
   }
 }
 
@@ -155,7 +164,10 @@ async function performInit(config: AliyunPushRuntimeConfig): Promise<AliyunPushI
 
   const initResult = await mod.initPush(credentials.appKey, credentials.appSecret);
   pushLogger.info('[初始化] initPush 返回', initResult);
-  assertPushSuccess(mod, initResult, '初始化');
+  assertInitPushSuccess(mod, initResult);
+  if (initResult.code === ALIYUN_PUSH_ALREADY_REGISTERED_CODE) {
+    pushLogger.info('[初始化] 原生 SDK 已注册，按幂等初始化成功继续后续流程', initResult);
+  }
 
   let thirdPushResult: PushResult | null = null;
   if (platform === 'android' && config.autoInitThirdPush !== false && hasVendorPushConfig(config)) {

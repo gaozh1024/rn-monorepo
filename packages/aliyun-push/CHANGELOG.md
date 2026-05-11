@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3
+
+### Patch Changes
+
+- Treat Aliyun Push `PUSH_20110` duplicate registration as an idempotent initialization success so startup can continue to third-party channel setup, Android channel creation, deviceId collection, and account binding.
+- Add targeted Vitest coverage for duplicate-registration initialization and unknown initialization failures.
+
 ## 0.1.2
 
 ### Patch Changes

@@ -270,6 +270,7 @@ setAliyunPushLogger({
 4. 厂商通道参数不是必填；只有配置了对应字段，插件才会注入对应 metadata
 5. 如果修改了 `aliyunPush.config.js`，记得重新执行 `expo prebuild` / `pod install`
 6. 只安装依赖但暂不启用推送时，也应保留 `@gaozh1024/aliyun-push/plugin`，否则 Gradle/CocoaPods 可能找不到阿里云原生依赖仓库
+7. 阿里云原生 SDK 返回 `PUSH_20110` 表示已经注册过，包内会按幂等初始化成功继续获取 deviceId 和执行账号绑定
 
 ## 🛠️ 本地开发
 

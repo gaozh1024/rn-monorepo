@@ -59,6 +59,7 @@ Aliyun mobile push integration package with runtime service APIs, React provider
 
 - Push initialization never completes because the native plugin/prebuild step was skipped.
 - Android build cannot resolve com.aliyun.ams artifacts when native dependency repositories were not injected by the plugin/prebuild step.
+- Aliyun native SDK duplicate-registration code PUSH_20110 should be treated as idempotent initialization success, not as a fatal init failure.
 - Notification callbacks appear inconsistent because callback registration and provider usage were mixed carelessly.
 - Expo plugin users forget to rerun prebuild or pod install after config changes.
 
