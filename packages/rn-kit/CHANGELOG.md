@@ -1,11 +1,16 @@
 # @gaozh1024/rn-kit
 
-## 0.5.1
+## 0.5.2
 
 ### Patch Changes
 
 - Fix `dismissKeyboardOnPressOutside` on React Native Web so clicks inside `input`, `textarea`, and `contenteditable` targets keep focus instead of immediately blurring the field.
 - Bring the Web logger overlay toggle to parity with Native by adding pointer drag, edge snapping, and persisted button position support.
+
+## 0.5.1
+
+### Patch Changes
+
 - Harden `AppInput` Web/mobile parity by moving built-in input layout, padding, radius and font-size styles off NativeWind-only `className` paths; document the Web focus-outline reset and style override guidance.
 - Make `Presence`, `MotionView`, `StaggerItem`, Toast and Alert presence surfaces safe on React Native Web by using CSS-backed Web transitions and dropping Reanimated-only layout animation props from Web host components.
 - Stabilize overlay and theme context values so toast/loading/alert state changes do not create new hook API object references for consumers.
