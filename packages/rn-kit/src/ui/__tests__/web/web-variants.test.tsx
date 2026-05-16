@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react-native';
+import { act } from 'react-test-renderer';
 import { ThemeProvider } from '@/theme';
 import { AppStatusBar } from '@/overlay/AppStatusBar.web';
 import { BottomSheetModal } from '../../form/BottomSheetModal.web';
@@ -166,5 +167,85 @@ describe('Web platform variants', () => {
       borderRadius: 9999,
     });
     expect(getByText('hello web')).toBeTruthy();
+  });
+
+  it('LogOverlay.web restores persisted button position', () => {
+    const { getByTestId } = render(
+      withTheme(<LogOverlay entries={[]} onClear={vi.fn()} buttonPosition={{ x: -120, y: -80 }} />)
+    );
+
+    expect(
+      flattenStyle(getByTestId('logger-overlay-toggle-wrapper').props.style).transform
+    ).toEqual([{ translateX: -120 }, { translateY: -80 }]);
+  });
+
+  it('LogOverlay.web supports pointer drag, snap and persist', () => {
+    const onButtonPositionChange = vi.fn();
+
+    const { getByTestId } = render(
+      withTheme(
+        <LogOverlay
+          entries={[]}
+          onClear={vi.fn()}
+          onButtonPositionChange={onButtonPositionChange}
+        />
+      )
+    );
+
+    const wrapper = getByTestId('logger-overlay-toggle-wrapper');
+    const setPointerCapture = vi.fn();
+    const releasePointerCapture = vi.fn();
+
+    act(() => {
+      wrapper.props.onPointerDown({
+        currentTarget: { setPointerCapture },
+        nativeEvent: { clientX: 300, clientY: 700, pointerId: 1 },
+      });
+      wrapper.props.onPointerMove({
+        nativeEvent: {
+          clientX: 80,
+          clientY: 600,
+          pointerId: 1,
+          preventDefault: vi.fn(),
+        },
+      });
+      wrapper.props.onPointerUp({
+        currentTarget: { releasePointerCapture },
+        nativeEvent: { clientX: 80, clientY: 600, pointerId: 1 },
+      });
+    });
+
+    expect(setPointerCapture).toHaveBeenCalledWith(1);
+    expect(releasePointerCapture).toHaveBeenCalledWith(1);
+    expect(onButtonPositionChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        x: expect.any(Number),
+        y: expect.any(Number),
+      })
+    );
+  });
+
+  it('LogOverlay.web does not toggle panel after drag', () => {
+    const { getByTestId, queryByTestId } = render(
+      withTheme(<LogOverlay entries={[]} onClear={vi.fn()} />)
+    );
+
+    const wrapper = getByTestId('logger-overlay-toggle-wrapper');
+    const toggle = getByTestId('logger-overlay-toggle');
+
+    act(() => {
+      wrapper.props.onPointerDown({
+        nativeEvent: { clientX: 300, clientY: 700, pointerId: 1 },
+      });
+      wrapper.props.onPointerMove({
+        nativeEvent: { clientX: 100, clientY: 650, pointerId: 1 },
+      });
+      wrapper.props.onPointerUp({
+        nativeEvent: { clientX: 100, clientY: 650, pointerId: 1 },
+      });
+    });
+    fireEvent.press(toggle);
+
+    expect(queryByTestId('logger-overlay-panel')).toBeNull();
   });
 });

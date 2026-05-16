@@ -462,6 +462,10 @@ const tabs = [
 </AppScreen>
 ```
 
+在 React Native Web 上，`dismissKeyboardOnPressOutside` 会自动忽略
+`input` / `textarea` / `contenteditable` 目标及其子节点，避免点击 `AppInput`
+后刚获得焦点就被外层容器立即 `Keyboard.dismiss()`。
+
 如果不是整页容器，而是局部自定义布局，也可以单独使用：
 
 ```tsx
@@ -754,8 +758,13 @@ export default function App() {
 - `consoleEnabled`
 - `overlayEnabled`
 - `defaultExpanded`
+- `overlayPositionStorageKey`
 - `exportEnabled`
 - `onExport`
+
+Web 与 Native 的日志浮动按钮都支持拖动、释放后自动吸附左右边缘，并通过
+`overlayPositionStorageKey` 复用同一套位置持久化逻辑。拖动结束不会误触发
+展开 / 收起；单击按钮仍会正常切换日志面板。
 
 `onExport` 会收到：
 

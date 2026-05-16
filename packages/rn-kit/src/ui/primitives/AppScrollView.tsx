@@ -1,6 +1,7 @@
-import { Keyboard, ScrollView, TouchableWithoutFeedback, type ScrollViewProps } from 'react-native';
+import { ScrollView, type ScrollViewProps } from 'react-native';
 import { useOptionalTheme } from '@/theme';
 import { cn } from '@/utils';
+import { KeyboardDismissPressable } from './KeyboardDismissPressable';
 import { resolveNamedColor, resolveSurfaceColor } from '../utils/theme-color';
 import {
   type CommonLayoutProps,
@@ -108,9 +109,5 @@ export function AppScrollView({
     return content;
   }
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      {content}
-    </TouchableWithoutFeedback>
-  );
+  return <KeyboardDismissPressable>{content}</KeyboardDismissPressable>;
 }

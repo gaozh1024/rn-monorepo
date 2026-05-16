@@ -2,8 +2,8 @@ import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react-native';
 import { act, create } from 'react-test-renderer';
-import { FlatList, TouchableWithoutFeedback } from 'react-native';
-import { AppFlatList } from '@/ui';
+import { FlatList } from 'react-native';
+import { AppFlatList, KeyboardDismissPressable } from '@/ui';
 
 function flattenStyle(style: any) {
   if (!style) return {};
@@ -84,7 +84,7 @@ describe('AppFlatList', () => {
     const flatList = renderer!.root.findByType(FlatList);
 
     expect(flatList.props.keyboardShouldPersistTaps).toBe('handled');
-    expect(renderer!.root.findAllByType(TouchableWithoutFeedback)).toHaveLength(1);
+    expect(renderer!.root.findAllByType(KeyboardDismissPressable)).toHaveLength(1);
   });
 
   it('应该支持语义化背景', () => {

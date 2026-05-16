@@ -1,8 +1,9 @@
 import React from 'react';
-import { Keyboard, TouchableWithoutFeedback, View, ViewProps } from 'react-native';
+import { View, ViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOptionalTheme } from '@/theme';
 import { cn } from '@/utils';
+import { KeyboardDismissPressable } from '../primitives/KeyboardDismissPressable';
 import { resolveNamedColor, resolveSurfaceColor } from '../utils/theme-color';
 import {
   type CommonLayoutProps,
@@ -145,11 +146,7 @@ export function SafeScreen({
     return content;
   }
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      {content}
-    </TouchableWithoutFeedback>
-  );
+  return <KeyboardDismissPressable>{content}</KeyboardDismissPressable>;
 }
 
 /**

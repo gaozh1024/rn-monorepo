@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import Animated from 'react-native-reanimated';
 import {
-  Keyboard,
   FlatList,
   ListRenderItem,
   RefreshControl,
@@ -9,7 +8,6 @@ import {
   StyleProp,
   ViewStyle,
   StyleSheet,
-  TouchableWithoutFeedback,
 } from 'react-native';
 import { useTheme, useThemeColors, useOptionalTheme } from '@/theme';
 import { AppView, AppText, AppPressable } from '@/ui/primitives';
@@ -18,6 +16,7 @@ import { Center } from '@/ui/layout';
 import { SkeletonAvatar, SkeletonText } from '@/ui/feedback';
 import { cn } from '@/utils';
 import { StaggerItem } from '@/ui/motion';
+import { KeyboardDismissPressable } from '../primitives/KeyboardDismissPressable';
 import {
   resolveMotionLayoutProps,
   type MotionEntryExitAnimation,
@@ -562,11 +561,7 @@ export function AppList<T = any>({
       return content;
     }
 
-    return (
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        {content}
-      </TouchableWithoutFeedback>
-    );
+    return <KeyboardDismissPressable>{content}</KeyboardDismissPressable>;
   };
 
   if (loading && data.length === 0) {

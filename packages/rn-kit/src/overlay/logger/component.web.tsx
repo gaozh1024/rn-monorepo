@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LogEntry, LogLevel } from '@/core/logger';
 import { formatLogTime, serializeLogEntries, stringifyLogData } from '@/core/logger';
 import { useThemeColors } from '@/theme';
@@ -29,9 +29,43 @@ const TOGGLE_BUTTON_WIDTH = 68;
 const TOGGLE_BUTTON_HEIGHT = 32;
 const TOGGLE_BUTTON_RIGHT_GAP = 10;
 const TOGGLE_BUTTON_BOTTOM_GAP = 20;
+const DRAG_THRESHOLD = 6;
+
+interface WebPointerLikeEvent {
+  currentTarget?: {
+    releasePointerCapture?: (pointerId: number) => void;
+    setPointerCapture?: (pointerId: number) => void;
+  };
+  nativeEvent?: {
+    clientX?: number;
+    clientY?: number;
+    pointerId?: number;
+    preventDefault?: () => void;
+  };
+}
+
+interface DragState {
+  pointerId: number | null;
+  startClientX: number;
+  startClientY: number;
+  startX: number;
+  startY: number;
+  moved: boolean;
+}
 
 function withAlpha(color: string, alpha = '20') {
   return color.startsWith('#') && color.length === 7 ? `${color}${alpha}` : color;
+}
+
+function getWebViewportSize() {
+  if (typeof window === 'undefined') {
+    return { width: 390, height: 844 };
+  }
+
+  return {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
 }
 
 export function getLoggerOverlayButtonBounds(width: number, height: number) {
@@ -74,11 +108,31 @@ export function LogOverlay({
   defaultExpanded = false,
   exportEnabled = true,
   onExport,
+  buttonPosition,
+  onButtonPositionChange,
 }: LogOverlayProps) {
   const colors = useThemeColors();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [filter, setFilter] = useState<OverlayFilter>('all');
   const [namespaceFilter, setNamespaceFilter] = useState<NamespaceFilter>(ALL_NAMESPACE);
+  const [dragPosition, setDragPosition] = useState(() => {
+    const { width, height } = getWebViewportSize();
+
+    return clampLoggerOverlayButtonPosition(
+      { x: buttonPosition?.x ?? 0, y: buttonPosition?.y ?? 0 },
+      width,
+      height
+    );
+  });
+  const dragPositionRef = useRef(dragPosition);
+  const dragStateRef = useRef<DragState>({
+    pointerId: null,
+    startClientX: 0,
+    startClientY: 0,
+    startX: 0,
+    startY: 0,
+    moved: false,
+  });
 
   const namespaces = useMemo<NamespaceFilter[]>(
     () => [
@@ -122,6 +176,135 @@ export function LogOverlay({
 
     console.info('[LoggerExport]', payload.serialized);
   };
+
+  useEffect(() => {
+    const { width, height } = getWebViewportSize();
+    const nextPosition = clampLoggerOverlayButtonPosition(
+      { x: buttonPosition?.x ?? 0, y: buttonPosition?.y ?? 0 },
+      width,
+      height
+    );
+
+    dragPositionRef.current = nextPosition;
+    setDragPosition(nextPosition);
+  }, [buttonPosition]);
+
+  const setNextDragPosition = useCallback((position: { x: number; y: number }) => {
+    dragPositionRef.current = position;
+    setDragPosition(position);
+  }, []);
+
+  const handlePointerDown = useCallback((event: WebPointerLikeEvent) => {
+    const nativeEvent = event.nativeEvent ?? {};
+    const pointerId = typeof nativeEvent.pointerId === 'number' ? nativeEvent.pointerId : null;
+
+    dragStateRef.current = {
+      pointerId,
+      startClientX: nativeEvent.clientX ?? 0,
+      startClientY: nativeEvent.clientY ?? 0,
+      startX: dragPositionRef.current.x,
+      startY: dragPositionRef.current.y,
+      moved: false,
+    };
+
+    if (pointerId !== null) {
+      event.currentTarget?.setPointerCapture?.(pointerId);
+    }
+  }, []);
+
+  const handlePointerMove = useCallback(
+    (event: WebPointerLikeEvent) => {
+      const nativeEvent = event.nativeEvent ?? {};
+      const state = dragStateRef.current;
+
+      if (state.pointerId === null) {
+        return;
+      }
+
+      if (typeof nativeEvent.pointerId === 'number' && nativeEvent.pointerId !== state.pointerId) {
+        return;
+      }
+
+      const dx = (nativeEvent.clientX ?? state.startClientX) - state.startClientX;
+      const dy = (nativeEvent.clientY ?? state.startClientY) - state.startClientY;
+
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+        state.moved = true;
+      }
+
+      if (!state.moved) {
+        return;
+      }
+
+      nativeEvent.preventDefault?.();
+
+      const { width, height } = getWebViewportSize();
+      const nextPosition = clampLoggerOverlayButtonPosition(
+        {
+          x: state.startX + dx,
+          y: state.startY + dy,
+        },
+        width,
+        height
+      );
+
+      setNextDragPosition(nextPosition);
+    },
+    [setNextDragPosition]
+  );
+
+  const finishPointerDrag = useCallback(
+    (event: WebPointerLikeEvent) => {
+      const nativeEvent = event.nativeEvent ?? {};
+      const state = dragStateRef.current;
+
+      if (state.pointerId === null) {
+        return;
+      }
+
+      if (typeof nativeEvent.pointerId === 'number' && nativeEvent.pointerId !== state.pointerId) {
+        return;
+      }
+
+      if (state.moved) {
+        const { width, height } = getWebViewportSize();
+        const nextPosition = getLoggerOverlaySnappedPosition(
+          dragPositionRef.current,
+          width,
+          height
+        );
+
+        setNextDragPosition(nextPosition);
+        onButtonPositionChange?.(nextPosition);
+      }
+
+      if (state.pointerId !== null) {
+        event.currentTarget?.releasePointerCapture?.(state.pointerId);
+      }
+
+      dragStateRef.current = {
+        ...state,
+        pointerId: null,
+      };
+    },
+    [onButtonPositionChange, setNextDragPosition]
+  );
+
+  const handleTogglePress = useCallback(() => {
+    if (dragStateRef.current.moved) {
+      dragStateRef.current.moved = false;
+      return;
+    }
+
+    setExpanded(value => !value);
+  }, []);
+
+  const pointerHandlers = {
+    onPointerCancel: finishPointerDrag,
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: finishPointerDrag,
+  } as Record<string, unknown>;
 
   return (
     <AppView
@@ -335,17 +518,22 @@ export function LogOverlay({
       <AppView
         testID="logger-overlay-toggle-wrapper"
         pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          right: TOGGLE_BUTTON_RIGHT_GAP,
-          bottom: TOGGLE_BUTTON_BOTTOM_GAP,
-        }}
+        {...pointerHandlers}
+        style={
+          {
+            position: 'absolute',
+            right: TOGGLE_BUTTON_RIGHT_GAP,
+            bottom: TOGGLE_BUTTON_BOTTOM_GAP,
+            transform: [{ translateX: dragPosition.x }, { translateY: dragPosition.y }],
+            touchAction: 'none',
+          } as any
+        }
       >
         <AppPressable
           testID="logger-overlay-toggle"
           accessibilityRole="button"
           accessibilityLabel="切换开发日志"
-          onPress={() => setExpanded(value => !value)}
+          onPress={handleTogglePress}
           rounded="full"
           style={{
             width: TOGGLE_BUTTON_WIDTH,

@@ -1,11 +1,15 @@
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react-native';
 import { act, create } from 'react-test-renderer';
-import { Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
 import { AppScreen, SafeScreen } from '../../layout/SafeScreen';
 import { ThemeProvider } from '@/theme';
+import {
+  dismissKeyboardFromPress,
+  isEditableKeyboardDismissTarget,
+} from '../../primitives/KeyboardDismissPressable';
 
 vi.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({
@@ -25,6 +29,11 @@ const theme = {
     border: { 500: '#e5e7eb' },
   },
 };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  (Platform as any).OS = 'ios';
+});
 
 function flattenStyle(style: any) {
   if (!style) return {};
@@ -104,6 +113,37 @@ describe('AppScreen', () => {
 
     expect(flattened.paddingTop).toBe(14);
     expect(flattened.paddingBottom).toBe(24);
+  });
+});
+
+describe('KeyboardDismissPressable', () => {
+  it('Web 上点击 input/textarea/contenteditable 时不应收起键盘', () => {
+    (Platform as any).OS = 'web';
+    const inputTarget = { tagName: 'INPUT', closest: vi.fn() };
+    const textareaTarget = { tagName: 'textarea', closest: vi.fn() };
+    const contentEditableTarget = { tagName: 'div', isContentEditable: true, closest: vi.fn() };
+    const nestedInputTarget = {
+      tagName: 'span',
+      closest: vi.fn(() => ({ tagName: 'input' })),
+    };
+
+    expect(isEditableKeyboardDismissTarget(inputTarget)).toBe(true);
+    expect(isEditableKeyboardDismissTarget(textareaTarget)).toBe(true);
+    expect(isEditableKeyboardDismissTarget(contentEditableTarget)).toBe(true);
+    expect(isEditableKeyboardDismissTarget(nestedInputTarget)).toBe(true);
+
+    dismissKeyboardFromPress({ target: inputTarget } as any);
+
+    expect(Keyboard.dismiss).not.toHaveBeenCalled();
+  });
+
+  it('Web 上点击非输入区域时仍应收起键盘', () => {
+    (Platform as any).OS = 'web';
+    const target = { tagName: 'div', closest: vi.fn(() => null) };
+
+    dismissKeyboardFromPress({ target } as any);
+
+    expect(Keyboard.dismiss).toHaveBeenCalled();
   });
 });
 

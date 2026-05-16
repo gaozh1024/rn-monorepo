@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { act, create } from 'react-test-renderer';
-import { FlatList, TouchableWithoutFeedback } from 'react-native';
+import { FlatList } from 'react-native';
 import { AppList } from '../../display/AppList';
-import { AppPressable, AppText } from '../../primitives';
+import { AppPressable, AppText, KeyboardDismissPressable } from '../../primitives';
 import { ThemeProvider, createTheme } from '@/theme';
 
 const theme = createTheme({
@@ -181,6 +181,6 @@ describe('AppList', () => {
     expect(contentStyle.alignItems).toBe('center');
     expect(contentStyle.gap).toBe(3);
     expect(list.props.keyboardShouldPersistTaps).toBe('handled');
-    expect(renderer!.root.findAllByType(TouchableWithoutFeedback)).toHaveLength(1);
+    expect(renderer!.root.findAllByType(KeyboardDismissPressable)).toHaveLength(1);
   });
 });

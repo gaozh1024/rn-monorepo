@@ -1,5 +1,5 @@
-import { Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { AppView, type AppViewProps } from './AppView';
+import { KeyboardDismissPressable } from './KeyboardDismissPressable';
 
 export interface KeyboardDismissViewProps extends AppViewProps {
   /** 是否启用点击空白收起键盘 */
@@ -20,9 +20,5 @@ export function KeyboardDismissView({
     return content;
   }
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      {content}
-    </TouchableWithoutFeedback>
-  );
+  return <KeyboardDismissPressable>{content}</KeyboardDismissPressable>;
 }
