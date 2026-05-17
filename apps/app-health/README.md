@@ -147,6 +147,59 @@ VITE_APP_HEALTH_ADMIN_TOKEN=admin_dev \
 pnpm dev
 ```
 
+## Local full stack with Docker
+
+The Docker workflow starts PostgreSQL, runs migrations explicitly, then serves the Go service and the nginx-hosted admin UI.
+
+Build and start PostgreSQL first:
+
+```bash
+cd apps/app-health
+docker compose up -d --build postgres
+```
+
+Run database migrations explicitly:
+
+```bash
+docker compose --profile tools run --rm migrate up
+```
+
+Start the service and admin UI:
+
+```bash
+docker compose up -d --build service admin
+```
+
+Health checks:
+
+```bash
+curl http://localhost:8080/healthz
+curl http://localhost:8080/readyz
+curl http://localhost:5173/healthz
+```
+
+Ingest smoke test:
+
+```bash
+curl -X POST http://localhost:8080/api/app-health/events \
+  -H 'authorization: Bearer ingest_dev' \
+  -H 'content-type: application/json' \
+  --data @contracts/examples/ingest-events.json
+```
+
+Open the admin UI:
+
+```text
+http://localhost:5173
+```
+
+Docker notes:
+
+- `migrate` is intentionally explicit. Do not auto-run migrations from the service container in production.
+- `VITE_APP_HEALTH_ADMIN_TOKEN` is compiled into the static admin bundle. This is acceptable for local/internal trials only; put production admin behind a private network, gateway auth, SSO, or RBAC before wider exposure.
+- Replace `ingest_dev` and `admin_dev` with strong runtime secrets outside local development.
+- The compose service exposes PostgreSQL on `localhost:15432`, the API on `localhost:8080`, and admin on `localhost:5173`.
+
 Current admin capabilities:
 
 - overview cards for open issues, today events, affected users, and fatal events;
