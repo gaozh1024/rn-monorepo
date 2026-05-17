@@ -15,13 +15,23 @@ func NewEventsHandler(events *appsvc.EventService) *EventsHandler {
 
 func (h *EventsHandler) List(w http.ResponseWriter, r *http.Request) {
 	query := domain.EventQuery{
-		AppID:    r.URL.Query().Get("appId"),
-		IssueID:  r.URL.Query().Get("issueId"),
-		UserID:   r.URL.Query().Get("userId"),
-		Level:    r.URL.Query().Get("level"),
-		Type:     r.URL.Query().Get("type"),
-		Page:     queryInt(r, "page", 1),
-		PageSize: queryInt(r, "pageSize", 20),
+		AppID:       r.URL.Query().Get("appId"),
+		IssueID:     r.URL.Query().Get("issueId"),
+		UserID:      r.URL.Query().Get("userId"),
+		Level:       r.URL.Query().Get("level"),
+		Type:        r.URL.Query().Get("type"),
+		From:        queryTime(r, "from"),
+		To:          queryTime(r, "to"),
+		AppVersion:  r.URL.Query().Get("appVersion"),
+		BuildNumber: r.URL.Query().Get("buildNumber"),
+		Environment: r.URL.Query().Get("environment"),
+		Platform:    r.URL.Query().Get("platform"),
+		OSVersion:   r.URL.Query().Get("osVersion"),
+		SessionID:   r.URL.Query().Get("sessionId"),
+		Fingerprint: r.URL.Query().Get("fingerprint"),
+		Message:     r.URL.Query().Get("message"),
+		Page:        queryInt(r, "page", 1),
+		PageSize:    queryInt(r, "pageSize", 20),
 	}
 	response, err := h.events.List(r.Context(), query)
 	if err != nil {

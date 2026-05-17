@@ -6,6 +6,12 @@ export interface IssueListParams {
   status?: HealthIssue['status'] | '';
   level?: string;
   platform?: string;
+  from?: string;
+  to?: string;
+  appVersion?: string;
+  buildNumber?: string;
+  fingerprint?: string;
+  message?: string;
   page?: number;
   pageSize?: number;
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -141,7 +142,41 @@ func matchEvent(event domain.HealthEvent, query domain.EventQuery) bool {
 	if query.Type != "" && event.Type != query.Type {
 		return false
 	}
+	if !query.From.IsZero() && event.CreatedAt.Before(query.From) {
+		return false
+	}
+	if !query.To.IsZero() && event.CreatedAt.After(query.To) {
+		return false
+	}
+	if query.AppVersion != "" && event.App.Version != query.AppVersion {
+		return false
+	}
+	if query.BuildNumber != "" && event.App.BuildNumber != query.BuildNumber {
+		return false
+	}
+	if query.Environment != "" && event.App.Environment != query.Environment {
+		return false
+	}
+	if query.Platform != "" && event.Device.Platform != query.Platform {
+		return false
+	}
+	if query.OSVersion != "" && event.Device.OSVersion != query.OSVersion {
+		return false
+	}
+	if query.SessionID != "" && event.Session.ID != query.SessionID {
+		return false
+	}
+	if query.Fingerprint != "" && (event.Error == nil || event.Error.Fingerprint != query.Fingerprint) {
+		return false
+	}
+	if query.Message != "" && (event.Error == nil || !containsFold(event.Error.Message, query.Message)) {
+		return false
+	}
 	return true
+}
+
+func containsFold(value string, query string) bool {
+	return strings.Contains(strings.ToLower(value), strings.ToLower(query))
 }
 
 func paginate[T any](items []T, page int, pageSize int) ([]T, int, error) {

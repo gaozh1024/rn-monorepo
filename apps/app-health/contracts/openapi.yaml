@@ -76,6 +76,16 @@ paths:
         - $ref: '#/components/parameters/UserId'
         - $ref: '#/components/parameters/Level'
         - $ref: '#/components/parameters/Type'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/AppVersion'
+        - $ref: '#/components/parameters/BuildNumber'
+        - $ref: '#/components/parameters/Environment'
+        - $ref: '#/components/parameters/Platform'
+        - $ref: '#/components/parameters/OSVersion'
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/Fingerprint'
+        - $ref: '#/components/parameters/Message'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -116,10 +126,13 @@ paths:
             type: string
             enum: [open, resolved, ignored]
         - $ref: '#/components/parameters/Level'
-        - name: platform
-          in: query
-          schema:
-            type: string
+        - $ref: '#/components/parameters/Platform'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/AppVersion'
+        - $ref: '#/components/parameters/BuildNumber'
+        - $ref: '#/components/parameters/Fingerprint'
+        - $ref: '#/components/parameters/Message'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -215,6 +228,61 @@ components:
     Type:
       name: type
       in: query
+      schema:
+        type: string
+    From:
+      name: from
+      in: query
+      description: Inclusive lower bound for created/last-seen time. RFC3339 format.
+      schema:
+        type: string
+        format: date-time
+    To:
+      name: to
+      in: query
+      description: Inclusive upper bound for created/last-seen time. RFC3339 format.
+      schema:
+        type: string
+        format: date-time
+    AppVersion:
+      name: appVersion
+      in: query
+      schema:
+        type: string
+    BuildNumber:
+      name: buildNumber
+      in: query
+      schema:
+        type: string
+    Environment:
+      name: environment
+      in: query
+      schema:
+        type: string
+    Platform:
+      name: platform
+      in: query
+      schema:
+        type: string
+    OSVersion:
+      name: osVersion
+      in: query
+      schema:
+        type: string
+    SessionId:
+      name: sessionId
+      in: query
+      schema:
+        type: string
+    Fingerprint:
+      name: fingerprint
+      in: query
+      schema:
+        type: string
+    Message:
+      name: message
+      in: query
+      description: Case-insensitive substring search over event error message or issue title.
       schema:
         type: string
     Page:

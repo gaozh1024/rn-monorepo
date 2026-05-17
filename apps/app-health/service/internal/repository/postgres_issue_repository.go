@@ -172,6 +172,24 @@ func issueWhere(query domain.IssueQuery) (string, []any) {
 	if query.Platform != "" {
 		add("last_platform = $%d", query.Platform)
 	}
+	if !query.From.IsZero() {
+		add("last_seen_at >= $%d", query.From)
+	}
+	if !query.To.IsZero() {
+		add("last_seen_at <= $%d", query.To)
+	}
+	if query.AppVersion != "" {
+		add("last_app_version = $%d", query.AppVersion)
+	}
+	if query.BuildNumber != "" {
+		add("last_build_number = $%d", query.BuildNumber)
+	}
+	if query.Fingerprint != "" {
+		add("fingerprint = $%d", query.Fingerprint)
+	}
+	if query.Message != "" {
+		add("title ILIKE '%%' || $%d || '%%'", query.Message)
+	}
 	if len(clauses) == 0 {
 		return "", args
 	}

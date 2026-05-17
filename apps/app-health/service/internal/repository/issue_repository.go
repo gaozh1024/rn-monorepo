@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -175,6 +176,24 @@ func matchIssue(issue domain.HealthIssue, query domain.IssueQuery) bool {
 		return false
 	}
 	if query.Platform != "" && issue.LastPlatform != query.Platform {
+		return false
+	}
+	if !query.From.IsZero() && issue.LastSeenAt.Before(query.From) {
+		return false
+	}
+	if !query.To.IsZero() && issue.LastSeenAt.After(query.To) {
+		return false
+	}
+	if query.AppVersion != "" && issue.LastAppVersion != query.AppVersion {
+		return false
+	}
+	if query.BuildNumber != "" && issue.LastBuildNumber != query.BuildNumber {
+		return false
+	}
+	if query.Fingerprint != "" && issue.Fingerprint != query.Fingerprint {
+		return false
+	}
+	if query.Message != "" && !strings.Contains(strings.ToLower(issue.Title), strings.ToLower(query.Message)) {
 		return false
 	}
 	return true

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/repository"
 )
@@ -37,4 +38,16 @@ func queryInt(r *http.Request, key string, fallback int) int {
 		return fallback
 	}
 	return parsed
+}
+
+func queryTime(r *http.Request, key string) time.Time {
+	value := r.URL.Query().Get(key)
+	if value == "" {
+		return time.Time{}
+	}
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return time.Time{}
+	}
+	return parsed.UTC()
 }

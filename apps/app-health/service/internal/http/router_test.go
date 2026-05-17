@@ -52,6 +52,10 @@ func TestRouterIngestAndAdminQueries(t *testing.T) {
 	assertRequest(t, router, http.MethodGet, "/api/app-health/issues?status=open&level=error&platform=ios", "Bearer admin_test", "", http.StatusOK, `"total":1`)
 	assertRequest(t, router, http.MethodGet, "/api/app-health/issues?status=resolved", "Bearer admin_test", "", http.StatusOK, `"total":0`)
 	assertRequest(t, router, http.MethodGet, "/api/app-health/events?appId=mobile-app&level=error&type=js_error&userId=user_1", "Bearer admin_test", "", http.StatusOK, `"total":1`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/events?appVersion=1.0.0&platform=ios&fingerprint=fp_test&message=boom&from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z", "Bearer admin_test", "", http.StatusOK, `"total":1`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/events?appVersion=9.9.9", "Bearer admin_test", "", http.StatusOK, `"total":0`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/issues?appVersion=1.0.0&fingerprint=fp_test&message=TypeError&from=2000-01-01T00:00:00Z&to=2100-01-01T00:00:00Z", "Bearer admin_test", "", http.StatusOK, `"total":1`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/issues?fingerprint=missing", "Bearer admin_test", "", http.StatusOK, `"total":0`)
 	assertRequest(t, router, http.MethodGet, "/api/app-health/stats/overview", "Bearer admin_test", "", http.StatusOK, `"openIssues":1`)
 }
 

@@ -79,13 +79,23 @@ type IngestEventsResponse struct {
 }
 
 type EventQuery struct {
-	AppID    string
-	IssueID  string
-	UserID   string
-	Level    string
-	Type     string
-	Page     int
-	PageSize int
+	AppID       string
+	IssueID     string
+	UserID      string
+	Level       string
+	Type        string
+	From        time.Time
+	To          time.Time
+	AppVersion  string
+	BuildNumber string
+	Environment string
+	Platform    string
+	OSVersion   string
+	SessionID   string
+	Fingerprint string
+	Message     string
+	Page        int
+	PageSize    int
 }
 
 type EventListResponse struct {

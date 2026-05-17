@@ -164,6 +164,36 @@ func eventWhere(query domain.EventQuery) (string, []any) {
 	if query.Type != "" {
 		add("type = $%d", query.Type)
 	}
+	if !query.From.IsZero() {
+		add("created_at >= $%d", query.From)
+	}
+	if !query.To.IsZero() {
+		add("created_at <= $%d", query.To)
+	}
+	if query.AppVersion != "" {
+		add("app_version = $%d", query.AppVersion)
+	}
+	if query.BuildNumber != "" {
+		add("build_number = $%d", query.BuildNumber)
+	}
+	if query.Environment != "" {
+		add("environment = $%d", query.Environment)
+	}
+	if query.Platform != "" {
+		add("platform = $%d", query.Platform)
+	}
+	if query.OSVersion != "" {
+		add("os_version = $%d", query.OSVersion)
+	}
+	if query.SessionID != "" {
+		add("session_id = $%d", query.SessionID)
+	}
+	if query.Fingerprint != "" {
+		add("fingerprint = $%d", query.Fingerprint)
+	}
+	if query.Message != "" {
+		add("error_message ILIKE '%%' || $%d || '%%'", query.Message)
+	}
 	if len(clauses) == 0 {
 		return "", args
 	}

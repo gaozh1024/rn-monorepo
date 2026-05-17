@@ -7,6 +7,16 @@ export interface EventListParams {
   userId?: string;
   level?: string;
   type?: string;
+  from?: string;
+  to?: string;
+  appVersion?: string;
+  buildNumber?: string;
+  environment?: string;
+  platform?: string;
+  osVersion?: string;
+  sessionId?: string;
+  fingerprint?: string;
+  message?: string;
   page?: number;
   pageSize?: number;
 }

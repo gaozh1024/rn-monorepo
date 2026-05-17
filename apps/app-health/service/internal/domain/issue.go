@@ -31,12 +31,18 @@ type HealthIssue struct {
 }
 
 type IssueQuery struct {
-	AppID    string
-	Status   string
-	Level    string
-	Platform string
-	Page     int
-	PageSize int
+	AppID       string
+	Status      string
+	Level       string
+	Platform    string
+	From        time.Time
+	To          time.Time
+	AppVersion  string
+	BuildNumber string
+	Fingerprint string
+	Message     string
+	Page        int
+	PageSize    int
 }
 
 type IssueListResponse struct {

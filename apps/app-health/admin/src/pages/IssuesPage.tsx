@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { listIssues } from '../api/issues';
+import type { IssueListParams } from '../api/issues';
 import type { HealthIssue, ListResponse } from '../api/types';
 import { IssueStatusBadge } from '../components/IssueStatusBadge';
 import { LevelBadge } from '../components/LevelBadge';
+import { Pagination } from '../components/Pagination';
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
 
 interface IssueFilters {
@@ -10,6 +12,12 @@ interface IssueFilters {
   status: HealthIssue['status'] | '';
   level: string;
   platform: string;
+  from: string;
+  to: string;
+  appVersion: string;
+  buildNumber: string;
+  fingerprint: string;
+  message: string;
 }
 
 const defaultFilters: IssueFilters = {
@@ -17,6 +25,12 @@ const defaultFilters: IssueFilters = {
   status: 'open',
   level: '',
   platform: '',
+  from: '',
+  to: '',
+  appVersion: '',
+  buildNumber: '',
+  fingerprint: '',
+  message: '',
 };
 
 export function IssuesPage({ onSelectIssue }: { onSelectIssue: (id: string) => void }) {
@@ -24,12 +38,20 @@ export function IssuesPage({ onSelectIssue }: { onSelectIssue: (id: string) => v
   const [response, setResponse] = useState<ListResponse<HealthIssue> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
-  async function load(currentFilters = filters) {
+  async function load(currentFilters = filters, currentPage = page, currentPageSize = pageSize) {
     setLoading(true);
     setError(null);
     try {
-      setResponse(await listIssues(currentFilters));
+      setResponse(
+        await listIssues({
+          ...toIssueListParams(currentFilters),
+          page: currentPage,
+          pageSize: currentPageSize,
+        })
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to load issues.');
     } finally {
@@ -38,18 +60,26 @@ export function IssuesPage({ onSelectIssue }: { onSelectIssue: (id: string) => v
   }
 
   useEffect(() => {
-    void load(filters);
-  }, [filters]);
+    void load(filters, page, pageSize);
+  }, [filters, page, pageSize]);
 
   function updateFilter<K extends keyof IssueFilters>(key: K, value: IssueFilters[K]) {
     setFilters(current => ({ ...current, [key]: value }));
+    setPage(1);
   }
 
   function resetFilters() {
     setFilters(defaultFilters);
+    setPage(1);
+  }
+
+  function updatePageSize(nextPageSize: number) {
+    setPageSize(nextPageSize);
+    setPage(1);
   }
 
   const issues = response?.items ?? [];
+  const total = response?.total ?? 0;
 
   return (
     <section>
@@ -99,6 +129,54 @@ export function IssuesPage({ onSelectIssue }: { onSelectIssue: (id: string) => v
             placeholder="ios / android / web"
           />
         </label>
+        <label>
+          From
+          <input
+            type="datetime-local"
+            value={filters.from}
+            onChange={event => updateFilter('from', event.target.value)}
+          />
+        </label>
+        <label>
+          To
+          <input
+            type="datetime-local"
+            value={filters.to}
+            onChange={event => updateFilter('to', event.target.value)}
+          />
+        </label>
+        <label>
+          App Version
+          <input
+            value={filters.appVersion}
+            onChange={event => updateFilter('appVersion', event.target.value)}
+            placeholder="1.0.0"
+          />
+        </label>
+        <label>
+          Build
+          <input
+            value={filters.buildNumber}
+            onChange={event => updateFilter('buildNumber', event.target.value)}
+            placeholder="45"
+          />
+        </label>
+        <label>
+          Fingerprint
+          <input
+            value={filters.fingerprint}
+            onChange={event => updateFilter('fingerprint', event.target.value)}
+            placeholder="fp_..."
+          />
+        </label>
+        <label>
+          Message
+          <input
+            value={filters.message}
+            onChange={event => updateFilter('message', event.target.value)}
+            placeholder="TypeError"
+          />
+        </label>
         <button onClick={resetFilters}>Reset</button>
       </div>
       {loading ? <LoadingState label="Loading issues..." /> : null}
@@ -111,6 +189,13 @@ export function IssuesPage({ onSelectIssue }: { onSelectIssue: (id: string) => v
           <p className="muted">
             Showing {issues.length} of {response?.total ?? issues.length} issues.
           </p>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={updatePageSize}
+          />
           <table>
             <thead>
               <tr>
@@ -141,8 +226,27 @@ export function IssuesPage({ onSelectIssue }: { onSelectIssue: (id: string) => v
               ))}
             </tbody>
           </table>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={updatePageSize}
+          />
         </>
       ) : null}
     </section>
   );
+}
+
+function toIssueListParams(filters: IssueFilters): IssueListParams {
+  return {
+    ...filters,
+    from: toISOStringOrEmpty(filters.from),
+    to: toISOStringOrEmpty(filters.to),
+  };
+}
+
+function toISOStringOrEmpty(value: string) {
+  return value ? new Date(value).toISOString() : '';
 }

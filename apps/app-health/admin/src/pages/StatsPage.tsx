@@ -5,14 +5,15 @@ import { ErrorState, LoadingState } from '../components/PageState';
 
 export function StatsPage() {
   const [stats, setStats] = useState<StatsOverview | null>(null);
+  const [appId, setAppId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
+  async function load(currentAppId = appId) {
     setLoading(true);
     setError(null);
     try {
-      setStats(await getStatsOverview());
+      setStats(await getStatsOverview({ appId: currentAppId }));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to load overview.');
     } finally {
@@ -21,14 +22,24 @@ export function StatsPage() {
   }
 
   useEffect(() => {
-    void load();
-  }, []);
+    void load(appId);
+  }, [appId]);
 
   return (
     <section>
       <div className="section-header">
         <h2>Overview</h2>
         <button onClick={() => void load()}>Refresh</button>
+      </div>
+      <div className="filters" aria-label="Overview filters">
+        <label>
+          App ID
+          <input
+            value={appId}
+            onChange={event => setAppId(event.target.value)}
+            placeholder="mobile-app"
+          />
+        </label>
       </div>
       {loading ? <LoadingState label="Loading overview..." /> : null}
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}

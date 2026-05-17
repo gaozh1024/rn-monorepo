@@ -119,9 +119,23 @@ curl http://localhost:8080/api/app-health/issues \
 curl 'http://localhost:8080/api/app-health/issues?status=open&level=error&platform=ios' \
   -H 'authorization: Bearer admin_dev'
 
+curl 'http://localhost:8080/api/app-health/issues?appVersion=1.0.0&fingerprint=fp_test&message=TypeError' \
+  -H 'authorization: Bearer admin_dev'
+
 curl 'http://localhost:8080/api/app-health/events?appId=mobile-app&level=error' \
   -H 'authorization: Bearer admin_dev'
+
+curl 'http://localhost:8080/api/app-health/events?appVersion=1.0.0&platform=ios&type=js_error&message=boom' \
+  -H 'authorization: Bearer admin_dev'
 ```
+
+Query notes:
+
+- `page` and `pageSize` are supported on issue and event lists. `pageSize` is capped at 100.
+- `from` and `to` use RFC3339 timestamps, for example `2026-05-17T00:00:00Z`.
+- Event list filters include `appId`, `issueId`, `userId`, `level`, `type`, `from`, `to`, `appVersion`, `buildNumber`, `environment`, `platform`, `osVersion`, `sessionId`, `fingerprint`, and `message`.
+- Issue list filters include `appId`, `status`, `level`, `platform`, `from`, `to`, `appVersion`, `buildNumber`, `fingerprint`, and `message`.
+- Current rn-health event types are `app_start`, `app_ready`, `app_background`, `app_foreground`, `js_error`, `react_error`, `unhandled_rejection`, `previous_session_crash`, `native_crash`, `api_error`, and `custom`.
 
 ## Local admin
 
@@ -136,8 +150,9 @@ pnpm dev
 Current admin capabilities:
 
 - overview cards for open issues, today events, affected users, and fatal events;
-- issue list with app/status/level/platform filters;
-- event list with app/issue/user/level/type filters;
+- app-scoped overview filtering;
+- issue list with app/status/level/platform/time/version/fingerprint/message filters and pagination;
+- event list with app/issue/user/level/type/time/version/platform/session/fingerprint/message filters and pagination;
 - issue detail with status transitions, stack trace, breadcrumbs, recent events, and raw sample event JSON;
 - loading, empty, retry, and error states for each page.
 

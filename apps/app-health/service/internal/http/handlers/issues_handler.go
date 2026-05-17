@@ -16,12 +16,18 @@ func NewIssuesHandler(issues *appsvc.IssueService) *IssuesHandler {
 
 func (h *IssuesHandler) List(w http.ResponseWriter, r *http.Request) {
 	query := domain.IssueQuery{
-		AppID:    r.URL.Query().Get("appId"),
-		Status:   r.URL.Query().Get("status"),
-		Level:    r.URL.Query().Get("level"),
-		Platform: r.URL.Query().Get("platform"),
-		Page:     queryInt(r, "page", 1),
-		PageSize: queryInt(r, "pageSize", 20),
+		AppID:       r.URL.Query().Get("appId"),
+		Status:      r.URL.Query().Get("status"),
+		Level:       r.URL.Query().Get("level"),
+		Platform:    r.URL.Query().Get("platform"),
+		From:        queryTime(r, "from"),
+		To:          queryTime(r, "to"),
+		AppVersion:  r.URL.Query().Get("appVersion"),
+		BuildNumber: r.URL.Query().Get("buildNumber"),
+		Fingerprint: r.URL.Query().Get("fingerprint"),
+		Message:     r.URL.Query().Get("message"),
+		Page:        queryInt(r, "page", 1),
+		PageSize:    queryInt(r, "pageSize", 20),
 	}
 	response, err := h.issues.List(r.Context(), query)
 	if err != nil {
