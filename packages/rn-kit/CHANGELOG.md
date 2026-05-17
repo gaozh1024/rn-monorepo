@@ -1,5 +1,12 @@
 # @gaozh1024/rn-kit
 
+## 0.5.3
+
+### Patch Changes
+
+- Add a vendor-neutral `healthReporter` bridge to `AppProvider`, `LoggerProvider`, and `AppErrorBoundary` so apps can connect `@gaozh1024/rn-health` or another monitoring SDK without making rn-kit depend on it.
+- React render errors now call `healthReporter.captureException`, and logger writes now call `healthReporter.addBreadcrumb` when a reporter is provided.
+
 ## 0.5.2
 
 ### Patch Changes

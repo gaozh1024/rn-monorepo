@@ -36,6 +36,7 @@ function flattenStyle(style: any): Record<string, any> {
 describe('AppErrorBoundary', () => {
   it('应该捕获渲染错误并写入 logger', () => {
     const entries: LogEntry[] = [];
+    const healthReporter = { captureException: vi.fn() };
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const { getByTestId, getByText } = render(
@@ -45,7 +46,7 @@ describe('AppErrorBoundary', () => {
         consoleEnabled={false}
         transports={[entry => entries.push(entry)]}
       >
-        <AppErrorBoundary enabled showDetails>
+        <AppErrorBoundary enabled showDetails healthReporter={healthReporter}>
           <CrashComponent />
         </AppErrorBoundary>
       </LoggerProvider>
@@ -57,6 +58,13 @@ describe('AppErrorBoundary', () => {
     expect(entries[0]?.level).toBe('error');
     expect(entries[0]?.namespace).toBe('react');
     expect(entries[0]?.message).toBe('React ErrorBoundary 捕获渲染异常');
+    expect(healthReporter.captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        source: 'react_error_boundary',
+        type: 'react_error',
+      })
+    );
 
     consoleError.mockRestore();
   });

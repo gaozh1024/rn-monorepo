@@ -5,6 +5,7 @@
 | 包                            | 描述               | 链接                                               |
 | ----------------------------- | ------------------ | -------------------------------------------------- |
 | @gaozh1024/rn-kit             | 统一框架包         | [README](../packages/rn-kit/README.md)             |
+| @gaozh1024/rn-health          | App 健康监控包     | [README](../packages/rn-health/README.md)          |
 | @gaozh1024/aliyun-speech      | 阿里云语音转文字包 | [README](../packages/aliyun-speech/README.md)      |
 | @gaozh1024/photo-album-picker | 相册选择包         | [README](../packages/photo-album-picker/README.md) |
 | @gaozh1024/aliyun-push        | 阿里云移动推送包   | [README](../packages/aliyun-push/README.md)        |
@@ -50,6 +51,8 @@
 
 版本发布记录：
 
+- [rn-health 0.1.0 Release Notes](./release-notes/rn-health-0.1.0.md)
+- [rn-kit 0.5.3 Release Notes](./release-notes/rn-kit-0.5.3.md)
 - [rn-kit 0.5.2 Release Notes](./release-notes/rn-kit-0.5.2.md)
 - [aliyun-push 0.1.3 Release Notes](./release-notes/aliyun-push-0.1.3.md)
 - [aliyun-push 0.1.2 Release Notes](./release-notes/aliyun-push-0.1.2.md)

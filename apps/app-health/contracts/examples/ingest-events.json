@@ -1,0 +1,49 @@
+{
+  "events": [
+    {
+      "id": "evt_example_001",
+      "type": "js_error",
+      "level": "error",
+      "timestamp": 1710000000000,
+      "app": {
+        "id": "mobile-app",
+        "version": "1.2.3",
+        "buildNumber": "45",
+        "environment": "production"
+      },
+      "device": {
+        "platform": "ios",
+        "osVersion": "17.4",
+        "model": "iPhone"
+      },
+      "session": {
+        "id": "sess_example_001",
+        "startedAt": 1710000000000
+      },
+      "user": {
+        "id": "user_1"
+      },
+      "error": {
+        "name": "TypeError",
+        "message": "Cannot read property x of undefined",
+        "stack": "TypeError: Cannot read property x of undefined\n    at CheckoutScreen.tsx:42:10",
+        "componentStack": "CheckoutScreen > SubmitButton",
+        "fingerprint": "fp_example_001"
+      },
+      "breadcrumbs": [
+        {
+          "timestamp": 1710000000000,
+          "category": "ui",
+          "level": "info",
+          "message": "点击提交订单"
+        }
+      ],
+      "tags": {
+        "source": "react_error_boundary"
+      },
+      "extra": {
+        "orderId": "order_1"
+      }
+    }
+  ]
+}

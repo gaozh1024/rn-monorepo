@@ -18,7 +18,10 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/aliyun-speech",
-    "projectTypes": ["expo", "react-native"],
+    "projectTypes": [
+      "expo",
+      "react-native"
+    ],
     "peerDependencies": {
       "@siteed/audio-studio": ">=3 <4",
       "expo": ">=53 <55",
@@ -67,5 +70,8 @@
       "path": "packages/aliyun-speech/src/core/AliyunSpeechTranscriber.ts"
     }
   ],
-  "docs": ["README.md", "AI_USAGE.md"]
+  "docs": [
+    "README.md",
+    "AI_USAGE.md"
+  ]
 }

@@ -1,0 +1,109 @@
+package service
+
+import (
+	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"errors"
+	"strings"
+	"time"
+
+	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/domain"
+	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/repository"
+)
+
+type IngestService struct {
+	events repository.EventRepository
+	issues repository.IssueRepository
+}
+
+func NewIngestService(events repository.EventRepository, issues repository.IssueRepository) *IngestService {
+	return &IngestService{events: events, issues: issues}
+}
+
+func (s *IngestService) Ingest(ctx context.Context, input []domain.HealthEvent) (domain.IngestEventsResponse, error) {
+	if len(input) > 100 {
+		return domain.IngestEventsResponse{}, errors.New("events must contain at most 100 items")
+	}
+	response := domain.IngestEventsResponse{}
+	for _, event := range input {
+		normalized, ok := normalizeEvent(event)
+		if !ok {
+			response.Rejected++
+			continue
+		}
+
+		fingerprint := eventFingerprint(normalized)
+		if fingerprint != "" && normalized.Error != nil {
+			normalized.Error.Fingerprint = fingerprint
+		}
+
+		saved, err := s.events.Insert(ctx, normalized)
+		if err != nil {
+			return response, err
+		}
+
+		if fingerprint != "" {
+			issue, err := s.issues.UpsertForEvent(ctx, saved, issueTitle(saved), fingerprint)
+			if err != nil {
+				return response, err
+			}
+			if err := s.events.AttachIssue(ctx, saved.ID, issue.ID); err != nil {
+				return response, err
+			}
+		}
+		response.Accepted++
+	}
+	return response, nil
+}
+
+func normalizeEvent(event domain.HealthEvent) (domain.HealthEvent, bool) {
+	if strings.TrimSpace(event.ID) == "" || strings.TrimSpace(event.Type) == "" || strings.TrimSpace(event.App.ID) == "" || strings.TrimSpace(event.Session.ID) == "" {
+		return domain.HealthEvent{}, false
+	}
+	if event.Level == "" {
+		event.Level = domain.LevelInfo
+	}
+	if event.Timestamp <= 0 {
+		event.Timestamp = time.Now().UnixMilli()
+	}
+	if event.CreatedAt.IsZero() {
+		event.CreatedAt = time.Now().UTC()
+	}
+	return event, true
+}
+
+func eventFingerprint(event domain.HealthEvent) string {
+	if event.Error == nil {
+		return ""
+	}
+	if event.Error.Fingerprint != "" {
+		return event.Error.Fingerprint
+	}
+	if event.Error.Message == "" && event.Error.Stack == "" {
+		return ""
+	}
+	firstStackLine := ""
+	for _, line := range strings.Split(event.Error.Stack, "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			firstStackLine = line
+			break
+		}
+	}
+	sum := sha1.Sum([]byte(event.Error.Name + "|" + event.Error.Message + "|" + firstStackLine))
+	return "fp_" + hex.EncodeToString(sum[:8])
+}
+
+func issueTitle(event domain.HealthEvent) string {
+	if event.Error == nil {
+		return event.Type
+	}
+	if event.Error.Name != "" && event.Error.Message != "" {
+		return event.Error.Name + ": " + event.Error.Message
+	}
+	if event.Error.Message != "" {
+		return event.Error.Message
+	}
+	return event.Type
+}

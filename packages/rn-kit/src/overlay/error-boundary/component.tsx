@@ -81,16 +81,20 @@ export class AppErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.context?.error(
-      'React ErrorBoundary 捕获渲染异常',
-      {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-      },
-      'react'
-    );
+    const errorPayload = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+    };
+
+    this.context?.error('React ErrorBoundary 捕获渲染异常', errorPayload, 'react');
+
+    void this.props.healthReporter?.captureException?.(error, {
+      source: 'react_error_boundary',
+      type: 'react_error',
+      componentStack: errorInfo.componentStack,
+    });
 
     this.props.onError?.(error, errorInfo);
   }

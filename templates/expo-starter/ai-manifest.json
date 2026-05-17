@@ -13,7 +13,9 @@
   ],
   "installation": {
     "packageManagerCommand": "npx create-expo-app@latest my-app --template @gaozh1024/expo-starter",
-    "projectTypes": ["template"],
+    "projectTypes": [
+      "template"
+    ],
     "peerDependencies": {}
   },
   "recommendedUsage": {
@@ -23,7 +25,13 @@
       "Use expo install for Expo-managed native dependencies when recreating the template in a new project."
     ]
   },
-  "stableApis": ["RootApp", "RootNavigator", "AppProviders", "createAPI integration", "PageScreen"],
+  "stableApis": [
+    "RootApp",
+    "RootNavigator",
+    "AppProviders",
+    "createAPI integration",
+    "PageScreen"
+  ],
   "compatibilityNotes": [
     "The current template baseline targets Expo SDK 54 and React Native 0.81.",
     "The template is a reference implementation, not an API surface.",
@@ -52,5 +60,8 @@
       "path": "templates/expo-starter/src/recipes/segmented-tabs.tsx"
     }
   ],
-  "docs": ["README.md", "AI_USAGE.md"]
+  "docs": [
+    "README.md",
+    "AI_USAGE.md"
+  ]
 }

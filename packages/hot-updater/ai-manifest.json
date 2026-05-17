@@ -18,7 +18,9 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/hot-updater",
-    "projectTypes": ["react-native"],
+    "projectTypes": [
+      "react-native"
+    ],
     "peerDependencies": {
       "@gaozh1024/rn-kit": ">=0.4.20",
       "@hot-updater/react-native": ">=0.28 <0.29",
@@ -67,5 +69,10 @@
       "path": "packages/hot-updater/docs/manifest-spec.md"
     }
   ],
-  "docs": ["README.md", "AI_USAGE.md", "docs/integration.md", "docs/manifest-spec.md"]
+  "docs": [
+    "README.md",
+    "AI_USAGE.md",
+    "docs/integration.md",
+    "docs/manifest-spec.md"
+  ]
 }

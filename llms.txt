@@ -2,6 +2,7 @@ Project: Panther Expo Framework Monorepo
 
 Primary packages:
 - @gaozh1024/rn-kit: Panther Expo Framework core package for app bootstrap, theme, UI, navigation helpers, overlays, and API factory usage in Expo or React Native apps.
+- @gaozh1024/rn-health: App health and error monitoring SDK for Expo or React Native apps with event capture, breadcrumbs, local queueing, sanitized transports, and rn-kit integration.
 - @gaozh1024/aliyun-speech: Aliyun real-time speech-to-text package with protocol core, headless hook, and optional default UI for Expo or React Native apps.
 - @gaozh1024/photo-album-picker: Photo album picker package for Expo or React Native apps with grid selection, fullscreen preview, and optional crop flow.
 - @gaozh1024/aliyun-push: Aliyun mobile push integration package with runtime service APIs, React provider, and Expo config plugin support.

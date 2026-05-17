@@ -28,7 +28,10 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/aliyun-push",
-    "projectTypes": ["expo", "react-native"],
+    "projectTypes": [
+      "expo",
+      "react-native"
+    ],
     "peerDependencies": {
       "aliyun-react-native-push": ">=1 <2",
       "expo": ">=53 <55",
@@ -78,5 +81,8 @@
       "path": "packages/aliyun-push/plugin/withAliyunPush.js"
     }
   ],
-  "docs": ["README.md", "AI_USAGE.md"]
+  "docs": [
+    "README.md",
+    "AI_USAGE.md"
+  ]
 }

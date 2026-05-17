@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react-native';
 import { LoggerProvider } from '../logger/provider';
 import { useLogger } from '../logger/hooks';
@@ -58,5 +58,31 @@ describe('LoggerProvider', () => {
     fireEvent.press(getByTestId('log-clear'));
 
     expect(String(getByTestId('log-count').props.children)).toBe('0');
+  });
+
+  it('应该把日志写入 healthReporter breadcrumbs', () => {
+    const healthReporter = { addBreadcrumb: vi.fn() };
+    const { getByTestId } = render(
+      <LoggerProvider
+        enabled
+        overlayEnabled={false}
+        consoleEnabled={false}
+        healthReporter={healthReporter}
+      >
+        <LoggerTestComponent />
+      </LoggerProvider>
+    );
+
+    fireEvent.press(getByTestId('log-info'));
+
+    expect(healthReporter.addBreadcrumb).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'logger',
+        level: 'info',
+        message: '开始登录',
+        namespace: 'auth',
+        data: { page: 'Login' },
+      })
+    );
   });
 });

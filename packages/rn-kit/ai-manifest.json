@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-kit",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "role": "core-framework",
   "summary": "Panther Expo Framework core package for app bootstrap, theme, UI, navigation helpers, overlays, and API factory usage in Expo or React Native apps.",
   "entrypoints": [
@@ -18,7 +18,10 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/rn-kit",
-    "projectTypes": ["expo", "react-native"],
+    "projectTypes": [
+      "expo",
+      "react-native"
+    ],
     "peerDependencies": {
       "@expo/vector-icons": ">=14 <16",
       "expo": ">=53 <55",
@@ -91,5 +94,9 @@
       "path": "templates/expo-starter/src/recipes/segmented-tabs.tsx"
     }
   ],
-  "docs": ["README.md", "AI_USAGE.md", "TAILWIND_SETUP.md"]
+  "docs": [
+    "README.md",
+    "AI_USAGE.md",
+    "TAILWIND_SETUP.md"
+  ]
 }

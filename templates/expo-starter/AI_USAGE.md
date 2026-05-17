@@ -1,45 +1,37 @@
 # @gaozh1024/expo-starter AI Usage
 
 ## What It Is
-
 Canonical Expo starter template for Panther-based apps, showing the recommended project structure, provider layout, navigation, storage wiring, and theme usage.
 
 ## When To Use
-
 - Use this template as the canonical reference when creating a new app on top of rn-kit.
 - Use it as the primary integration reference when AI needs to infer project structure or recommended provider boundaries.
 - Use it to validate how rn-kit is expected to be wired into a real Expo SDK 54 app.
 
 ## When Not To Use
-
 - Do not treat this template as a reusable component library package.
 - Do not copy every file mechanically into an existing mature app if the app already has a stable structure.
 - Do not bypass Expo version alignment when reproducing dependency setup from the template.
 
 ## Recommended Entry
-
 - Prefer RootApp, root/providers.tsx, and AppProviders.tsx as the primary reference for app bootstrap and provider layering.
 - Use the template's data/api.ts as the canonical createAPI integration example.
 - Use PageScreen and existing feature screens as the canonical AppScreen page structure reference.
 - Use src/recipes/segmented-tabs.tsx as the canonical reference for page-local animated status/category switching.
 
 ## Install Prerequisites
-
 - Install command: pnpm add @gaozh1024/expo-starter
 
 ## Required Project Setup
-
 - Follow the template dependency baseline for Expo SDK 54 / React Native 0.81 unless intentionally targeting another verified baseline.
 - Keep NativeWind, Expo image dependencies, storage injection, and navigation packages aligned with the template.
 - Use expo install for Expo-managed native dependencies when recreating the template in a new project.
 
 ## Minimal Working Example
-
 - root-provider-bootstrap: templates/expo-starter/src/recipes/minimal-bootstrap.tsx
 - business-providers-boundary: templates/expo-starter/src/root/providers.tsx
 
 ## Canonical Patterns
-
 - Prefer the stable public API `RootApp` when it matches the use case.
 - Prefer the stable public API `RootNavigator` when it matches the use case.
 - Prefer the stable public API `AppProviders` when it matches the use case.
@@ -47,24 +39,20 @@ Canonical Expo starter template for Panther-based apps, showing the recommended 
 - Prefer the stable public API `PageScreen` when it matches the use case.
 
 ## Anti-Patterns
-
 - Treating the template as proof that any newer Expo-native package version will be safe in the same app.
 - Flattening all provider layers into a single app file instead of preserving the stable root-vs-business provider split.
 - Ignoring the template's AppScreen conventions and then diagnosing safe-area or theme issues as component bugs.
 
 ## Common Failure Cases
-
 - Existing apps diverge from the template's dependency baseline and then hit version skew with native packages.
 - Business capabilities are placed into root providers instead of AppProviders, making future template alignment harder.
 - Page containers diverge from AppScreen conventions and lose the template's expected safe-area or background behavior.
 
 ## Compatibility Baseline
-
 - The current template baseline targets Expo SDK 54 and React Native 0.81.
 - The template is a reference implementation, not an API surface.
 - Storage, linking, app bootstrap, and observability wiring are intentionally shown in real files rather than abstract docs alone.
 
 ## See Also
-
 - README.md
 - AI_USAGE.md

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: app-health-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app_health
+    ports:
+      - "15432:5432"
+    volumes:
+      - app-health-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app_health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  app-health-postgres-data:
