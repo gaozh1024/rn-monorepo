@@ -1,6 +1,8 @@
 import type { AppHealthEvent } from '../core/types';
 import type { FetchHealthTransportOptions } from './types';
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 export function createFetchHealthTransport(options: FetchHealthTransportOptions) {
   return async (events: readonly AppHealthEvent[]) => {
     if (events.length === 0) return;
@@ -18,14 +20,24 @@ export function createFetchHealthTransport(options: FetchHealthTransportOptions)
       headers.authorization = `Bearer ${options.ingestToken}`;
     }
 
-    const response = await fetcher(options.endpoint, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ events }),
-    });
+    const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const canAbort = timeoutMs > 0 && typeof AbortController !== 'undefined';
+    const controller = canAbort ? new AbortController() : undefined;
+    const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : undefined;
 
-    if (!response.ok) {
-      throw new Error(`Health transport failed with status ${response.status}`);
+    try {
+      const response = await fetcher(options.endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ events }),
+        signal: controller?.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Health transport failed with status ${response.status}`);
+      }
+    } finally {
+      if (timeout !== undefined) clearTimeout(timeout);
     }
   };
 }

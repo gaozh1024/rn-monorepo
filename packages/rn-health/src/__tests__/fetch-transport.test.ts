@@ -99,4 +99,36 @@ describe('createFetchHealthTransport', () => {
       })
     );
   });
+
+  it('aborts requests after timeoutMs', async () => {
+    const fetcher = vi.fn(
+      async (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        })
+    ) as unknown as typeof fetch;
+    const transport = createFetchHealthTransport({
+      endpoint: 'https://example.com/events',
+      timeoutMs: 1,
+      fetcher,
+    });
+
+    await expect(transport([event])).rejects.toThrow('aborted');
+  });
+
+  it('can disable timeout with timeoutMs zero', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchHealthTransport({
+      endpoint: 'https://example.com/events',
+      timeoutMs: 0,
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({ signal: undefined })
+    );
+  });
 });

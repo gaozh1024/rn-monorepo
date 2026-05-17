@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/rn-health",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "App health and error monitoring SDK for Expo / React Native.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

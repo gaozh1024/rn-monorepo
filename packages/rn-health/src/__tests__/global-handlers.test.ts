@@ -49,4 +49,40 @@ describe('installGlobalErrorHandlers', () => {
     dispose();
     (globalThis as { ErrorUtils?: unknown }).ErrorUtils = previousErrorUtils;
   });
+
+  it('captures React Native unhandled rejection callback fallback', () => {
+    const health = reporter();
+    const previousWindow = (globalThis as { window?: unknown }).window;
+    const previousHandler = (globalThis as { onunhandledrejection?: unknown }).onunhandledrejection;
+    const previousAddEventListener = (globalThis as { addEventListener?: unknown })
+      .addEventListener;
+    const previousRemoveEventListener = (globalThis as { removeEventListener?: unknown })
+      .removeEventListener;
+
+    (globalThis as { window?: unknown }).window = undefined;
+    (globalThis as { onunhandledrejection?: unknown }).onunhandledrejection = undefined;
+    (globalThis as { addEventListener?: unknown }).addEventListener = undefined;
+    (globalThis as { removeEventListener?: unknown }).removeEventListener = undefined;
+
+    const dispose = installGlobalErrorHandlers(health, { captureGlobalErrors: false });
+    const reason = new Error('promise boom');
+    (globalThis as { onunhandledrejection?: (event: unknown) => unknown }).onunhandledrejection?.({
+      reason,
+    });
+
+    expect(health.captureException).toHaveBeenCalledWith(
+      reason,
+      expect.objectContaining({
+        source: 'global.onunhandledrejection',
+        type: 'unhandled_rejection',
+      })
+    );
+
+    dispose();
+    (globalThis as { window?: unknown }).window = previousWindow;
+    (globalThis as { onunhandledrejection?: unknown }).onunhandledrejection = previousHandler;
+    (globalThis as { addEventListener?: unknown }).addEventListener = previousAddEventListener;
+    (globalThis as { removeEventListener?: unknown }).removeEventListener =
+      previousRemoveEventListener;
+  });
 });

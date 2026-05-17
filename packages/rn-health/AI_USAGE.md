@@ -7,6 +7,8 @@ App health and error monitoring SDK for Expo or React Native apps with event cap
 - Use this package when a mobile app needs production error monitoring without coupling UI framework code to a vendor SDK.
 - Use AppHealthProvider to create a health reporter that can be passed into rn-kit AppProvider.healthReporter.
 - Use captureGlobalErrors and captureUnhandledRejections defaults for lightweight JavaScript error monitoring.
+- Use createMonitoredFetch or installAxiosHealthInterceptor when API failures should be reported as app health events.
+- Use createAsyncStorageHealthStorage with app-provided AsyncStorage for production queue persistence.
 - Use captureException and captureMessage for manual business error reporting.
 - Use addBreadcrumb to attach navigation, logger, API, and user-action context to later error events.
 - Use createFetchHealthTransport or endpoint configuration to send batches to an app-owned collector.
@@ -19,7 +21,8 @@ App health and error monitoring SDK for Expo or React Native apps with event cap
 ## Recommended Entry
 - Prefer importing AppHealthProvider and useAppHealth from @gaozh1024/rn-health.
 - Pass the provider client into rn-kit AppProvider.healthReporter when the app uses rn-kit.
-- Inject a persistent storage adapter such as AsyncStorage in production so queued events and previous-session detection survive app restarts.
+- Inject createAsyncStorageHealthStorage(AsyncStorage) in production so queued events and previous-session detection survive app restarts.
+- Use createMonitoredFetch or installAxiosHealthInterceptor at API-client boundaries rather than in scattered catch blocks.
 
 ## Install Prerequisites
 - Install command: pnpm add @gaozh1024/rn-health
@@ -29,6 +32,7 @@ App health and error monitoring SDK for Expo or React Native apps with event cap
 - Install react and react-native peer dependencies through the app's existing Expo or React Native setup.
 - Provide endpoint or transports for production uploads; without a transport, events are captured but not sent.
 - Provide a persistent storage adapter in real apps if event retry and previous-session crash detection must survive process restarts.
+- Configure transportTimeoutMs when the default 10s upload timeout is too short or too long for the app's network profile.
 
 ## Minimal Working Example
 - health-provider-rn-kit-bridge: packages/rn-health/README.md
@@ -40,18 +44,22 @@ App health and error monitoring SDK for Expo or React Native apps with event cap
 - Prefer the stable public API `createAppHealthClient` when it matches the use case.
 - Prefer the stable public API `createAppHealthQueue` when it matches the use case.
 - Prefer the stable public API `createFetchHealthTransport` when it matches the use case.
+- Prefer the stable public API `createAsyncStorageHealthStorage` when it matches the use case.
+- Prefer the stable public API `createMonitoredFetch` when it matches the use case.
+- Prefer the stable public API `installAxiosHealthInterceptor` when it matches the use case.
 - Prefer the stable public API `defaultAppHealthSanitizer` when it matches the use case.
 - Prefer the stable public API `MemoryHealthStorage` when it matches the use case.
 - Prefer the stable public API `installGlobalErrorHandlers` when it matches the use case.
 
 ## Anti-Patterns
-- Calling fetch directly from scattered catch blocks instead of routing errors through captureException or a transport.
+- Calling fetch directly from scattered catch blocks instead of routing API-client boundaries through createMonitoredFetch or installAxiosHealthInterceptor.
 - Treating previous_session_crash as a precise native crash signal; it is an inferred abnormal-exit health signal.
-- Disabling sanitization in production or uploading authorization headers and tokens inside breadcrumbs.
+- Disabling sanitization in production or uploading authorization headers, bodies, and tokens inside breadcrumbs or API metadata.
 
 ## Common Failure Cases
 - No events arrive because endpoint/transports are omitted or enabled is false.
 - Queued events disappear after restart because the default MemoryHealthStorage was used instead of persistent app storage.
+- API 4xx responses are not reported because capture4xx is intentionally opt-in.
 - Native crashes are not visible because no NativeCrashAdapter or vendor-native crash reporter has been installed.
 - Health reports are too noisy because breadcrumbs are added for high-frequency UI events without throttling.
 

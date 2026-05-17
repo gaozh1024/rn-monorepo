@@ -5,7 +5,16 @@ interface ErrorUtilsLike {
   setGlobalHandler?: (handler: (error: unknown, isFatal?: boolean) => void) => void;
 }
 
-interface GlobalWithErrorUtils {
+interface EventTargetLike {
+  addEventListener?: (type: string, listener: (event: unknown) => void) => void;
+  removeEventListener?: (type: string, listener: (event: unknown) => void) => void;
+}
+
+interface RejectionCallbackGlobal {
+  onunhandledrejection?: ((event: unknown) => unknown) | null;
+}
+
+interface GlobalWithErrorUtils extends EventTargetLike, RejectionCallbackGlobal {
   ErrorUtils?: ErrorUtilsLike;
 }
 
@@ -26,7 +35,7 @@ export function installGlobalErrorHandlers(
   }
 
   if (options.captureUnhandledRejections ?? true) {
-    installWebUnhandledRejectionHandler(reporter, disposers);
+    installUnhandledRejectionHandler(reporter, disposers);
   }
 
   return () => {
@@ -74,20 +83,64 @@ function installWebErrorHandler(reporter: AppHealthReporter, disposers: Array<()
   disposers.push(() => window.removeEventListener('error', handleError));
 }
 
-function installWebUnhandledRejectionHandler(
+function installUnhandledRejectionHandler(
   reporter: AppHealthReporter,
   disposers: Array<() => void>
 ) {
-  if (typeof window === 'undefined') return;
+  const target = getUnhandledRejectionEventTarget();
+  if (target?.addEventListener && target.removeEventListener) {
+    const handleRejection = (event: unknown) => {
+      void reporter.captureException(getRejectionReason(event), {
+        type: 'unhandled_rejection',
+        level: 'error',
+        source:
+          typeof window !== 'undefined' && target === window
+            ? 'window.onunhandledrejection'
+            : 'global.onunhandledrejection',
+      });
+    };
 
-  const handleRejection = (event: PromiseRejectionEvent) => {
-    void reporter.captureException(event.reason, {
+    target.addEventListener('unhandledrejection', handleRejection);
+    disposers.push(() => target.removeEventListener?.('unhandledrejection', handleRejection));
+    return;
+  }
+
+  installCallbackUnhandledRejectionHandler(reporter, disposers);
+}
+
+function getUnhandledRejectionEventTarget() {
+  if (typeof window !== 'undefined') return window;
+
+  const globalTarget = globalThis as GlobalWithErrorUtils;
+  if (globalTarget.addEventListener && globalTarget.removeEventListener) return globalTarget;
+
+  return undefined;
+}
+
+function installCallbackUnhandledRejectionHandler(
+  reporter: AppHealthReporter,
+  disposers: Array<() => void>
+) {
+  const globalTarget = globalThis as GlobalWithErrorUtils;
+  const previousHandler = globalTarget.onunhandledrejection;
+
+  globalTarget.onunhandledrejection = event => {
+    void reporter.captureException(getRejectionReason(event), {
       type: 'unhandled_rejection',
       level: 'error',
-      source: 'window.onunhandledrejection',
+      source: 'global.onunhandledrejection',
     });
+    return previousHandler?.(event);
   };
 
-  window.addEventListener('unhandledrejection', handleRejection);
-  disposers.push(() => window.removeEventListener('unhandledrejection', handleRejection));
+  disposers.push(() => {
+    globalTarget.onunhandledrejection = previousHandler ?? null;
+  });
+}
+
+function getRejectionReason(event: unknown) {
+  if (event && typeof event === 'object' && 'reason' in event) {
+    return (event as { reason?: unknown }).reason;
+  }
+  return event;
 }

@@ -190,6 +190,7 @@ function resolveTransports(config: AppHealthClientConfig) {
         endpoint: config.endpoint,
         ingestToken: config.ingestToken,
         headers: config.headers,
+        timeoutMs: config.transportTimeoutMs,
       })
     );
   }

@@ -140,6 +140,7 @@ export interface AppHealthClientConfig {
   maxQueueSize?: number;
   flushIntervalMs?: number;
   flushBatchSize?: number;
+  transportTimeoutMs?: number;
   flushOnFatal?: boolean;
   captureGlobalErrors?: boolean;
   captureUnhandledRejections?: boolean;

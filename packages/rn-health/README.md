@@ -2,7 +2,7 @@
 
 App health and error monitoring SDK for Expo / React Native apps.
 
-It captures global JavaScript errors, unhandled Web promise rejections, manual business exceptions, breadcrumbs, app/session health events, queued uploads, and inferred previous-session crashes. Native process crashes are intentionally adapter-based so the core package stays vendor-neutral.
+It captures global JavaScript errors, unhandled promise rejections, API failures, manual business exceptions, breadcrumbs, app/session health events, queued uploads, and inferred previous-session crashes. Native process crashes are intentionally adapter-based so the core package stays vendor-neutral.
 
 ## Install
 
@@ -105,7 +105,7 @@ For production apps, prefer the full setup below:
 ```tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppProvider } from '@gaozh1024/rn-kit';
-import { AppHealthProvider } from '@gaozh1024/rn-health';
+import { AppHealthProvider, createAsyncStorageHealthStorage } from '@gaozh1024/rn-health';
 
 export default function App() {
   return (
@@ -117,11 +117,8 @@ export default function App() {
       environment="production"
       endpoint="https://api.example.com/api/app-health/events"
       ingestToken="your-ingest-token"
-      storage={{
-        getItem: key => AsyncStorage.getItem(key),
-        setItem: (key, value) => AsyncStorage.setItem(key, value),
-        removeItem: key => AsyncStorage.removeItem(key),
-      }}
+      transportTimeoutMs={10_000}
+      storage={createAsyncStorageHealthStorage(AsyncStorage)}
     >
       {health => (
         <AppProvider enableErrorBoundary healthReporter={health}>
@@ -137,8 +134,9 @@ Production notes:
 
 - `MemoryHealthStorage` is only for tests and demos; inject persistent storage so queued events and previous-session crash inference survive process restarts.
 - When using `@gaozh1024/rn-kit`, explicitly set `enableErrorBoundary` in production if you want React render errors reported.
+- Unhandled rejection capture is best-effort across React Native runtimes; it supports DOM `unhandledrejection`, global event targets, and `globalThis.onunhandledrejection` fallback when available.
 - Native process crashes require `nativeCrashAdapter`; the core package stays vendor-neutral and does not include a native crash SDK.
-- Source map symbolication is not included in `0.1.x`; production stack traces are uploaded raw.
+- Source map symbolication is not included in `0.2.x`; production stack traces are uploaded raw.
 - Do not upload raw authorization headers, cookies, request/response bodies, phone numbers, or tokens. Keep or customize the sanitizer.
 
 ## Persistent storage
@@ -147,15 +145,55 @@ The default `MemoryHealthStorage` is useful for tests and simple demos. Producti
 
 ```ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAsyncStorageHealthStorage } from '@gaozh1024/rn-health';
 
+<AppHealthProvider storage={createAsyncStorageHealthStorage(AsyncStorage)} />;
+```
+
+## Transport timeout
+
+The built-in fetch transport aborts uploads after `10_000ms` by default so monitoring cannot hang indefinitely behind a stuck network request. Override it with `transportTimeoutMs`, or set `0` to disable the abort timeout.
+
+```tsx
 <AppHealthProvider
-  storage={{
-    getItem: key => AsyncStorage.getItem(key),
-    setItem: (key, value) => AsyncStorage.setItem(key, value),
-    removeItem: key => AsyncStorage.removeItem(key),
-  }}
+  endpoint="https://api.example.com/api/app-health/events"
+  transportTimeoutMs={5_000}
 />
 ```
+
+## API error capture
+
+`0.2.0` adds dependency-free helpers for API monitoring. They capture network errors and 5xx responses by default. 4xx capture is opt-in to avoid noisy user-input errors. URLs are sanitized by default by removing query strings and hashes; request/response bodies and headers are not uploaded.
+
+### fetch
+
+```ts
+import { createMonitoredFetch, useAppHealth } from '@gaozh1024/rn-health';
+
+function useApiFetch() {
+  const health = useAppHealth();
+  return createMonitoredFetch(fetch, health, {
+    tags: { client: 'fetch' },
+    capture4xx: false,
+  });
+}
+```
+
+### axios
+
+```ts
+import axios from 'axios';
+import { installAxiosHealthInterceptor, type AppHealthReporter } from '@gaozh1024/rn-health';
+
+function installApiMonitoring(health: AppHealthReporter) {
+  return installAxiosHealthInterceptor(axios, health, {
+    tags: { client: 'axios' },
+    capture4xx: false,
+  });
+}
+```
+
+Call the disposer returned by `installAxiosHealthInterceptor` when the axios instance or app shell is torn down.
 
 ## Sanitization
 
@@ -203,6 +241,9 @@ Pure JavaScript cannot reliably capture native process crashes after the process
 - `createAppHealthClient`
 - `createAppHealthQueue`
 - `createFetchHealthTransport`
+- `createAsyncStorageHealthStorage`
+- `createMonitoredFetch`
+- `installAxiosHealthInterceptor`
 - `defaultAppHealthSanitizer`
 - `MemoryHealthStorage`
 - `installGlobalErrorHandlers`

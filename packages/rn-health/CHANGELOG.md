@@ -1,5 +1,15 @@
 # @gaozh1024/rn-health
 
+## 0.2.0
+
+### Minor Changes
+
+- Add `createAsyncStorageHealthStorage` so React Native apps can wire `@react-native-async-storage/async-storage` without hand-writing the storage adapter.
+- Add upload timeout support through `transportTimeoutMs`; the built-in fetch transport now defaults to a 10s timeout and supports `0` to disable aborts.
+- Expand unhandled rejection capture to React Native-style `globalThis.onunhandledrejection` runtimes when DOM event targets are unavailable.
+- Add `createMonitoredFetch` for dependency-free API error capture around `fetch`, with safe default URL sanitization and opt-in 4xx capture.
+- Add `installAxiosHealthInterceptor` using structural axios types so apps can monitor axios API failures without adding axios as an SDK dependency.
+
 ## 0.1.1
 
 ### Patch Changes
