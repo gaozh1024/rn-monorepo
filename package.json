@@ -20,7 +20,7 @@
     "yalc:update": "pnpm -r --filter='@gaozh1024/*' exec yalc push --replace",
     "prepare": "husky",
     "verify:web": "pnpm --dir packages/rn-kit typecheck && pnpm --dir packages/rn-kit test && pnpm --dir packages/rn-kit build && pnpm --dir templates/expo-starter lint",
-    "verify:app-health:service": "cd apps/app-health/service && GOCACHE=/tmp/app-health-go-cache go test ./... && GOCACHE=/tmp/app-health-go-cache go build -o /tmp/app-health-service ./cmd/app-health-service && GOCACHE=/tmp/app-health-go-cache go build -o /tmp/app-health-migrate ./cmd/app-health-migrate",
+    "verify:app-health:service": "cd apps/app-health/service && GOCACHE=/tmp/app-health-go-cache go test ./... && GOCACHE=/tmp/app-health-go-cache go build -o /tmp/app-health-service ./cmd/app-health-service && GOCACHE=/tmp/app-health-go-cache go build -o /tmp/app-health-migrate ./cmd/app-health-migrate && GOCACHE=/tmp/app-health-go-cache go build -o /tmp/app-health-retention ./cmd/app-health-retention",
     "verify:app-health:admin": "pnpm --dir apps/app-health/admin typecheck && pnpm --dir apps/app-health/admin build",
     "verify:app-health": "pnpm verify:app-health:service && pnpm verify:app-health:admin"
   },

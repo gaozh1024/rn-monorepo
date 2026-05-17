@@ -143,6 +143,21 @@ func (r *PostgresIssueRepository) CountOpen(ctx context.Context, appID string) (
 	return count, err
 }
 
+func (r *PostgresIssueRepository) ProtectedEventIDs(ctx context.Context) ([]string, error) {
+	rows, err := r.pool.Query(ctx, `
+SELECT DISTINCT event_id
+FROM (
+  SELECT sample_event_id AS event_id FROM app_health_issues WHERE sample_event_id IS NOT NULL AND sample_event_id <> ''
+  UNION
+  SELECT last_event_id AS event_id FROM app_health_issues WHERE last_event_id IS NOT NULL AND last_event_id <> ''
+) protected_events`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return pgx.CollectRows(rows, pgx.RowTo[string])
+}
+
 func issueColumns() string {
 	return `id, app_id, fingerprint, title, level, status, event_count, affected_user_count,
   first_seen_at, last_seen_at, last_event_id, sample_event_id,

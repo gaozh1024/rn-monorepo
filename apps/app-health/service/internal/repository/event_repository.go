@@ -23,6 +23,7 @@ type EventRepository interface {
 	Get(context.Context, string) (domain.HealthEvent, error)
 	ListByIssue(context.Context, string, int) ([]domain.HealthEvent, error)
 	CountToday(context.Context, string) (events int, fatal int, users int, err error)
+	DeleteBefore(context.Context, time.Time, []string, bool) (int, error)
 }
 
 type MemoryEventRepository struct {
@@ -124,6 +125,39 @@ func (r *MemoryEventRepository) CountToday(_ context.Context, appID string) (int
 		}
 	}
 	return events, fatal, len(userIDs), nil
+}
+
+func (r *MemoryEventRepository) DeleteBefore(_ context.Context, before time.Time, protectedIDs []string, dryRun bool) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	protected := map[string]struct{}{}
+	for _, id := range protectedIDs {
+		if id != "" {
+			protected[id] = struct{}{}
+		}
+	}
+	deleted := 0
+	nextOrder := make([]string, 0, len(r.order))
+	for _, id := range r.order {
+		event, ok := r.events[id]
+		if !ok {
+			continue
+		}
+		if _, ok := protected[id]; ok || !event.CreatedAt.Before(before) {
+			nextOrder = append(nextOrder, id)
+			continue
+		}
+		deleted++
+		if !dryRun {
+			delete(r.events, id)
+			continue
+		}
+		nextOrder = append(nextOrder, id)
+	}
+	if !dryRun {
+		r.order = nextOrder
+	}
+	return deleted, nil
 }
 
 func matchEvent(event domain.HealthEvent, query domain.EventQuery) bool {

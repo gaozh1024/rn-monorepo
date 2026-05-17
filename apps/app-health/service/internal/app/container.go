@@ -3,7 +3,9 @@ package app
 import (
 	"context"
 	"log/slog"
+	"time"
 
+	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/alert"
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/config"
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/db"
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/repository"
@@ -41,11 +43,26 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 		logger.Warn("APP_HEALTH_DATABASE_URL is empty; using in-memory app-health repositories")
 	}
 
+	alertLevel, err := alert.ParseLevel(cfg.AlertMinLevel)
+	if err != nil {
+		return nil, err
+	}
+	notifier, err := alert.NewWebhookNotifier(alert.Config{
+		WebhookURL: cfg.AlertWebhookURL,
+		MinLevel:   alertLevel,
+		Cooldown:   time.Duration(cfg.AlertCooldownSeconds) * time.Second,
+		Timeout:    time.Duration(cfg.AlertTimeoutSeconds) * time.Second,
+		Async:      true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &Container{
 		Pool:   pool,
 		Events: events,
 		Issues: issues,
-		Ingest: appsvc.NewIngestService(events, issues),
+		Ingest: appsvc.NewIngestService(events, issues, notifier),
 		Event:  appsvc.NewEventService(events),
 		Issue:  appsvc.NewIssueService(issues, events),
 		Stats:  appsvc.NewStatsService(events, issues),

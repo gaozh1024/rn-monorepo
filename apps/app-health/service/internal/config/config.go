@@ -17,6 +17,12 @@ type Config struct {
 	MaxBodyBytes         int64
 	IngestRateLimitRPS   int
 	IngestRateLimitBurst int
+	AlertWebhookURL      string
+	AlertMinLevel        string
+	AlertCooldownSeconds int
+	AlertTimeoutSeconds  int
+	EventRetentionDays   int
+	RetentionDryRun      bool
 }
 
 func Load() Config {
@@ -30,6 +36,12 @@ func Load() Config {
 		MaxBodyBytes:         getEnvInt64("APP_HEALTH_MAX_BODY_BYTES", 1_048_576),
 		IngestRateLimitRPS:   getEnvInt("APP_HEALTH_INGEST_RATE_LIMIT_RPS", 0),
 		IngestRateLimitBurst: getEnvInt("APP_HEALTH_INGEST_RATE_LIMIT_BURST", 0),
+		AlertWebhookURL:      strings.TrimSpace(os.Getenv("APP_HEALTH_ALERT_WEBHOOK_URL")),
+		AlertMinLevel:        getEnv("APP_HEALTH_ALERT_MIN_LEVEL", "fatal"),
+		AlertCooldownSeconds: getEnvInt("APP_HEALTH_ALERT_COOLDOWN_SECONDS", 300),
+		AlertTimeoutSeconds:  getEnvInt("APP_HEALTH_ALERT_TIMEOUT_SECONDS", 5),
+		EventRetentionDays:   getEnvInt("APP_HEALTH_EVENT_RETENTION_DAYS", 30),
+		RetentionDryRun:      getEnvBool("APP_HEALTH_RETENTION_DRY_RUN", true),
 	}
 }
 
@@ -41,6 +53,12 @@ func (c Config) LogValue() slog.Value {
 		slog.Int64("maxBodyBytes", c.MaxBodyBytes),
 		slog.Int("ingestRateLimitRPS", c.IngestRateLimitRPS),
 		slog.Int("ingestRateLimitBurst", c.IngestRateLimitBurst),
+		slog.Bool("alertEnabled", c.AlertWebhookURL != ""),
+		slog.String("alertMinLevel", c.AlertMinLevel),
+		slog.Int("alertCooldownSeconds", c.AlertCooldownSeconds),
+		slog.Int("alertTimeoutSeconds", c.AlertTimeoutSeconds),
+		slog.Int("eventRetentionDays", c.EventRetentionDays),
+		slog.Bool("retentionDryRun", c.RetentionDryRun),
 	)
 }
 
@@ -71,6 +89,18 @@ func getEnvInt64(key string, fallback int64) int64 {
 	}
 	parsed, err := strconv.ParseInt(value, 10, 64)
 	if err != nil || parsed < 0 {
+		return fallback
+	}
+	return parsed
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
 		return fallback
 	}
 	return parsed

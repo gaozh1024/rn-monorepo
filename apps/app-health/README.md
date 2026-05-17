@@ -17,6 +17,7 @@ apps/app-health/
   service/                    # Go API + migrations
     cmd/app-health-service/   # HTTP service entrypoint
     cmd/app-health-migrate/   # PostgreSQL migration runner
+    cmd/app-health-retention/ # Event retention cleanup runner
     internal/db/migrations/   # Goose SQL migrations
   admin/                      # Static React/Vite admin console
 ```
@@ -36,6 +37,12 @@ apps/app-health/
 | `APP_HEALTH_MAX_BODY_BYTES`          | `1048576`               | Maximum ingest request body size in bytes. Set `0` to disable this service-level guard.   |
 | `APP_HEALTH_INGEST_RATE_LIMIT_RPS`   | `0`                     | Per-process ingest token-bucket refill rate. `0` disables service-level rate limiting.    |
 | `APP_HEALTH_INGEST_RATE_LIMIT_BURST` | `0`                     | Per-process ingest token-bucket burst capacity. `0` disables service-level rate limiting. |
+| `APP_HEALTH_ALERT_WEBHOOK_URL`       | empty                   | Optional generic HTTP/HTTPS webhook URL for urgent issue alerts. Keep tokens in secrets.  |
+| `APP_HEALTH_ALERT_MIN_LEVEL`         | `fatal`                 | Minimum event level that can trigger alerts: `info`, `warning`, `error`, or `fatal`.      |
+| `APP_HEALTH_ALERT_COOLDOWN_SECONDS`  | `300`                   | Per `appId + fingerprint + level` alert cooldown window in seconds.                       |
+| `APP_HEALTH_ALERT_TIMEOUT_SECONDS`   | `5`                     | Webhook request timeout in seconds.                                                       |
+| `APP_HEALTH_EVENT_RETENTION_DAYS`    | `30`                    | Number of days to retain historical events for the retention runner.                      |
+| `APP_HEALTH_RETENTION_DRY_RUN`       | `true`                  | Default dry-run mode used by `app-health-retention env`.                                  |
 
 ### Admin
 
@@ -107,8 +114,47 @@ Ingest safety behavior:
 - A batch can contain at most 100 events.
 - Invalid events are counted as `rejected` and do not block valid events in the same batch.
 - Duplicate event IDs are counted as `duplicated` and are ignored without increasing issue counts.
+- Duplicate event IDs do not trigger alert webhooks again.
 - Event `level` must be one of `info`, `warning`, `error`, or `fatal`.
 - A single event can include at most 100 breadcrumbs, 50 tag keys, and 64 KiB of JSON-encoded `extra` data.
+
+## Alert routing
+
+The service can send a generic JSON webhook after an ingested event has been persisted, grouped into an issue, and linked back to that issue. Webhook delivery is best-effort: a webhook timeout or non-2xx response never rejects the ingest request.
+
+Enable it with:
+
+```bash
+APP_HEALTH_ALERT_WEBHOOK_URL='https://example.internal/app-health-webhook?token=replace_me' \
+APP_HEALTH_ALERT_MIN_LEVEL=fatal \
+APP_HEALTH_ALERT_COOLDOWN_SECONDS=300 \
+APP_HEALTH_ALERT_TIMEOUT_SECONDS=5 \
+go run ./cmd/app-health-service
+```
+
+Alert payload shape:
+
+```json
+{
+  "title": "App Health fatal: TypeError: boom",
+  "appId": "com.example.app",
+  "level": "fatal",
+  "fingerprint": "fp_test",
+  "eventId": "event_1",
+  "issueId": "issue_1",
+  "timestamp": "2026-05-17T00:00:00Z",
+  "event": {},
+  "issue": {}
+}
+```
+
+Alert notes:
+
+- Default `APP_HEALTH_ALERT_MIN_LEVEL=fatal` means `error`, `warning`, and `info` are stored but do not alert.
+- Set `APP_HEALTH_ALERT_MIN_LEVEL=error` if JavaScript/API errors should alert too.
+- Cooldown is keyed by `appId + fingerprint + level`, so one crash storm sends at most one alert per cooldown window.
+- Do not commit webhook URLs containing tokens. Put them in your runtime secret manager.
+- Service config logs only whether alerting is enabled; it does not log the webhook URL.
 
 Admin API examples:
 
@@ -196,9 +242,53 @@ http://localhost:5173
 Docker notes:
 
 - `migrate` is intentionally explicit. Do not auto-run migrations from the service container in production.
+- `retention` is also explicit and lives under the `tools` profile. Run `dry-run` before `run`.
 - `VITE_APP_HEALTH_ADMIN_TOKEN` is compiled into the static admin bundle. This is acceptable for local/internal trials only; put production admin behind a private network, gateway auth, SSO, or RBAC before wider exposure.
 - Replace `ingest_dev` and `admin_dev` with strong runtime secrets outside local development.
 - The compose service exposes PostgreSQL on `localhost:15432`, the API on `localhost:8080`, and admin on `localhost:5173`.
+
+Run retention from Docker Compose:
+
+```bash
+docker compose --profile tools run --rm retention dry-run
+docker compose --profile tools run --rm retention run
+```
+
+## Event retention
+
+`app-health-retention` keeps long-running deployments bounded by deleting old event rows while preserving issue summaries.
+
+Local PostgreSQL dry-run:
+
+```bash
+cd apps/app-health/service
+APP_HEALTH_DATABASE_URL='postgres://postgres:postgres@localhost:15432/app_health?sslmode=disable' \
+APP_HEALTH_EVENT_RETENTION_DAYS=30 \
+go run ./cmd/app-health-retention dry-run
+```
+
+Actual cleanup:
+
+```bash
+APP_HEALTH_DATABASE_URL='postgres://postgres:postgres@localhost:15432/app_health?sslmode=disable' \
+APP_HEALTH_EVENT_RETENTION_DAYS=30 \
+go run ./cmd/app-health-retention run
+```
+
+Retention behavior:
+
+- `dry-run` returns the number of events that would be deleted and does not change data.
+- `run` deletes events whose `created_at` is older than `now - APP_HEALTH_EVENT_RETENTION_DAYS`.
+- Issue rows are not deleted by this job.
+- Event IDs referenced by issue `sample_event_id` or `last_event_id` are protected from deletion.
+- `APP_HEALTH_DATABASE_URL` is required so the runner cannot accidentally report success against an empty in-memory repository.
+
+Example cron:
+
+```cron
+15 3 * * * /app/app-health-retention dry-run >> /var/log/app-health-retention.log 2>&1
+30 3 * * 0 /app/app-health-retention run >> /var/log/app-health-retention.log 2>&1
+```
 
 Current admin capabilities:
 
@@ -220,7 +310,7 @@ pnpm verify:app-health
 This runs:
 
 - Go unit tests for `apps/app-health/service`;
-- Go builds for `app-health-service` and `app-health-migrate`;
+- Go builds for `app-health-service`, `app-health-migrate`, and `app-health-retention`;
 - admin TypeScript check;
 - admin production build.
 
@@ -230,6 +320,8 @@ This runs:
 - Set strong, different `APP_HEALTH_INGEST_TOKEN` and `APP_HEALTH_ADMIN_TOKEN` values.
 - Terminate TLS and rate-limit ingestion at your gateway or load balancer. The service also has a per-process ingest token bucket for a first local guard.
 - Keep `APP_HEALTH_MAX_BODY_BYTES` enabled so malformed or oversized ingest requests cannot consume unbounded memory.
+- Configure `APP_HEALTH_ALERT_WEBHOOK_URL` for fatal/error alert routing, and keep the URL in a secret manager.
+- Schedule `app-health-retention dry-run` and then `app-health-retention run` after backup/operational review.
 - Use `/healthz` for process liveness and `/readyz` for dependency readiness checks.
 - Deploy `admin/` as static assets with `VITE_APP_HEALTH_API_BASE_URL` pointing at the service.
 - Keep admin access private; the admin token is intended as a first deployable guard, not a full multi-user RBAC system.
@@ -237,6 +329,6 @@ This runs:
 ## Current limitations / next milestones
 
 - No source-map symbolication yet.
-- No alert routing yet.
-- No retention/archival job yet.
+- No alert retry/outbox yet; webhook delivery is best-effort.
+- No archival export before retention yet.
 - Admin auth is token-based only; add SSO/RBAC before exposing it to a wider internal audience.

@@ -30,6 +30,22 @@ services:
     profiles:
       - tools
 
+  retention:
+    build:
+      context: ./service
+    entrypoint: ['/app/app-health-retention']
+    command: ['dry-run']
+    environment:
+      APP_HEALTH_DATABASE_URL: 'postgres://postgres:postgres@postgres:5432/app_health?sslmode=disable'
+      APP_HEALTH_ENV: 'development'
+      APP_HEALTH_EVENT_RETENTION_DAYS: '30'
+      APP_HEALTH_RETENTION_DRY_RUN: 'true'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+
   service:
     build:
       context: ./service
@@ -43,6 +59,10 @@ services:
       APP_HEALTH_MAX_BODY_BYTES: '1048576'
       APP_HEALTH_INGEST_RATE_LIMIT_RPS: '20'
       APP_HEALTH_INGEST_RATE_LIMIT_BURST: '100'
+      APP_HEALTH_ALERT_WEBHOOK_URL: ''
+      APP_HEALTH_ALERT_MIN_LEVEL: 'fatal'
+      APP_HEALTH_ALERT_COOLDOWN_SECONDS: '300'
+      APP_HEALTH_ALERT_TIMEOUT_SECONDS: '5'
     ports:
       - '8080:8080'
     depends_on:

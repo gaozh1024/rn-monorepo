@@ -142,6 +142,27 @@ FROM app_health_events `+where, args...).Scan(&events, &fatal, &users)
 	return events, fatal, users, err
 }
 
+func (r *PostgresEventRepository) DeleteBefore(ctx context.Context, before time.Time, protectedIDs []string, dryRun bool) (int, error) {
+	if protectedIDs == nil {
+		protectedIDs = []string{}
+	}
+	if dryRun {
+		var count int
+		err := r.pool.QueryRow(ctx, `
+SELECT count(*)
+FROM app_health_events
+WHERE created_at < $1 AND NOT (id = ANY($2::text[]))`, before, protectedIDs).Scan(&count)
+		return count, err
+	}
+	commandTag, err := r.pool.Exec(ctx, `
+DELETE FROM app_health_events
+WHERE created_at < $1 AND NOT (id = ANY($2::text[]))`, before, protectedIDs)
+	if err != nil {
+		return 0, err
+	}
+	return int(commandTag.RowsAffected()), nil
+}
+
 func eventWhere(query domain.EventQuery) (string, []any) {
 	clauses := []string{}
 	args := []any{}

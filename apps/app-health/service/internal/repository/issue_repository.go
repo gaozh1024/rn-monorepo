@@ -16,6 +16,7 @@ type IssueRepository interface {
 	Get(context.Context, string) (domain.HealthIssue, error)
 	UpdateStatus(context.Context, string, domain.IssueStatus) (domain.HealthIssue, error)
 	CountOpen(context.Context, string) (int, error)
+	ProtectedEventIDs(context.Context) ([]string, error)
 }
 
 type MemoryIssueRepository struct {
@@ -153,6 +154,28 @@ func (r *MemoryIssueRepository) CountOpen(_ context.Context, appID string) (int,
 		}
 	}
 	return count, nil
+}
+
+func (r *MemoryIssueRepository) ProtectedEventIDs(_ context.Context) ([]string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	seen := map[string]struct{}{}
+	ids := []string{}
+	add := func(id string) {
+		if id == "" {
+			return
+		}
+		if _, ok := seen[id]; ok {
+			return
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	for _, issue := range r.issues {
+		add(issue.SampleEventID)
+		add(issue.LastEventID)
+	}
+	return ids, nil
 }
 
 func (r *MemoryIssueRepository) trackUser(issueID string, event domain.HealthEvent) {

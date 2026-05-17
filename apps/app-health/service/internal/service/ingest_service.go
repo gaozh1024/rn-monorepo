@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/alert"
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/domain"
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/repository"
 )
@@ -16,6 +17,7 @@ import (
 type IngestService struct {
 	events repository.EventRepository
 	issues repository.IssueRepository
+	alerts alert.Notifier
 }
 
 const (
@@ -26,8 +28,12 @@ const (
 	maxFutureClockSkew    = 24 * time.Hour
 )
 
-func NewIngestService(events repository.EventRepository, issues repository.IssueRepository) *IngestService {
-	return &IngestService{events: events, issues: issues}
+func NewIngestService(events repository.EventRepository, issues repository.IssueRepository, notifiers ...alert.Notifier) *IngestService {
+	notifier := alert.Notifier(alert.NoopNotifier{})
+	if len(notifiers) > 0 && notifiers[0] != nil {
+		notifier = notifiers[0]
+	}
+	return &IngestService{events: events, issues: issues, alerts: notifier}
 }
 
 func (s *IngestService) Ingest(ctx context.Context, input []domain.HealthEvent) (domain.IngestEventsResponse, error) {
@@ -64,6 +70,18 @@ func (s *IngestService) Ingest(ctx context.Context, input []domain.HealthEvent) 
 			if err := s.events.AttachIssue(ctx, saved.ID, issue.ID); err != nil {
 				return response, err
 			}
+			saved.IssueID = issue.ID
+			_ = s.alerts.Notify(ctx, alert.Notification{
+				Title:       "App Health " + string(saved.Level) + ": " + issue.Title,
+				AppID:       saved.App.ID,
+				Level:       saved.Level,
+				Fingerprint: fingerprint,
+				EventID:     saved.ID,
+				IssueID:     issue.ID,
+				Timestamp:   saved.CreatedAt,
+				Event:       saved,
+				Issue:       issue,
+			})
 		}
 		response.Accepted++
 	}
