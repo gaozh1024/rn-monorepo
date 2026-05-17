@@ -57,3 +57,14 @@ func (c *Container) Close() {
 		c.Pool.Close()
 	}
 }
+
+func (c *Container) DatabaseConfigured() bool {
+	return c != nil && c.Pool != nil
+}
+
+func (c *Container) Ready(ctx context.Context) error {
+	if c == nil || c.Pool == nil {
+		return nil
+	}
+	return c.Pool.Ping(ctx)
+}

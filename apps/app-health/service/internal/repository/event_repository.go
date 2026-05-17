@@ -10,7 +10,10 @@ import (
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/domain"
 )
 
-var ErrNotFound = errors.New("not found")
+var (
+	ErrNotFound  = errors.New("not found")
+	ErrDuplicate = errors.New("duplicate")
+)
 
 type EventRepository interface {
 	Insert(context.Context, domain.HealthEvent) (domain.HealthEvent, error)
@@ -34,6 +37,9 @@ func NewMemoryEventRepository() *MemoryEventRepository {
 func (r *MemoryEventRepository) Insert(_ context.Context, event domain.HealthEvent) (domain.HealthEvent, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if _, exists := r.events[event.ID]; exists {
+		return domain.HealthEvent{}, ErrDuplicate
+	}
 	if event.CreatedAt.IsZero() {
 		event.CreatedAt = time.Now().UTC()
 	}

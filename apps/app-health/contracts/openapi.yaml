@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: App Health API
-  version: 0.1.0
+  version: 0.2.0
   description: API contract for rn-health ingestion and App Health admin queries.
 servers:
   - url: http://localhost:8080
@@ -19,6 +19,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthzResponse'
+  /readyz:
+    get:
+      summary: Service readiness check
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyzResponse'
+        '503':
+          description: Service dependency is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyzResponse'
   /api/app-health/events:
     post:
       summary: Ingest app health events from rn-health
@@ -37,6 +54,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngestEventsResponse'
+        '413':
+          description: Request body is too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Ingest rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     get:
       summary: List raw app health events for admin UI
       security:
@@ -211,6 +240,23 @@ components:
         status:
           type: string
           example: ok
+    ReadyzResponse:
+      type: object
+      required: [status, databaseConfigured]
+      properties:
+        status:
+          type: string
+          enum: [ok, unavailable]
+        databaseConfigured:
+          type: boolean
+        error:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
     IngestEventsRequest:
       type: object
       required: [events]
@@ -227,6 +273,8 @@ components:
         accepted:
           type: integer
         rejected:
+          type: integer
+        duplicated:
           type: integer
     HealthEvent:
       type: object
@@ -254,14 +302,17 @@ components:
           $ref: '#/components/schemas/ErrorInfo'
         breadcrumbs:
           type: array
+          maxItems: 100
           items:
             $ref: '#/components/schemas/Breadcrumb'
         tags:
           type: object
+          maxProperties: 50
           additionalProperties:
             type: string
         extra:
           type: object
+          description: JSON-encoded size is limited by the service.
           additionalProperties: true
     AppInfo:
       type: object

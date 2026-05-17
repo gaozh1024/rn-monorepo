@@ -30,7 +30,7 @@ func (r *PostgresEventRepository) Insert(ctx context.Context, event domain.Healt
 	}
 	var raw map[string]any
 	raw = decodeJSON(jsonBytes(event), map[string]any{})
-	_, err := r.pool.Exec(ctx, `
+	commandTag, err := r.pool.Exec(ctx, `
 INSERT INTO app_health_events (
   id, app_id, app_version, build_number, environment,
   type, level, platform, os_version, device_model,
@@ -39,7 +39,7 @@ INSERT INTO app_health_events (
   event_timestamp, created_at
 ) VALUES (
   $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
-)`,
+) ON CONFLICT (id) DO NOTHING`,
 		event.ID, event.App.ID, event.App.Version, event.App.BuildNumber, event.App.Environment,
 		event.Type, string(event.Level), event.Device.Platform, event.Device.OSVersion, event.Device.Model,
 		userID(event), event.Session.ID, event.Error.Name, event.Error.Message, event.Error.Stack,
@@ -48,6 +48,9 @@ INSERT INTO app_health_events (
 	)
 	if err != nil {
 		return domain.HealthEvent{}, err
+	}
+	if commandTag.RowsAffected() == 0 {
+		return domain.HealthEvent{}, ErrDuplicate
 	}
 	return event, nil
 }

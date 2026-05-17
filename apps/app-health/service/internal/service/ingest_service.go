@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -17,17 +18,25 @@ type IngestService struct {
 	issues repository.IssueRepository
 }
 
+const (
+	maxIngestEvents       = 100
+	maxBreadcrumbsPerItem = 100
+	maxTagsPerItem        = 50
+	maxExtraBytesPerItem  = 64 * 1024
+	maxFutureClockSkew    = 24 * time.Hour
+)
+
 func NewIngestService(events repository.EventRepository, issues repository.IssueRepository) *IngestService {
 	return &IngestService{events: events, issues: issues}
 }
 
 func (s *IngestService) Ingest(ctx context.Context, input []domain.HealthEvent) (domain.IngestEventsResponse, error) {
-	if len(input) > 100 {
+	if len(input) > maxIngestEvents {
 		return domain.IngestEventsResponse{}, errors.New("events must contain at most 100 items")
 	}
 	response := domain.IngestEventsResponse{}
 	for _, event := range input {
-		normalized, ok := normalizeEvent(event)
+		normalized, ok := normalizeEvent(event, time.Now())
 		if !ok {
 			response.Rejected++
 			continue
@@ -39,6 +48,10 @@ func (s *IngestService) Ingest(ctx context.Context, input []domain.HealthEvent) 
 		}
 
 		saved, err := s.events.Insert(ctx, normalized)
+		if errors.Is(err, repository.ErrDuplicate) {
+			response.Duplicated++
+			continue
+		}
 		if err != nil {
 			return response, err
 		}
@@ -57,20 +70,49 @@ func (s *IngestService) Ingest(ctx context.Context, input []domain.HealthEvent) 
 	return response, nil
 }
 
-func normalizeEvent(event domain.HealthEvent) (domain.HealthEvent, bool) {
+func normalizeEvent(event domain.HealthEvent, now time.Time) (domain.HealthEvent, bool) {
 	if strings.TrimSpace(event.ID) == "" || strings.TrimSpace(event.Type) == "" || strings.TrimSpace(event.App.ID) == "" || strings.TrimSpace(event.Session.ID) == "" {
 		return domain.HealthEvent{}, false
 	}
 	if event.Level == "" {
 		event.Level = domain.LevelInfo
 	}
+	if !isValidLevel(event.Level) {
+		return domain.HealthEvent{}, false
+	}
 	if event.Timestamp <= 0 {
-		event.Timestamp = time.Now().UnixMilli()
+		event.Timestamp = now.UnixMilli()
+	}
+	if event.Timestamp > now.Add(maxFutureClockSkew).UnixMilli() {
+		return domain.HealthEvent{}, false
 	}
 	if event.CreatedAt.IsZero() {
-		event.CreatedAt = time.Now().UTC()
+		event.CreatedAt = now.UTC()
+	}
+	if len(event.Breadcrumbs) > maxBreadcrumbsPerItem || len(event.Tags) > maxTagsPerItem {
+		return domain.HealthEvent{}, false
+	}
+	if !isJSONSizeAllowed(event.Extra, maxExtraBytesPerItem) {
+		return domain.HealthEvent{}, false
 	}
 	return event, true
+}
+
+func isValidLevel(level domain.EventLevel) bool {
+	switch level {
+	case domain.LevelInfo, domain.LevelWarning, domain.LevelError, domain.LevelFatal:
+		return true
+	default:
+		return false
+	}
+}
+
+func isJSONSizeAllowed(value any, maxBytes int) bool {
+	if value == nil {
+		return true
+	}
+	encoded, err := json.Marshal(value)
+	return err == nil && len(encoded) <= maxBytes
 }
 
 func eventFingerprint(event domain.HealthEvent) string {

@@ -45,7 +45,9 @@ func TestRouterIngestAndAdminQueries(t *testing.T) {
 	router := NewRouter(cfg, logger, container)
 
 	assertRequest(t, router, http.MethodGet, "/healthz", "", "", http.StatusOK, `"status":"ok"`)
+	assertRequest(t, router, http.MethodGet, "/readyz", "", "", http.StatusOK, `"databaseConfigured":false`)
 	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", examplePayload, http.StatusOK, `"accepted":1`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", examplePayload, http.StatusOK, `"duplicated":1`)
 	assertRequest(t, router, http.MethodGet, "/api/app-health/issues", "Bearer admin_test", "", http.StatusOK, `"total":1`)
 	assertRequest(t, router, http.MethodGet, "/api/app-health/issues?status=open&level=error&platform=ios", "Bearer admin_test", "", http.StatusOK, `"total":1`)
 	assertRequest(t, router, http.MethodGet, "/api/app-health/issues?status=resolved", "Bearer admin_test", "", http.StatusOK, `"total":0`)
@@ -63,6 +65,80 @@ func TestRouterRejectsWrongToken(t *testing.T) {
 	t.Cleanup(container.Close)
 	router := NewRouter(cfg, logger, container)
 	assertRequest(t, router, http.MethodGet, "/api/app-health/issues", "Bearer wrong", "", http.StatusUnauthorized, `"unauthorized"`)
+}
+
+func TestRouterRejectsOversizedIngestBody(t *testing.T) {
+	cfg := config.Config{
+		IngestToken:  "ingest_test",
+		AdminToken:   "admin_test",
+		CORSOrigins:  []string{"*"},
+		Env:          "test",
+		MaxBodyBytes: 16,
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", examplePayload, http.StatusRequestEntityTooLarge, `"request body too large"`)
+}
+
+func TestRouterRateLimitsIngest(t *testing.T) {
+	cfg := config.Config{
+		IngestToken:          "ingest_test",
+		AdminToken:           "admin_test",
+		CORSOrigins:          []string{"*"},
+		Env:                  "test",
+		IngestRateLimitRPS:   1,
+		IngestRateLimitBurst: 1,
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", examplePayload, http.StatusOK, `"accepted":1`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", examplePayload, http.StatusTooManyRequests, `"rate limit exceeded"`)
+}
+
+func TestRouterRejectsInvalidIngestEvents(t *testing.T) {
+	cfg := config.Config{
+		IngestToken: "ingest_test",
+		AdminToken:  "admin_test",
+		CORSOrigins: []string{"*"},
+		Env:         "test",
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	const invalidPayload = `{
+  "events": [
+    {
+      "id": "evt_invalid_level",
+      "type": "js_error",
+      "level": "critical",
+      "timestamp": 1710000000000,
+      "app": { "id": "mobile-app" },
+      "device": { "platform": "ios" },
+      "session": { "id": "sess_test_001", "startedAt": 1710000000000 },
+      "error": { "message": "boom" }
+    }
+  ]
+}`
+
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", invalidPayload, http.StatusOK, `"rejected":1`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/events", "Bearer admin_test", "", http.StatusOK, `"total":0`)
 }
 
 func assertRequest(t *testing.T, handler http.Handler, method string, path string, token string, body string, wantStatus int, wantBody string) {

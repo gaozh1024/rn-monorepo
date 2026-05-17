@@ -73,8 +73,9 @@ type IngestEventsRequest struct {
 }
 
 type IngestEventsResponse struct {
-	Accepted int `json:"accepted"`
-	Rejected int `json:"rejected"`
+	Accepted   int `json:"accepted"`
+	Rejected   int `json:"rejected"`
+	Duplicated int `json:"duplicated,omitempty"`
 }
 
 type EventQuery struct {
