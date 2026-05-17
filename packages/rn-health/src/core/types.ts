@@ -128,6 +128,7 @@ export interface AppHealthClientConfig {
   environment?: string;
   userId?: string;
   endpoint?: string;
+  ingestToken?: string;
   headers?:
     | Record<string, string>
     | (() => Record<string, string> | Promise<Record<string, string>>);
@@ -139,6 +140,7 @@ export interface AppHealthClientConfig {
   maxQueueSize?: number;
   flushIntervalMs?: number;
   flushBatchSize?: number;
+  flushOnFatal?: boolean;
   captureGlobalErrors?: boolean;
   captureUnhandledRejections?: boolean;
   detectPreviousCrash?: boolean;

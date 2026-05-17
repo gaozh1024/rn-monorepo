@@ -91,6 +91,13 @@ export async function createAppHealthClient(
     await queue.enqueue(sanitized);
   }
 
+  async function enqueueAndMaybeFlush(event: AppHealthEvent) {
+    await enqueue(event);
+    if ((config.flushOnFatal ?? true) && event.level === 'fatal') {
+      await flush();
+    }
+  }
+
   async function flush() {
     if (!enabled || transports.length === 0) return;
 
@@ -110,7 +117,7 @@ export async function createAppHealthClient(
           componentStack: context.componentStack,
           fingerprint: createFingerprint(payload),
         };
-        await enqueue({
+        await enqueueAndMaybeFlush({
           ...createBaseEvent(context.type ?? 'js_error', context.level ?? 'error'),
           error: errorPayload,
           breadcrumbs: runtime.breadcrumbs,
@@ -121,7 +128,7 @@ export async function createAppHealthClient(
     },
     async captureMessage(message, context = {}) {
       await safeRun(async () => {
-        await enqueue({
+        await enqueueAndMaybeFlush({
           ...createBaseEvent(context.type ?? 'custom', context.level ?? 'info'),
           error:
             context.level === 'error' || context.level === 'fatal'
@@ -179,7 +186,11 @@ function resolveTransports(config: AppHealthClientConfig) {
 
   if (config.endpoint) {
     transports.push(
-      createFetchHealthTransport({ endpoint: config.endpoint, headers: config.headers })
+      createFetchHealthTransport({
+        endpoint: config.endpoint,
+        ingestToken: config.ingestToken,
+        headers: config.headers,
+      })
     );
   }
 

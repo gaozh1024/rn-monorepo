@@ -13,7 +13,7 @@
 ## 推荐用法
 
 ```tsx
-<AppHealthProvider endpoint="https://api.example.com/app-health/events">
+<AppHealthProvider endpoint="https://api.example.com/api/app-health/events">
   {health => (
     <AppProvider enableErrorBoundary enableLogger healthReporter={health}>
       <RootNavigator />

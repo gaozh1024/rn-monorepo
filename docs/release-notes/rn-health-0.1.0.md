@@ -9,7 +9,7 @@
 - 支持 `captureException`、`captureMessage`、`addBreadcrumb`、`flush`、`setUser`、`setTags`。
 - 支持 React Native `global.ErrorUtils`、Web `window.error` 和 `window.unhandledrejection` 的全局错误捕获。
 - 支持本地事件队列、批量 flush、上传失败保留队列。
-- 支持内置 fetch transport：`POST /app-health/events`。
+- 支持内置 fetch transport：`POST /api/app-health/events`。
 - 支持默认敏感字段脱敏，包括 token、password、authorization、cookie、phone、email 等。
 - 支持 session 记录和 `previous_session_crash` 异常退出推断。
 - 预留 `NativeCrashAdapter`，后续可接 Sentry、Firebase Crashlytics 或自研原生 crash 模块。
@@ -19,7 +19,7 @@
 配合 `@gaozh1024/rn-kit@0.5.3` 使用时，可以把 `AppHealthProvider` 产生的 reporter 传给 `AppProvider.healthReporter`：
 
 ```tsx
-<AppHealthProvider endpoint="https://api.example.com/app-health/events">
+<AppHealthProvider endpoint="https://api.example.com/api/app-health/events">
   {health => (
     <AppProvider enableErrorBoundary enableLogger healthReporter={health}>
       <RootNavigator />

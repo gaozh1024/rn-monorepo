@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-health",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "role": "feature-package",
   "summary": "App health and error monitoring SDK for Expo or React Native apps with event capture, breadcrumbs, local queueing, sanitized transports, and rn-kit integration.",
   "entrypoints": [

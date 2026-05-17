@@ -75,4 +75,93 @@ describe('createAppHealthClient', () => {
 
     expect(delivered.some(event => event.type === 'previous_session_crash')).toBe(true);
   });
+
+  it('flushes fatal exceptions immediately by default', async () => {
+    const delivered: AppHealthEvent[] = [];
+    const client = await createAppHealthClient({
+      storage: new MemoryHealthStorage(),
+      flushIntervalMs: 0,
+      transports: [events => delivered.push(...events)],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.captureException(new Error('fatal boom'), { level: 'fatal' });
+
+    expect(
+      delivered.some(event => event.level === 'fatal' && event.error?.message === 'fatal boom')
+    ).toBe(true);
+  });
+
+  it('keeps fatal exceptions queued when immediate flush fails', async () => {
+    const storage = new MemoryHealthStorage();
+    const delivered: AppHealthEvent[] = [];
+    const errors: unknown[] = [];
+    let fail = false;
+    const client = await createAppHealthClient({
+      storage,
+      flushIntervalMs: 0,
+      onError: error => errors.push(error),
+      transports: [
+        events => {
+          if (fail) throw new Error('fatal network down');
+          delivered.push(...events);
+        },
+      ],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    fail = true;
+    await client.captureException(new Error('fatal kept'), { level: 'fatal' });
+
+    expect(
+      errors.some(error => error instanceof Error && error.message === 'fatal network down')
+    ).toBe(true);
+    expect(delivered.some(event => event.error?.message === 'fatal kept')).toBe(false);
+
+    fail = false;
+    await client.flush();
+
+    expect(delivered.some(event => event.error?.message === 'fatal kept')).toBe(true);
+  });
+
+  it('does not immediately flush non-fatal exceptions', async () => {
+    const delivered: AppHealthEvent[] = [];
+    const client = await createAppHealthClient({
+      storage: new MemoryHealthStorage(),
+      flushIntervalMs: 0,
+      transports: [events => delivered.push(...events)],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.captureException(new Error('non fatal boom'));
+
+    expect(delivered.some(event => event.error?.message === 'non fatal boom')).toBe(false);
+
+    await client.flush();
+
+    expect(delivered.some(event => event.error?.message === 'non fatal boom')).toBe(true);
+  });
+
+  it('allows disabling fatal immediate flush', async () => {
+    const delivered: AppHealthEvent[] = [];
+    const client = await createAppHealthClient({
+      storage: new MemoryHealthStorage(),
+      flushIntervalMs: 0,
+      flushOnFatal: false,
+      transports: [events => delivered.push(...events)],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.captureException(new Error('fatal delayed'), { level: 'fatal' });
+
+    expect(delivered.some(event => event.error?.message === 'fatal delayed')).toBe(false);
+
+    await client.flush();
+
+    expect(delivered.some(event => event.error?.message === 'fatal delayed')).toBe(true);
+  });
 });

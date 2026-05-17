@@ -9,12 +9,18 @@ export function createFetchHealthTransport(options: FetchHealthTransportOptions)
     const extraHeaders =
       typeof options.headers === 'function' ? await options.headers() : (options.headers ?? {});
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...extraHeaders,
+    };
+
+    if (options.ingestToken && !hasAuthorizationHeader(extraHeaders)) {
+      headers.authorization = `Bearer ${options.ingestToken}`;
+    }
+
     const response = await fetcher(options.endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...extraHeaders,
-      },
+      headers,
       body: JSON.stringify({ events }),
     });
 
@@ -22,4 +28,8 @@ export function createFetchHealthTransport(options: FetchHealthTransportOptions)
       throw new Error(`Health transport failed with status ${response.status}`);
     }
   };
+}
+
+function hasAuthorizationHeader(headers: Record<string, string>) {
+  return Object.keys(headers).some(key => key.toLowerCase() === 'authorization');
 }

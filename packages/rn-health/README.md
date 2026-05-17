@@ -29,7 +29,8 @@ export default function App() {
       appId="mobile-app"
       appVersion="1.2.3"
       buildNumber="45"
-      endpoint="https://api.example.com/app-health/events"
+      endpoint="https://api.example.com/api/app-health/events"
+      ingestToken="your-ingest-token"
     >
       {health => (
         <AppProvider enableErrorBoundary enableLogger={__DEV__} healthReporter={health}>
@@ -71,7 +72,7 @@ function SubmitButton() {
 The built-in fetch transport sends batches to:
 
 ```http
-POST /app-health/events
+POST /api/app-health/events
 Content-Type: application/json
 ```
 
@@ -95,7 +96,50 @@ Payload:
 }
 ```
 
-A 2xx response is treated as success. Failed uploads remain queued and are retried on later `flush()` calls.
+A 2xx response is treated as success. Failed uploads remain queued and are retried on later `flush()` calls. If `ingestToken` is provided, the built-in fetch transport sends `authorization: Bearer <ingestToken>` automatically; explicit `headers.authorization` takes precedence.
+
+## Production setup checklist
+
+For production apps, prefer the full setup below:
+
+```tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppProvider } from '@gaozh1024/rn-kit';
+import { AppHealthProvider } from '@gaozh1024/rn-health';
+
+export default function App() {
+  return (
+    <AppHealthProvider
+      enabled={!__DEV__}
+      appId="mobile-app"
+      appVersion="1.2.3"
+      buildNumber="45"
+      environment="production"
+      endpoint="https://api.example.com/api/app-health/events"
+      ingestToken="your-ingest-token"
+      storage={{
+        getItem: key => AsyncStorage.getItem(key),
+        setItem: (key, value) => AsyncStorage.setItem(key, value),
+        removeItem: key => AsyncStorage.removeItem(key),
+      }}
+    >
+      {health => (
+        <AppProvider enableErrorBoundary healthReporter={health}>
+          <RootNavigator />
+        </AppProvider>
+      )}
+    </AppHealthProvider>
+  );
+}
+```
+
+Production notes:
+
+- `MemoryHealthStorage` is only for tests and demos; inject persistent storage so queued events and previous-session crash inference survive process restarts.
+- When using `@gaozh1024/rn-kit`, explicitly set `enableErrorBoundary` in production if you want React render errors reported.
+- Native process crashes require `nativeCrashAdapter`; the core package stays vendor-neutral and does not include a native crash SDK.
+- Source map symbolication is not included in `0.1.x`; production stack traces are uploaded raw.
+- Do not upload raw authorization headers, cookies, request/response bodies, phone numbers, or tokens. Keep or customize the sanitizer.
 
 ## Persistent storage
 

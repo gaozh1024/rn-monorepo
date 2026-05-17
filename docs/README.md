@@ -51,6 +51,7 @@
 
 版本发布记录：
 
+- [rn-health 0.1.1 Release Notes](./release-notes/rn-health-0.1.1.md)
 - [rn-health 0.1.0 Release Notes](./release-notes/rn-health-0.1.0.md)
 - [rn-kit 0.5.3 Release Notes](./release-notes/rn-kit-0.5.3.md)
 - [rn-kit 0.5.2 Release Notes](./release-notes/rn-kit-0.5.2.md)

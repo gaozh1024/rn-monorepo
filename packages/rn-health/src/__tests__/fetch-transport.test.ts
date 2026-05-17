@@ -40,4 +40,63 @@ describe('createFetchHealthTransport', () => {
 
     await expect(transport([event])).rejects.toThrow('Health transport failed with status 500');
   });
+
+  it('uses ingestToken as bearer authorization', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchHealthTransport({
+      endpoint: 'https://example.com/events',
+      ingestToken: 'ingest_123',
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({
+        headers: expect.objectContaining({ authorization: 'Bearer ingest_123' }),
+      })
+    );
+  });
+
+  it('lets explicit authorization headers override ingestToken', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchHealthTransport({
+      endpoint: 'https://example.com/events',
+      ingestToken: 'ingest_123',
+      headers: { authorization: 'Bearer custom' },
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({
+        headers: expect.objectContaining({ authorization: 'Bearer custom' }),
+      })
+    );
+  });
+
+  it('supports async headers with ingestToken fallback', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchHealthTransport({
+      endpoint: 'https://example.com/events',
+      ingestToken: 'ingest_123',
+      headers: async () => ({ 'x-app': 'mobile-app' }),
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          authorization: 'Bearer ingest_123',
+          'x-app': 'mobile-app',
+        }),
+      })
+    );
+  });
 });
