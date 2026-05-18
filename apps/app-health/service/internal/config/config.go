@@ -23,6 +23,11 @@ type Config struct {
 	AlertTimeoutSeconds  int
 	EventRetentionDays   int
 	RetentionDryRun      bool
+	AdminEmail           string
+	AdminPasswordHash    string
+	SessionSecret        string
+	CookieSecure         bool
+	SessionTTLHours      int
 }
 
 func Load() Config {
@@ -42,6 +47,11 @@ func Load() Config {
 		AlertTimeoutSeconds:  getEnvInt("APP_HEALTH_ALERT_TIMEOUT_SECONDS", 5),
 		EventRetentionDays:   getEnvInt("APP_HEALTH_EVENT_RETENTION_DAYS", 30),
 		RetentionDryRun:      getEnvBool("APP_HEALTH_RETENTION_DRY_RUN", true),
+		AdminEmail:           getEnv("APP_HEALTH_ADMIN_EMAIL", "admin@example.com"),
+		AdminPasswordHash:    strings.TrimSpace(os.Getenv("APP_HEALTH_ADMIN_PASSWORD_HASH")),
+		SessionSecret:        strings.TrimSpace(os.Getenv("APP_HEALTH_SESSION_SECRET")),
+		CookieSecure:         getEnvBool("APP_HEALTH_COOKIE_SECURE", false),
+		SessionTTLHours:      getEnvInt("APP_HEALTH_SESSION_TTL_HOURS", 168),
 	}
 }
 
@@ -59,6 +69,11 @@ func (c Config) LogValue() slog.Value {
 		slog.Int("alertTimeoutSeconds", c.AlertTimeoutSeconds),
 		slog.Int("eventRetentionDays", c.EventRetentionDays),
 		slog.Bool("retentionDryRun", c.RetentionDryRun),
+		slog.String("adminEmail", c.AdminEmail),
+		slog.Bool("adminPasswordConfigured", c.AdminPasswordHash != ""),
+		slog.Bool("sessionSecretConfigured", c.SessionSecret != ""),
+		slog.Bool("cookieSecure", c.CookieSecure),
+		slog.Int("sessionTTLHours", c.SessionTTLHours),
 	)
 }
 

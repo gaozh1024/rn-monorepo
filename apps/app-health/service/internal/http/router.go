@@ -18,6 +18,7 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 	eventsHandler := handlers.NewEventsHandler(container.Event)
 	issuesHandler := handlers.NewIssuesHandler(container.Issue)
 	statsHandler := handlers.NewStatsHandler(container.Stats)
+	authHandler := handlers.NewAuthHandler(container.Auth, container.Session, cfg.CookieSecure)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -45,12 +46,15 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 	})
 
 	requireIngest := middleware.RequireBearer(cfg.IngestToken)
-	requireAdmin := middleware.RequireBearer(cfg.AdminToken)
+	requireAdmin := middleware.RequireAdmin(cfg.AdminToken, container.Session)
 
 	ingestPipeline := middleware.MaxBodyBytes(cfg.MaxBodyBytes)(ingestHandler)
 	ingestPipeline = middleware.RateLimit(cfg.IngestRateLimitRPS, cfg.IngestRateLimitBurst)(ingestPipeline)
 
 	mux.Handle("POST /api/app-health/events", requireIngest(ingestPipeline))
+	mux.HandleFunc("POST /api/app-health/auth/login", authHandler.Login)
+	mux.HandleFunc("POST /api/app-health/auth/logout", authHandler.Logout)
+	mux.Handle("GET /api/app-health/auth/me", requireAdmin(http.HandlerFunc(authHandler.Me)))
 	mux.Handle("GET /api/app-health/events", requireAdmin(http.HandlerFunc(eventsHandler.List)))
 	mux.Handle("GET /api/app-health/events/{id}", requireAdmin(http.HandlerFunc(eventsHandler.Get)))
 	mux.Handle("GET /api/app-health/issues", requireAdmin(http.HandlerFunc(issuesHandler.List)))

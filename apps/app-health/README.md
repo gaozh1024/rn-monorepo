@@ -43,13 +43,18 @@ apps/app-health/
 | `APP_HEALTH_ALERT_TIMEOUT_SECONDS`   | `5`                     | Webhook request timeout in seconds.                                                       |
 | `APP_HEALTH_EVENT_RETENTION_DAYS`    | `30`                    | Number of days to retain historical events for the retention runner.                      |
 | `APP_HEALTH_RETENTION_DRY_RUN`       | `true`                  | Default dry-run mode used by `app-health-retention env`.                                  |
+| `APP_HEALTH_ADMIN_EMAIL`             | `admin@example.com`     | Owner admin email used by password login.                                                 |
+| `APP_HEALTH_ADMIN_PASSWORD_HASH`     | empty                   | Bcrypt hash for the owner admin password. Empty disables password login.                  |
+| `APP_HEALTH_SESSION_SECRET`          | empty                   | HMAC session-cookie secret. Must be at least 32 characters.                               |
+| `APP_HEALTH_COOKIE_SECURE`           | `false`                 | Set `true` when serving over HTTPS so the admin cookie is marked Secure.                  |
+| `APP_HEALTH_SESSION_TTL_HOURS`       | `168`                   | Admin session lifetime in hours.                                                          |
 
 ### Admin
 
-| Variable                       | Default                 | Description                                    |
-| ------------------------------ | ----------------------- | ---------------------------------------------- |
-| `VITE_APP_HEALTH_API_BASE_URL` | `http://localhost:8080` | Go service API base URL.                       |
-| `VITE_APP_HEALTH_ADMIN_TOKEN`  | `admin_dev`             | Admin bearer token used by the local admin UI. |
+| Variable                       | Default                 | Description                                                             |
+| ------------------------------ | ----------------------- | ----------------------------------------------------------------------- |
+| `VITE_APP_HEALTH_API_BASE_URL` | `http://localhost:8080` | Go service API base URL.                                                |
+| `VITE_APP_HEALTH_ADMIN_TOKEN`  | empty                   | Optional legacy bearer token fallback. Leave empty to use cookie login. |
 
 ## Local service: in-memory mode
 
@@ -59,10 +64,14 @@ Useful for fast API checks without PostgreSQL. Data is lost on restart.
 cd apps/app-health/service
 go test ./...
 go build -o bin/app-health-service ./cmd/app-health-service
+go run ./cmd/app-health-password 'replace_me_password'
 
 APP_HEALTH_ADDR=:8080 \
 APP_HEALTH_INGEST_TOKEN=ingest_dev \
 APP_HEALTH_ADMIN_TOKEN=admin_dev \
+APP_HEALTH_ADMIN_EMAIL=admin@example.com \
+APP_HEALTH_ADMIN_PASSWORD_HASH='replace_with_bcrypt_hash' \
+APP_HEALTH_SESSION_SECRET='replace_with_at_least_32_random_chars' \
 ./bin/app-health-service
 ```
 
@@ -90,6 +99,9 @@ APP_HEALTH_DATABASE_URL='postgres://postgres:postgres@localhost:15432/app_health
 APP_HEALTH_ADDR=:8080 \
 APP_HEALTH_INGEST_TOKEN=ingest_dev \
 APP_HEALTH_ADMIN_TOKEN=admin_dev \
+APP_HEALTH_ADMIN_EMAIL=admin@example.com \
+APP_HEALTH_ADMIN_PASSWORD_HASH='replace_with_bcrypt_hash' \
+APP_HEALTH_SESSION_SECRET='replace_with_at_least_32_random_chars' \
 go run ./cmd/app-health-service
 ```
 
@@ -99,6 +111,21 @@ Health check:
 curl http://localhost:8080/healthz
 curl http://localhost:8080/readyz
 ```
+
+Admin login smoke test:
+
+```bash
+curl -i -X POST http://localhost:8080/api/app-health/auth/login \
+  -H 'content-type: application/json' \
+  --data '{"email":"admin@example.com","password":"replace_me_password"}'
+```
+
+Auth notes:
+
+- Password login uses `APP_HEALTH_ADMIN_EMAIL` + bcrypt `APP_HEALTH_ADMIN_PASSWORD_HASH`. Generate a hash with `go run ./cmd/app-health-password '<password>'`.
+- Session cookies are signed with `APP_HEALTH_SESSION_SECRET`; production should use a random secret of at least 32 characters.
+- The old `APP_HEALTH_ADMIN_TOKEN` bearer mode remains as a compatibility fallback for scripts and private deployments, but the admin UI now prefers HttpOnly cookie login.
+- Set `APP_HEALTH_COOKIE_SECURE=true` behind HTTPS. Keep it `false` for plain `http://localhost` development.
 
 Ingest example:
 
@@ -189,7 +216,6 @@ Query notes:
 cd apps/app-health/admin
 pnpm typecheck
 VITE_APP_HEALTH_API_BASE_URL=http://localhost:8080 \
-VITE_APP_HEALTH_ADMIN_TOKEN=admin_dev \
 pnpm dev
 ```
 
@@ -239,12 +265,21 @@ Open the admin UI:
 http://localhost:5173
 ```
 
+Docker development credentials:
+
+```text
+email: admin@example.com
+password: admin_dev
+```
+
+The Docker password is only for local development. Replace the bcrypt hash and session secret before exposing the service.
+
 Docker notes:
 
 - `migrate` is intentionally explicit. Do not auto-run migrations from the service container in production.
 - `retention` is also explicit and lives under the `tools` profile. Run `dry-run` before `run`.
-- `VITE_APP_HEALTH_ADMIN_TOKEN` is compiled into the static admin bundle. This is acceptable for local/internal trials only; put production admin behind a private network, gateway auth, SSO, or RBAC before wider exposure.
-- Replace `ingest_dev` and `admin_dev` with strong runtime secrets outside local development.
+- Leave `VITE_APP_HEALTH_ADMIN_TOKEN` empty for cookie login. If you set it, it is compiled into the static admin bundle and should only be used for local/internal trials.
+- Replace `ingest_dev`, `admin_dev`, the bcrypt hash, and the session secret with strong runtime secrets outside local development.
 - The compose service exposes PostgreSQL on `localhost:15432`, the API on `localhost:8080`, and admin on `localhost:5173`.
 
 Run retention from Docker Compose:
@@ -317,7 +352,7 @@ This runs:
 ## Production shape
 
 - Use PostgreSQL and run `app-health-migrate up` before deploying a new service version.
-- Set strong, different `APP_HEALTH_INGEST_TOKEN` and `APP_HEALTH_ADMIN_TOKEN` values.
+- Set a strong `APP_HEALTH_INGEST_TOKEN`, bcrypt admin password hash, and random `APP_HEALTH_SESSION_SECRET`; keep `APP_HEALTH_ADMIN_TOKEN` only for script/back-compat access if you still need it.
 - Terminate TLS and rate-limit ingestion at your gateway or load balancer. The service also has a per-process ingest token bucket for a first local guard.
 - Keep `APP_HEALTH_MAX_BODY_BYTES` enabled so malformed or oversized ingest requests cannot consume unbounded memory.
 - Configure `APP_HEALTH_ALERT_WEBHOOK_URL` for fatal/error alert routing, and keep the URL in a secret manager.

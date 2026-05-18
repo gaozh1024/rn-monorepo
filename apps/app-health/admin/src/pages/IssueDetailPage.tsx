@@ -30,7 +30,7 @@ export function IssueDetailPage({ issueId, onBack }: { issueId: string; onBack: 
     try {
       setDetail(await getIssue(issueId));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load issue detail.');
+      setError(cause instanceof Error ? cause.message : '问题详情加载失败。');
     } finally {
       setLoading(false);
     }
@@ -49,15 +49,15 @@ export function IssueDetailPage({ issueId, onBack }: { issueId: string; onBack: 
   return (
     <div className="page-stack">
       <Button variant="ghost" onClick={onBack}>
-        ← Back to issues
+        ← 返回问题列表
       </Button>
-      {loading ? <LoadingState label="Loading issue..." /> : null}
+      {loading ? <LoadingState label="正在加载问题详情..." /> : null}
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {!loading && !error && detail ? (
         <>
           <div className="page-heading detail-title">
             <div>
-              <span className="eyebrow">Issue detail</span>
+              <span className="eyebrow">问题详情</span>
               <h2>{detail.issue.title}</h2>
               <p className="muted">{detail.issue.fingerprint}</p>
             </div>
@@ -68,35 +68,35 @@ export function IssueDetailPage({ issueId, onBack }: { issueId: string; onBack: 
           </div>
           <div className="actions">
             <Button variant="ghost" onClick={() => void setStatus('open')}>
-              Open
+              标记未处理
             </Button>
             <Button variant="primary" onClick={() => void setStatus('resolved')}>
-              Resolved
+              标记已解决
             </Button>
             <Button variant="ghost" onClick={() => void setStatus('ignored')}>
-              Ignored
+              标记忽略
             </Button>
           </div>
           <div className="stats-grid stats-grid-compact">
-            <MetricCard label="Events" value={detail.issue.eventCount} />
-            <MetricCard label="Users" value={detail.issue.affectedUserCount} tone="warning" />
-            <MetricCard label="Platform" value={detail.issue.lastPlatform ?? '-'} />
-            <MetricCard label="Version" value={detail.issue.lastAppVersion ?? '-'} />
+            <MetricCard label="事件数" value={detail.issue.eventCount} />
+            <MetricCard label="受影响用户" value={detail.issue.affectedUserCount} tone="warning" />
+            <MetricCard label="平台" value={detail.issue.lastPlatform ?? '-'} />
+            <MetricCard label="版本" value={detail.issue.lastAppVersion ?? '-'} />
           </div>
           <Card>
-            <CardHeader title="Stack trace" />
+            <CardHeader title="堆栈信息" />
             <StackTraceView stack={detail.sampleEvent?.error?.stack} />
           </Card>
           <Card>
-            <CardHeader title="Breadcrumbs" />
+            <CardHeader title="面包屑" />
             <BreadcrumbTimeline breadcrumbs={detail.sampleEvent?.breadcrumbs} />
           </Card>
           <Card>
-            <CardHeader title="Recent events" />
+            <CardHeader title="最近事件" />
             <JsonViewer value={detail.recentEvents} />
           </Card>
           <Card>
-            <CardHeader title="Sample event" />
+            <CardHeader title="样本事件" />
             <JsonViewer value={detail.sampleEvent ?? {}} />
           </Card>
         </>

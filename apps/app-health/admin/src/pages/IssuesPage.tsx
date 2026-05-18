@@ -61,7 +61,7 @@ export function IssuesPage({
         })
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load issues.');
+      setError(cause instanceof Error ? cause.message : '问题列表加载失败。');
     } finally {
       setLoading(false);
     }
@@ -98,19 +98,16 @@ export function IssuesPage({
     <div className="page-stack">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Issue triage</span>
-          <h1>Issues</h1>
-          <p>Grouped crashes and errors for {filters.appId || 'all applications'}.</p>
+          <span className="eyebrow">问题处理</span>
+          <h1>问题</h1>
+          <p>{filters.appId || '全部应用'} 的崩溃和错误聚合。</p>
         </div>
-        <Button onClick={() => void load()}>Refresh</Button>
+        <Button onClick={() => void load()}>刷新</Button>
       </div>
 
       <Card>
-        <CardHeader
-          title="Filters"
-          description="Narrow issues by status, severity, version, platform, or message."
-        />
-        <div className="filters" aria-label="Issue filters">
+        <CardHeader title="筛选" description="按状态、级别、版本、平台、指纹或错误消息缩小范围。" />
+        <div className="filters" aria-label="问题筛选">
           <label>
             App ID
             <input
@@ -120,34 +117,34 @@ export function IssuesPage({
             />
           </label>
           <label>
-            Status
+            状态
             <select
               value={filters.status}
               onChange={event =>
                 updateFilter('status', event.target.value as IssueFilters['status'])
               }
             >
-              <option value="">All</option>
-              <option value="open">Open</option>
-              <option value="resolved">Resolved</option>
-              <option value="ignored">Ignored</option>
+              <option value="">全部</option>
+              <option value="open">未处理</option>
+              <option value="resolved">已解决</option>
+              <option value="ignored">已忽略</option>
             </select>
           </label>
           <label>
-            Level
+            级别
             <select
               value={filters.level}
               onChange={event => updateFilter('level', event.target.value)}
             >
-              <option value="">All</option>
-              <option value="fatal">Fatal</option>
-              <option value="error">Error</option>
-              <option value="warning">Warning</option>
-              <option value="info">Info</option>
+              <option value="">全部</option>
+              <option value="fatal">致命</option>
+              <option value="error">错误</option>
+              <option value="warning">警告</option>
+              <option value="info">信息</option>
             </select>
           </label>
           <label>
-            Platform
+            平台
             <input
               value={filters.platform}
               onChange={event => updateFilter('platform', event.target.value)}
@@ -155,7 +152,7 @@ export function IssuesPage({
             />
           </label>
           <label>
-            From
+            开始时间
             <input
               type="datetime-local"
               value={filters.from}
@@ -163,7 +160,7 @@ export function IssuesPage({
             />
           </label>
           <label>
-            To
+            结束时间
             <input
               type="datetime-local"
               value={filters.to}
@@ -171,7 +168,7 @@ export function IssuesPage({
             />
           </label>
           <label>
-            App Version
+            应用版本
             <input
               value={filters.appVersion}
               onChange={event => updateFilter('appVersion', event.target.value)}
@@ -179,7 +176,7 @@ export function IssuesPage({
             />
           </label>
           <label>
-            Build
+            构建号
             <input
               value={filters.buildNumber}
               onChange={event => updateFilter('buildNumber', event.target.value)}
@@ -187,7 +184,7 @@ export function IssuesPage({
             />
           </label>
           <label>
-            Fingerprint
+            指纹
             <input
               value={filters.fingerprint}
               onChange={event => updateFilter('fingerprint', event.target.value)}
@@ -195,7 +192,7 @@ export function IssuesPage({
             />
           </label>
           <label>
-            Message
+            消息
             <input
               value={filters.message}
               onChange={event => updateFilter('message', event.target.value)}
@@ -203,19 +200,19 @@ export function IssuesPage({
             />
           </label>
           <Button variant="ghost" onClick={resetFilters}>
-            Reset
+            重置
           </Button>
         </div>
       </Card>
-      {loading ? <LoadingState label="Loading issues..." /> : null}
+      {loading ? <LoadingState label="正在加载问题..." /> : null}
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {!loading && !error && !issues.length ? (
-        <EmptyState label="No issues match the current filters." />
+        <EmptyState label="当前筛选条件下暂无问题。" />
       ) : null}
       {!loading && !error && issues.length ? (
         <>
           <p className="muted">
-            Showing {issues.length} of {response?.total ?? issues.length} issues.
+            当前显示 {issues.length} / {response?.total ?? issues.length} 个问题。
           </p>
           <Pagination
             page={page}
@@ -228,13 +225,13 @@ export function IssuesPage({
             <table>
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Level</th>
-                  <th>Status</th>
-                  <th>Events</th>
-                  <th>Users</th>
-                  <th>Platform</th>
-                  <th>Last Seen</th>
+                  <th>标题</th>
+                  <th>级别</th>
+                  <th>状态</th>
+                  <th>事件数</th>
+                  <th>用户数</th>
+                  <th>平台</th>
+                  <th>最近出现</th>
                 </tr>
               </thead>
               <tbody>

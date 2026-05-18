@@ -7,7 +7,7 @@ export type QueryValue = boolean | number | string | null | undefined;
 export type QueryParams = Record<string, QueryValue>;
 
 export const apiBaseUrl = import.meta.env.VITE_APP_HEALTH_API_BASE_URL || 'http://localhost:8080';
-const defaultAdminToken = import.meta.env.VITE_APP_HEALTH_ADMIN_TOKEN || 'admin_dev';
+const defaultAdminToken = import.meta.env.VITE_APP_HEALTH_ADMIN_TOKEN || '';
 
 export function buildQuery(params: object = {}) {
   const search = new URLSearchParams();
@@ -24,11 +24,9 @@ export function buildQuery(params: object = {}) {
 export async function apiGet<T>(path: string, options: ApiClientOptions = {}): Promise<T> {
   const response = await fetch(`${options.baseUrl ?? apiBaseUrl}${path}`, {
     credentials: 'include',
-    headers: {
-      authorization: `Bearer ${options.adminToken ?? defaultAdminToken}`,
-    },
+    headers: adminHeaders(options),
   });
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  if (!response.ok) throw new Error(`请求失败：${response.status}`);
   return response.json() as Promise<T>;
 }
 
@@ -41,11 +39,16 @@ export async function apiPatch<T>(
     credentials: 'include',
     method: 'PATCH',
     headers: {
-      authorization: `Bearer ${options.adminToken ?? defaultAdminToken}`,
+      ...adminHeaders(options),
       'content-type': 'application/json',
     },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  if (!response.ok) throw new Error(`请求失败：${response.status}`);
   return response.json() as Promise<T>;
+}
+
+function adminHeaders(options: ApiClientOptions) {
+  const token = options.adminToken ?? defaultAdminToken;
+  return token ? { authorization: `Bearer ${token}` } : undefined;
 }

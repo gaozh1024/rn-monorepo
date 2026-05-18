@@ -14,13 +14,15 @@ import (
 )
 
 type Container struct {
-	Pool   *pgxpool.Pool
-	Events repository.EventRepository
-	Issues repository.IssueRepository
-	Ingest *appsvc.IngestService
-	Event  *appsvc.EventService
-	Issue  *appsvc.IssueService
-	Stats  *appsvc.StatsService
+	Pool    *pgxpool.Pool
+	Events  repository.EventRepository
+	Issues  repository.IssueRepository
+	Ingest  *appsvc.IngestService
+	Event   *appsvc.EventService
+	Issue   *appsvc.IssueService
+	Stats   *appsvc.StatsService
+	Auth    *appsvc.AuthService
+	Session *appsvc.SessionService
 }
 
 func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Container, error) {
@@ -59,13 +61,15 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 	}
 
 	return &Container{
-		Pool:   pool,
-		Events: events,
-		Issues: issues,
-		Ingest: appsvc.NewIngestService(events, issues, notifier),
-		Event:  appsvc.NewEventService(events),
-		Issue:  appsvc.NewIssueService(issues, events),
-		Stats:  appsvc.NewStatsService(events, issues),
+		Pool:    pool,
+		Events:  events,
+		Issues:  issues,
+		Ingest:  appsvc.NewIngestService(events, issues, notifier),
+		Event:   appsvc.NewEventService(events),
+		Issue:   appsvc.NewIssueService(issues, events),
+		Stats:   appsvc.NewStatsService(events, issues),
+		Auth:    appsvc.NewAuthService(cfg.AdminEmail, cfg.AdminPasswordHash),
+		Session: appsvc.NewSessionService(cfg.SessionSecret, time.Duration(cfg.SessionTTLHours)*time.Hour),
 	}, nil
 }
 

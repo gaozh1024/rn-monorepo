@@ -11,6 +11,7 @@ func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
 			origin := r.Header.Get("origin")
 			if origin != "" && (slices.Contains(allowedOrigins, "*") || slices.Contains(allowedOrigins, origin)) {
 				w.Header().Set("access-control-allow-origin", origin)
+				w.Header().Set("access-control-allow-credentials", "true")
 				w.Header().Set("vary", "origin")
 			}
 			w.Header().Set("access-control-allow-methods", "GET,POST,PATCH,OPTIONS")

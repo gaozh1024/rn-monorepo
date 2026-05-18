@@ -80,7 +80,7 @@ export function EventsPage({
         })
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to load events.');
+      setError(cause instanceof Error ? cause.message : '事件列表加载失败。');
     } finally {
       setLoading(false);
     }
@@ -123,19 +123,16 @@ export function EventsPage({
     <div className="page-stack">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Raw telemetry</span>
-          <h1>Events</h1>
-          <p>Inspect raw app health events, sessions, users, breadcrumbs, and payloads.</p>
+          <span className="eyebrow">原始遥测</span>
+          <h1>事件</h1>
+          <p>查看原始健康事件、会话、用户、面包屑和完整 payload。</p>
         </div>
-        <Button onClick={() => void load()}>Refresh</Button>
+        <Button onClick={() => void load()}>刷新</Button>
       </div>
 
       <Card>
-        <CardHeader
-          title="Filters"
-          description="Search by event type, severity, app version, session, fingerprint, or message."
-        />
-        <div className="filters" aria-label="Event filters">
+        <CardHeader title="筛选" description="按事件类型、级别、版本、会话、指纹或消息搜索。" />
+        <div className="filters" aria-label="事件筛选">
           <label>
             App ID
             <input
@@ -145,7 +142,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            Issue ID
+            问题 ID
             <input
               value={filters.issueId}
               onChange={event => updateFilter('issueId', event.target.value)}
@@ -153,7 +150,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            User ID
+            用户 ID
             <input
               value={filters.userId}
               onChange={event => updateFilter('userId', event.target.value)}
@@ -161,25 +158,25 @@ export function EventsPage({
             />
           </label>
           <label>
-            Level
+            级别
             <select
               value={filters.level}
               onChange={event => updateFilter('level', event.target.value)}
             >
-              <option value="">All</option>
-              <option value="fatal">Fatal</option>
-              <option value="error">Error</option>
-              <option value="warning">Warning</option>
-              <option value="info">Info</option>
+              <option value="">全部</option>
+              <option value="fatal">致命</option>
+              <option value="error">错误</option>
+              <option value="warning">警告</option>
+              <option value="info">信息</option>
             </select>
           </label>
           <label>
-            Type
+            类型
             <select
               value={filters.type}
               onChange={event => updateFilter('type', event.target.value)}
             >
-              <option value="">All</option>
+              <option value="">全部</option>
               {appHealthEventTypes.map(type => (
                 <option key={type} value={type}>
                   {type}
@@ -188,7 +185,7 @@ export function EventsPage({
             </select>
           </label>
           <label>
-            From
+            开始时间
             <input
               type="datetime-local"
               value={filters.from}
@@ -196,7 +193,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            To
+            结束时间
             <input
               type="datetime-local"
               value={filters.to}
@@ -204,7 +201,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            App Version
+            应用版本
             <input
               value={filters.appVersion}
               onChange={event => updateFilter('appVersion', event.target.value)}
@@ -212,7 +209,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            Build
+            构建号
             <input
               value={filters.buildNumber}
               onChange={event => updateFilter('buildNumber', event.target.value)}
@@ -220,7 +217,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            Environment
+            环境
             <input
               value={filters.environment}
               onChange={event => updateFilter('environment', event.target.value)}
@@ -228,7 +225,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            Platform
+            平台
             <input
               value={filters.platform}
               onChange={event => updateFilter('platform', event.target.value)}
@@ -236,7 +233,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            OS Version
+            系统版本
             <input
               value={filters.osVersion}
               onChange={event => updateFilter('osVersion', event.target.value)}
@@ -244,7 +241,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            Session ID
+            会话 ID
             <input
               value={filters.sessionId}
               onChange={event => updateFilter('sessionId', event.target.value)}
@@ -252,7 +249,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            Fingerprint
+            指纹
             <input
               value={filters.fingerprint}
               onChange={event => updateFilter('fingerprint', event.target.value)}
@@ -260,7 +257,7 @@ export function EventsPage({
             />
           </label>
           <label>
-            Message
+            消息
             <input
               value={filters.message}
               onChange={event => updateFilter('message', event.target.value)}
@@ -268,19 +265,19 @@ export function EventsPage({
             />
           </label>
           <Button variant="ghost" onClick={resetFilters}>
-            Reset
+            重置
           </Button>
         </div>
       </Card>
-      {loading ? <LoadingState label="Loading events..." /> : null}
+      {loading ? <LoadingState label="正在加载事件..." /> : null}
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {!loading && !error && !events.length ? (
-        <EmptyState label="No events match the current filters." />
+        <EmptyState label="当前筛选条件下暂无事件。" />
       ) : null}
       {!loading && !error && events.length ? (
         <>
           <p className="muted">
-            Showing {events.length} of {response?.total ?? events.length} events.
+            当前显示 {events.length} / {response?.total ?? events.length} 条事件。
           </p>
           <Pagination
             page={page}
@@ -293,12 +290,12 @@ export function EventsPage({
             <table>
               <thead>
                 <tr>
-                  <th>Type</th>
-                  <th>Level</th>
-                  <th>App</th>
-                  <th>User</th>
-                  <th>Message</th>
-                  <th>Created</th>
+                  <th>类型</th>
+                  <th>级别</th>
+                  <th>应用</th>
+                  <th>用户</th>
+                  <th>消息</th>
+                  <th>创建时间</th>
                 </tr>
               </thead>
               <tbody>
@@ -330,7 +327,7 @@ export function EventsPage({
       ) : null}
       {selected ? (
         <Card>
-          <CardHeader title="Selected event payload" description={selected.id} />
+          <CardHeader title="选中事件 Payload" description={selected.id} />
           <JsonViewer value={selected} />
         </Card>
       ) : null}

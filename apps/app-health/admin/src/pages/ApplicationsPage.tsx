@@ -8,32 +8,32 @@ export function ApplicationsPage({ appId }: { appId: string }) {
     <div className="page-stack">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Application registry</span>
-          <h1>Applications</h1>
-          <p>Create apps, generate ingest tokens, and copy SDK setup snippets.</p>
+          <span className="eyebrow">应用注册表</span>
+          <h1>应用管理</h1>
+          <p>创建应用、生成上报 Token，并复制 rn-health SDK 接入片段。</p>
         </div>
-        <Button>Create App</Button>
+        <Button>创建应用</Button>
       </div>
 
       <div className="stats-grid">
-        <MetricCard label="Registered apps" value="Coming soon" tone="info" />
-        <MetricCard label="Active ingest tokens" value="Soon" />
-        <MetricCard label="Last seen app" value={currentAppId} tone="success" />
-        <MetricCard label="Setup status" value="Draft" tone="warning" />
+        <MetricCard label="已注册应用" value="即将支持" tone="info" />
+        <MetricCard label="有效 Token" value="即将支持" />
+        <MetricCard label="最近应用" value={currentAppId} tone="success" />
+        <MetricCard label="接入状态" value="规划中" tone="warning" />
       </div>
 
       <Card>
         <CardHeader
-          title="App registry is the next backend milestone"
-          description="Phase 1 ships the admin shell. Phase 3 will add app creation, token hashing, and SDK setup generation."
+          title="应用注册表是下一阶段后端里程碑"
+          description="当前阶段先交付管理员登录和中文控制台；后续会加入应用创建、Token 哈希存储和 SDK 接入向导。"
         />
         <div className="setup-preview">
           <div>
-            <h3>Planned app model</h3>
+            <h3>计划中的应用模型</h3>
             <ul>
-              <li>App name, slug, environments, platform</li>
-              <li>Per-app ingest tokens with hash-only storage</li>
-              <li>SDK setup snippet and curl smoke command</li>
+              <li>应用名称、应用 ID、环境和平台</li>
+              <li>应用级上报 Token，仅保存哈希</li>
+              <li>SDK 初始化片段和 curl 冒烟命令</li>
             </ul>
           </div>
           <pre>{`<AppHealthProvider

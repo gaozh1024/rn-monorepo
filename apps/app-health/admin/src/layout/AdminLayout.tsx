@@ -8,7 +8,9 @@ interface AdminLayoutProps {
   appId: string;
   environment: string;
   timeRange: string;
+  userEmail?: string;
   children: ReactNode;
+  onLogout?: () => void;
   onNavigate: (page: Page) => void;
   onAppIdChange: (value: string) => void;
   onEnvironmentChange: (value: string) => void;
@@ -20,7 +22,9 @@ export function AdminLayout({
   appId,
   environment,
   timeRange,
+  userEmail,
   children,
+  onLogout,
   onNavigate,
   onAppIdChange,
   onEnvironmentChange,
@@ -34,6 +38,8 @@ export function AdminLayout({
           appId={appId}
           environment={environment}
           timeRange={timeRange}
+          userEmail={userEmail}
+          onLogout={onLogout}
           onAppIdChange={onAppIdChange}
           onEnvironmentChange={onEnvironmentChange}
           onTimeRangeChange={onTimeRangeChange}

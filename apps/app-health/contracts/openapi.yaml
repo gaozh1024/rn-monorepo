@@ -36,6 +36,73 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReadyzResponse'
+  /api/app-health/auth/login:
+    post:
+      summary: Login to the admin console with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Logged in and session cookie set
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserResponse'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Admin auth or session is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/auth/logout:
+    post:
+      summary: Logout from the admin console and clear the session cookie
+      security: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+  /api/app-health/auth/me:
+    get:
+      summary: Get the current admin user from a session cookie or bearer token
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current admin user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserResponse'
+        '401':
+          description: Missing or invalid admin session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/app-health/events:
     post:
       summary: Ingest app health events from rn-health
@@ -203,6 +270,10 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: app_health_session
   parameters:
     AppId:
       name: appId
@@ -325,6 +396,34 @@ components:
       properties:
         error:
           type: string
+    AdminUser:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          example: owner
+    AuthUserResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/AdminUser'
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
     IngestEventsRequest:
       type: object
       required: [events]

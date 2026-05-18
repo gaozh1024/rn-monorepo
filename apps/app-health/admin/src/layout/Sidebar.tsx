@@ -7,12 +7,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'applications', label: 'Applications', badge: 'Soon' },
-  { id: 'issues', label: 'Issues' },
-  { id: 'events', label: 'Events' },
-  { id: 'alerts', label: 'Alerts', badge: 'Beta' },
-  { id: 'settings', label: 'Settings' },
+  { id: 'overview', label: '总览' },
+  { id: 'applications', label: '应用管理', badge: '即将支持' },
+  { id: 'issues', label: '问题' },
+  { id: 'events', label: '事件' },
+  { id: 'alerts', label: '告警', badge: '测试版' },
+  { id: 'settings', label: '设置' },
 ];
 
 export function Sidebar({
@@ -28,10 +28,10 @@ export function Sidebar({
         <div className="brand-mark">AH</div>
         <div>
           <strong>App Health</strong>
-          <span>Admin Console</span>
+          <span>管理后台</span>
         </div>
       </div>
-      <nav className="sidebar-nav" aria-label="Primary navigation">
+      <nav className="sidebar-nav" aria-label="主导航">
         {navItems.map(item => (
           <button
             key={item.id}
@@ -44,7 +44,7 @@ export function Sidebar({
         ))}
       </nav>
       <div className="sidebar-footer">
-        <span>Self-hosted monitor</span>
+        <span>自托管监控</span>
         <strong>rn-health</strong>
       </div>
     </aside>

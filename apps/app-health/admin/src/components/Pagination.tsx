@@ -18,18 +18,18 @@ export function Pagination({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="pagination" aria-label="Pagination">
+    <div className="pagination" aria-label="分页">
       <button disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
-        Previous
+        上一页
       </button>
       <span>
-        Page {page} of {totalPages}
+        第 {page} / {totalPages} 页
       </span>
       <button disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
-        Next
+        下一页
       </button>
       <label>
-        Page size
+        每页数量
         <select value={pageSize} onChange={event => onPageSizeChange(Number(event.target.value))}>
           {pageSizeOptions.map(value => (
             <option key={value} value={value}>

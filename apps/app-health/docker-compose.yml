@@ -63,6 +63,11 @@ services:
       APP_HEALTH_ALERT_MIN_LEVEL: 'fatal'
       APP_HEALTH_ALERT_COOLDOWN_SECONDS: '300'
       APP_HEALTH_ALERT_TIMEOUT_SECONDS: '5'
+      APP_HEALTH_ADMIN_EMAIL: 'admin@example.com'
+      APP_HEALTH_ADMIN_PASSWORD_HASH: '$2a$10$B76xdQ9IRhG8L4LmoGNZFeFR2CsCCXPdXOsh5jqfTSGWc9byFjTjW'
+      APP_HEALTH_SESSION_SECRET: 'development_session_secret_32_chars_minimum'
+      APP_HEALTH_COOKIE_SECURE: 'false'
+      APP_HEALTH_SESSION_TTL_HOURS: '168'
     ports:
       - '8080:8080'
     depends_on:
@@ -79,7 +84,7 @@ services:
       context: ./admin
       args:
         VITE_APP_HEALTH_API_BASE_URL: 'http://localhost:8080'
-        VITE_APP_HEALTH_ADMIN_TOKEN: 'admin_dev'
+        VITE_APP_HEALTH_ADMIN_TOKEN: ''
     ports:
       - '5173:80'
     depends_on:

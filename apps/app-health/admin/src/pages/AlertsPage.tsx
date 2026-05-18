@@ -7,42 +7,42 @@ export function AlertsPage({ appId }: { appId: string }) {
     <div className="page-stack">
       <div className="page-heading">
         <div>
-          <span className="eyebrow">Alert routing</span>
-          <h1>Alerts</h1>
-          <p>Manage fatal/error webhook routing and delivery health.</p>
+          <span className="eyebrow">告警路由</span>
+          <h1>告警</h1>
+          <p>管理致命错误/错误级别的 Webhook 路由和投递健康状态。</p>
         </div>
-        <Button>New Rule</Button>
+        <Button>新建规则</Button>
       </div>
 
       <div className="stats-grid">
-        <MetricCard label="Webhook mode" value="Env MVP" tone="info" />
-        <MetricCard label="Minimum level" value="fatal" tone="danger" />
-        <MetricCard label="Cooldown" value="300s" />
-        <MetricCard label="Selected app" value={appId || 'All apps'} />
+        <MetricCard label="Webhook 模式" value="环境变量 MVP" tone="info" />
+        <MetricCard label="最低级别" value="fatal" tone="danger" />
+        <MetricCard label="冷却时间" value="300 秒" />
+        <MetricCard label="当前应用" value={appId || '全部应用'} />
       </div>
 
       <Card>
         <CardHeader
-          title="Alert rule management is planned for Phase 5"
-          description="The service already supports a best-effort webhook through APP_HEALTH_ALERT_WEBHOOK_URL. The console will add editable rules and delivery history."
+          title="告警规则管理将在后续阶段完善"
+          description="Service 已支持通过 APP_HEALTH_ALERT_WEBHOOK_URL 进行尽力投递；控制台后续会加入可编辑规则和投递历史。"
         />
         <div className="table-card">
           <table>
             <thead>
               <tr>
-                <th>Rule</th>
-                <th>Level</th>
-                <th>Target</th>
-                <th>Status</th>
+                <th>规则</th>
+                <th>级别</th>
+                <th>目标</th>
+                <th>状态</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Environment webhook</td>
+                <td>环境变量 Webhook</td>
                 <td>fatal</td>
                 <td>APP_HEALTH_ALERT_WEBHOOK_URL</td>
                 <td>
-                  <span className="badge status-open">configured by env</span>
+                  <span className="badge status-open">环境变量配置</span>
                 </td>
               </tr>
             </tbody>
