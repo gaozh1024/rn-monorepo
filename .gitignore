@@ -154,3 +154,7 @@ web-build/
 
 # HarmonyOS / Hvigor
 .hvigor/
+
+# App Health local Docker deploy artifacts
+apps/app-health/deploy-service/.env
+apps/app-health/deploy-service/out/

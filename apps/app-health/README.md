@@ -219,6 +219,19 @@ VITE_APP_HEALTH_API_BASE_URL=http://localhost:8080 \
 pnpm dev
 ```
 
+## Local service-only Docker deploy
+
+If you only need to publish the Go service locally, use the standalone deploy directory:
+
+```bash
+cd apps/app-health/deploy-service
+cp .env.example .env
+./deploy-service.sh
+```
+
+This builds `app-health-service:local` from `apps/app-health/service`, starts `app-health-service-local`, and exposes the API at `http://localhost:8080`.
+The default `.env.example` uses in-memory storage for quick local testing; configure `APP_HEALTH_DATABASE_URL` if you need PostgreSQL persistence.
+
 ## Local full stack with Docker
 
 The Docker workflow starts PostgreSQL, runs migrations explicitly, then serves the Go service and the nginx-hosted admin UI.
