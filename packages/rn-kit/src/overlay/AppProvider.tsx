@@ -18,6 +18,7 @@ import type { LoggerProviderProps } from './logger/types';
 import { LoggerProvider } from './logger/provider';
 import { AppErrorBoundary } from './error-boundary/component';
 import type { AppErrorBoundaryProps } from './error-boundary/types';
+import type { AppHealthReporter } from '@/core/health-reporter';
 import { isDevelopment } from '@/utils';
 
 // ============================================================================
@@ -93,6 +94,8 @@ export interface AppProviderProps extends Omit<NavigationProviderProps, 'childre
   loggerProps?: Omit<LoggerProviderProps, 'children'>;
   /** Error Boundary 配置 */
   errorBoundaryProps?: Omit<AppErrorBoundaryProps, 'children'>;
+  /** App 健康监控桥接器，用于接收 ErrorBoundary 异常和 logger breadcrumbs */
+  healthReporter?: AppHealthReporter;
 }
 
 // ============================================================================
@@ -214,6 +217,7 @@ export function AppProvider({
   motion,
   loggerProps,
   errorBoundaryProps,
+  healthReporter,
   ...navigationProps
 }: AppProviderProps) {
   // 从外到内套娃（外层包裹内层）
@@ -230,13 +234,13 @@ export function AppProvider({
       <OverlayProvider
         loggerProps={
           enableLogger
-            ? { enabled: true, overlayEnabled: true, ...loggerProps }
-            : { enabled: false, overlayEnabled: false, ...loggerProps }
+            ? { enabled: true, overlayEnabled: true, healthReporter, ...loggerProps }
+            : { enabled: false, overlayEnabled: false, healthReporter, ...loggerProps }
         }
         errorBoundaryProps={
           enableErrorBoundary
-            ? { enabled: true, ...errorBoundaryProps }
-            : { enabled: false, ...errorBoundaryProps }
+            ? { enabled: true, healthReporter, ...errorBoundaryProps }
+            : { enabled: false, healthReporter, ...errorBoundaryProps }
         }
       >
         {content}
@@ -245,7 +249,7 @@ export function AppProvider({
   } else {
     if (enableErrorBoundary) {
       content = (
-        <AppErrorBoundary enabled {...errorBoundaryProps}>
+        <AppErrorBoundary enabled healthReporter={healthReporter} {...errorBoundaryProps}>
           {content}
         </AppErrorBoundary>
       );
@@ -253,7 +257,7 @@ export function AppProvider({
 
     if (enableLogger) {
       content = (
-        <LoggerProvider enabled overlayEnabled {...loggerProps}>
+        <LoggerProvider enabled overlayEnabled healthReporter={healthReporter} {...loggerProps}>
           {content}
         </LoggerProvider>
       );

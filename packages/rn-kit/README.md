@@ -785,7 +785,35 @@ Web 与 Native 的日志浮动按钮都支持拖动、释放后自动吸附左�
 
 当错误边界与 logger 同时开启时，组件渲染异常会自动写入 `react` 命名空间日志，便于在控制台和 `LogOverlay` 中回看。
 
-##### 3. 单独使用 `OverlayProvider` / `LoggerProvider`
+##### 3. 接入生产错误监控 healthReporter
+
+`rn-kit` 不直接依赖任何监控厂商，也不强依赖 `@gaozh1024/rn-health`。如果 App 需要线上错误监控，可以把实现了 `AppHealthReporter` 协议的对象传给 `AppProvider`：
+
+```tsx
+import { AppProvider } from '@gaozh1024/rn-kit';
+import { AppHealthProvider } from '@gaozh1024/rn-health';
+
+export default function App() {
+  return (
+    <AppHealthProvider endpoint="https://collector.example.com/app-health/events">
+      {health => (
+        <AppProvider enableErrorBoundary enableLogger healthReporter={health}>
+          <RootNavigator />
+        </AppProvider>
+      )}
+    </AppHealthProvider>
+  );
+}
+```
+
+接入后：
+
+- `AppErrorBoundary` 捕获 React 渲染异常时会调用 `healthReporter.captureException`
+- `LoggerProvider` 写入日志时会调用 `healthReporter.addBreadcrumb`
+- 未传 `healthReporter` 时行为保持不变
+- `rn-kit` 只负责桥接，不负责队列、上传、脱敏或 Native crash 捕获
+
+##### 4. 单独使用 `OverlayProvider` / `LoggerProvider`
 
 如果你不是通过 `AppProvider` 接入，而是自己手动包 Provider，需要注意：
 
@@ -820,7 +848,7 @@ import { AppErrorBoundary, LoggerProvider } from '@gaozh1024/rn-kit';
 </LoggerProvider>;
 ```
 
-##### 4. 生产 telemetry transport
+##### 5. 生产 telemetry transport
 
 如果要接入线上监控，请优先使用 `createTelemetryClient` 包一层业务 transport，而不是在组件里直接调用厂商 SDK。下面示例只演示接口形态，不绑定具体服务：
 

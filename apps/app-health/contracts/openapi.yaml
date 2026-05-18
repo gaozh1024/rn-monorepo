@@ -1,0 +1,659 @@
+openapi: 3.0.3
+info:
+  title: App Health API
+  version: 0.2.0
+  description: API contract for rn-health ingestion and App Health admin queries.
+servers:
+  - url: http://localhost:8080
+security:
+  - bearerAuth: []
+paths:
+  /healthz:
+    get:
+      summary: Service health check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthzResponse'
+  /readyz:
+    get:
+      summary: Service readiness check
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyzResponse'
+        '503':
+          description: Service dependency is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyzResponse'
+  /api/app-health/auth/login:
+    post:
+      summary: Login to the admin console with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Logged in and session cookie set
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserResponse'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Admin auth or session is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/auth/logout:
+    post:
+      summary: Logout from the admin console and clear the session cookie
+      security: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+  /api/app-health/auth/me:
+    get:
+      summary: Get the current admin user from a session cookie or bearer token
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current admin user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserResponse'
+        '401':
+          description: Missing or invalid admin session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/events:
+    post:
+      summary: Ingest app health events from rn-health
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestEventsRequest'
+      responses:
+        '200':
+          description: Events accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestEventsResponse'
+        '413':
+          description: Request body is too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Ingest rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List raw app health events for admin UI
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppId'
+        - $ref: '#/components/parameters/IssueId'
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Level'
+        - $ref: '#/components/parameters/Type'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/AppVersion'
+        - $ref: '#/components/parameters/BuildNumber'
+        - $ref: '#/components/parameters/Environment'
+        - $ref: '#/components/parameters/Platform'
+        - $ref: '#/components/parameters/OSVersion'
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/Fingerprint'
+        - $ref: '#/components/parameters/Message'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Event list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+  /api/app-health/events/{id}:
+    get:
+      summary: Get raw event details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDetailResponse'
+  /api/app-health/issues:
+    get:
+      summary: List aggregated issues for admin UI
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, resolved, ignored]
+        - $ref: '#/components/parameters/Level'
+        - $ref: '#/components/parameters/Platform'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/AppVersion'
+        - $ref: '#/components/parameters/BuildNumber'
+        - $ref: '#/components/parameters/Fingerprint'
+        - $ref: '#/components/parameters/Message'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Issue list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueListResponse'
+  /api/app-health/issues/{id}:
+    get:
+      summary: Get issue details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Issue details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueDetailResponse'
+  /api/app-health/issues/{id}/status:
+    patch:
+      summary: Update issue status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueStatusUpdateRequest'
+      responses:
+        '200':
+          description: Updated issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssueResponse'
+  /api/app-health/stats/overview:
+    get:
+      summary: Overview stats for admin dashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppId'
+      responses:
+        '200':
+          description: Overview stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsOverviewResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: app_health_session
+  parameters:
+    AppId:
+      name: appId
+      in: query
+      schema:
+        type: string
+    IssueId:
+      name: issueId
+      in: query
+      schema:
+        type: string
+    UserId:
+      name: userId
+      in: query
+      schema:
+        type: string
+    Level:
+      name: level
+      in: query
+      schema:
+        type: string
+        enum: [info, warning, error, fatal]
+    Type:
+      name: type
+      in: query
+      schema:
+        type: string
+    From:
+      name: from
+      in: query
+      description: Inclusive lower bound for created/last-seen time. RFC3339 format.
+      schema:
+        type: string
+        format: date-time
+    To:
+      name: to
+      in: query
+      description: Inclusive upper bound for created/last-seen time. RFC3339 format.
+      schema:
+        type: string
+        format: date-time
+    AppVersion:
+      name: appVersion
+      in: query
+      schema:
+        type: string
+    BuildNumber:
+      name: buildNumber
+      in: query
+      schema:
+        type: string
+    Environment:
+      name: environment
+      in: query
+      schema:
+        type: string
+    Platform:
+      name: platform
+      in: query
+      schema:
+        type: string
+    OSVersion:
+      name: osVersion
+      in: query
+      schema:
+        type: string
+    SessionId:
+      name: sessionId
+      in: query
+      schema:
+        type: string
+    Fingerprint:
+      name: fingerprint
+      in: query
+      schema:
+        type: string
+    Message:
+      name: message
+      in: query
+      description: Case-insensitive substring search over event error message or issue title.
+      schema:
+        type: string
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  schemas:
+    HealthzResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+    ReadyzResponse:
+      type: object
+      required: [status, databaseConfigured]
+      properties:
+        status:
+          type: string
+          enum: [ok, unavailable]
+        databaseConfigured:
+          type: boolean
+        error:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    AdminUser:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          example: owner
+    AuthUserResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/AdminUser'
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    IngestEventsRequest:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/HealthEvent'
+    IngestEventsResponse:
+      type: object
+      required: [accepted, rejected]
+      properties:
+        accepted:
+          type: integer
+        rejected:
+          type: integer
+        duplicated:
+          type: integer
+    HealthEvent:
+      type: object
+      required: [id, type, level, timestamp, app, device, session]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        level:
+          type: string
+          enum: [info, warning, error, fatal]
+        timestamp:
+          type: integer
+          format: int64
+        app:
+          $ref: '#/components/schemas/AppInfo'
+        device:
+          $ref: '#/components/schemas/DeviceInfo'
+        session:
+          $ref: '#/components/schemas/SessionInfo'
+        user:
+          $ref: '#/components/schemas/UserInfo'
+        error:
+          $ref: '#/components/schemas/ErrorInfo'
+        breadcrumbs:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Breadcrumb'
+        tags:
+          type: object
+          maxProperties: 50
+          additionalProperties:
+            type: string
+        extra:
+          type: object
+          description: JSON-encoded size is limited by the service.
+          additionalProperties: true
+    AppInfo:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        buildNumber:
+          type: string
+        environment:
+          type: string
+    DeviceInfo:
+      type: object
+      properties:
+        platform:
+          type: string
+        osVersion:
+          type: string
+        model:
+          type: string
+    SessionInfo:
+      type: object
+      required: [id, startedAt]
+      properties:
+        id:
+          type: string
+        startedAt:
+          type: integer
+          format: int64
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+      additionalProperties: true
+    ErrorInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        message:
+          type: string
+        stack:
+          type: string
+        componentStack:
+          type: string
+        fingerprint:
+          type: string
+    Breadcrumb:
+      type: object
+      required: [message]
+      properties:
+        timestamp:
+          type: integer
+          format: int64
+        category:
+          type: string
+        level:
+          type: string
+        message:
+          type: string
+        data: {}
+    HealthIssue:
+      type: object
+      properties:
+        id:
+          type: string
+        appId:
+          type: string
+        fingerprint:
+          type: string
+        title:
+          type: string
+        level:
+          type: string
+        status:
+          type: string
+        eventCount:
+          type: integer
+        affectedUserCount:
+          type: integer
+        firstSeenAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        lastAppVersion:
+          type: string
+        lastPlatform:
+          type: string
+    IssueListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthIssue'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+    IssueResponse:
+      type: object
+      required: [issue]
+      properties:
+        issue:
+          $ref: '#/components/schemas/HealthIssue'
+    IssueDetailResponse:
+      type: object
+      properties:
+        issue:
+          $ref: '#/components/schemas/HealthIssue'
+        sampleEvent:
+          $ref: '#/components/schemas/HealthEvent'
+        recentEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthEvent'
+        versionDistribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionBucket'
+        platformDistribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionBucket'
+    EventListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/HealthEvent'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+    EventDetailResponse:
+      type: object
+      required: [event]
+      properties:
+        event:
+          $ref: '#/components/schemas/HealthEvent'
+    IssueStatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [open, resolved, ignored]
+    StatsOverviewResponse:
+      type: object
+      properties:
+        openIssues:
+          type: integer
+        eventsToday:
+          type: integer
+        affectedUsersToday:
+          type: integer
+        fatalEventsToday:
+          type: integer
+    DistributionBucket:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer

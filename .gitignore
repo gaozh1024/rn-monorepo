@@ -118,6 +118,10 @@ Desktop.ini
 examples/
 examples/**
 
+# Keep App Health API contract examples versioned.
+!apps/app-health/contracts/examples/
+!apps/app-health/contracts/examples/**
+
 # yalc本地发布
 .yalc/
 yalc.lock
@@ -150,3 +154,7 @@ web-build/
 
 # HarmonyOS / Hvigor
 .hvigor/
+
+# App Health local Docker deploy artifacts
+apps/app-health/deploy-service/.env
+apps/app-health/deploy-service/out/

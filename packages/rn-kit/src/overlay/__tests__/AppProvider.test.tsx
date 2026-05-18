@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react-native';
 import { AppProvider } from '../AppProvider';
 import { useLoading } from '../loading/hooks';
@@ -154,15 +154,20 @@ describe('AppProvider', () => {
   });
 
   it('启用错误边界后应该显示回退界面', () => {
+    const healthReporter = { captureException: vi.fn() };
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const { getByTestId } = render(
-      <AppProvider enableErrorBoundary enableLogger={false}>
+      <AppProvider enableErrorBoundary enableLogger={false} healthReporter={healthReporter}>
         <CrashComponent />
       </AppProvider>
     );
 
     expect(getByTestId('app-error-boundary')).toBeTruthy();
+    expect(healthReporter.captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ source: 'react_error_boundary' })
+    );
 
     consoleError.mockRestore();
   });

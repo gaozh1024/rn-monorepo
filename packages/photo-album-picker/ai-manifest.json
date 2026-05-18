@@ -18,7 +18,10 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/photo-album-picker",
-    "projectTypes": ["expo", "react-native"],
+    "projectTypes": [
+      "expo",
+      "react-native"
+    ],
     "peerDependencies": {
       "@gaozh1024/rn-kit": ">=0.4.20",
       "@react-navigation/native": ">=7.0.0",
@@ -77,5 +80,8 @@
       "path": "packages/photo-album-picker/src/screens/PhotoCropScreen.tsx"
     }
   ],
-  "docs": ["README.md", "AI_USAGE.md"]
+  "docs": [
+    "README.md",
+    "AI_USAGE.md"
+  ]
 }

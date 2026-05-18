@@ -1,0 +1,38 @@
+name: app-health
+
+services:
+  app-health-postgres:
+    image: postgres:16-alpine
+    container_name: app-health-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app_health}
+    ports:
+      - '${APP_HEALTH_POSTGRES_PORT:-15432}:5432'
+    volumes:
+      - app-health-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app_health}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app-health-service:
+    build:
+      context: ..
+      dockerfile: deploy-service/Dockerfile
+    image: app-health-service:latest
+    container_name: app-health-service
+    env_file:
+      - ./.env
+    ports:
+      - '${APP_HEALTH_SERVICE_PORT:-8080}:8080'
+    depends_on:
+      app-health-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  app-health-postgres-data:
+    name: app-health-postgres-data

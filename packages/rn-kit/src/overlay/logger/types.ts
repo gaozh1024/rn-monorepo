@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { AppHealthReporter } from '@/core/health-reporter';
 import type { LogEntry, LogLevel, LoggerTransport } from '@/core/logger';
 
 export interface LoggerExportPayload {
@@ -16,6 +17,7 @@ export interface LoggerProviderProps {
   overlayPositionStorageKey?: string;
   consoleEnabled?: boolean;
   transports?: LoggerTransport[];
+  healthReporter?: AppHealthReporter;
   exportEnabled?: boolean;
   onExport?: (payload: LoggerExportPayload) => void;
 }

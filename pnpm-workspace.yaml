@@ -1,6 +1,7 @@
 packages:
   - 'packages/*'
   - 'templates/*'
+  - 'apps/*/*'
 
 # pnpm配置
 autoInstallPeers: true

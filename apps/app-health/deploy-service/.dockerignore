@@ -1,0 +1,13 @@
+admin/
+contracts/
+deploy-service/.env
+deploy-service/README.md
+deploy-service/docker-compose.yml
+deploy-service/deploy-service.sh
+deploy-service/.env.example
+deploy-service/out/
+service/bin/
+service/tmp/
+service/*.log
+service/.env
+.DS_Store

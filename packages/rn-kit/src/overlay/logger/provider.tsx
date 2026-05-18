@@ -18,6 +18,7 @@ export function LoggerProvider({
   overlayPositionStorageKey = DEFAULT_OVERLAY_POSITION_STORAGE_KEY,
   consoleEnabled = true,
   transports = [],
+  healthReporter,
   exportEnabled = true,
   onExport,
 }: LoggerProviderProps) {
@@ -70,8 +71,16 @@ export function LoggerProvider({
       });
       setEntries(prev => [entry, ...prev].slice(0, maxEntries));
       resolvedTransports.forEach(transport => transport(entry));
+      void healthReporter?.addBreadcrumb?.({
+        category: 'logger',
+        level: nextLevel,
+        message,
+        data,
+        namespace,
+        timestamp: entry.timestamp,
+      });
     },
-    [enabled, level, maxEntries, resolvedTransports]
+    [enabled, healthReporter, level, maxEntries, resolvedTransports]
   );
 
   const contextValue = useMemo<LoggerContextType>(
