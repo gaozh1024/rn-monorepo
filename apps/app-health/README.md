@@ -229,8 +229,8 @@ cp .env.example .env
 ./deploy-service.sh
 ```
 
-This builds `app-health-service:local` from `apps/app-health/service`, starts `app-health-service-local`, and exposes the API at `http://localhost:8080`.
-The default `.env.example` uses in-memory storage for quick local testing; configure `APP_HEALTH_DATABASE_URL` if you need PostgreSQL persistence.
+This starts the local `app-health` stack: `app-health-postgres` plus `app-health-service`, runs migrations, and exposes the API at `http://localhost:8080`.
+The default `.env.example` uses PostgreSQL persistence through the `app-health-postgres-data` Docker volume; `/readyz` should report `databaseConfigured=true`.
 
 ## Local full stack with Docker
 
