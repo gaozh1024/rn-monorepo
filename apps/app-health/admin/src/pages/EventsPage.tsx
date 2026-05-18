@@ -3,15 +3,18 @@ import { appHealthEventTypes } from '../api/constants';
 import { listEvents } from '../api/events';
 import type { EventListParams } from '../api/events';
 import type { HealthEvent, ListResponse } from '../api/types';
+import { getAppDisplayName } from '../app/appScope';
+import type { ProjectAppOption } from '../app/appScope';
 import { JsonViewer } from '../components/JsonViewer';
 import { LevelBadge } from '../components/LevelBadge';
 import { Pagination } from '../components/Pagination';
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader } from '../components/ui/Card';
+import { DropdownSelect } from '../components/ui/DropdownSelect';
+import type { DropdownOption } from '../components/ui/DropdownSelect';
 
 interface EventFilters {
-  appId: string;
   issueId: string;
   userId: string;
   level: string;
@@ -29,7 +32,6 @@ interface EventFilters {
 }
 
 const defaultFilters: EventFilters = {
-  appId: '',
   issueId: '',
   userId: '',
   level: '',
@@ -46,18 +48,25 @@ const defaultFilters: EventFilters = {
   message: '',
 };
 
+const eventLevelOptions: DropdownOption[] = [
+  { value: '', label: '全部' },
+  { value: 'fatal', label: '致命' },
+  { value: 'error', label: '错误' },
+  { value: 'warning', label: '警告' },
+  { value: 'info', label: '信息' },
+];
+
 export function EventsPage({
   issueId,
-  appId = '',
+  app,
   environment = '',
 }: {
   issueId?: string;
-  appId?: string;
+  app: ProjectAppOption;
   environment?: string;
 }) {
   const [filters, setFilters] = useState<EventFilters>({
     ...defaultFilters,
-    appId,
     issueId: issueId ?? '',
     environment,
   });
@@ -74,6 +83,7 @@ export function EventsPage({
     try {
       setResponse(
         await listEvents({
+          appId: app.appId,
           ...toEventListParams(currentFilters),
           page: currentPage,
           pageSize: currentPageSize,
@@ -88,17 +98,16 @@ export function EventsPage({
 
   useEffect(() => {
     void load(filters, page, pageSize);
-  }, [filters, page, pageSize]);
+  }, [app.appId, filters, page, pageSize]);
 
   useEffect(() => {
     setFilters(current => ({
       ...current,
-      appId,
       environment,
       issueId: issueId ?? current.issueId,
     }));
     setPage(1);
-  }, [appId, environment, issueId]);
+  }, [app.appId, environment, issueId]);
 
   function updateFilter<K extends keyof EventFilters>(key: K, value: EventFilters[K]) {
     setFilters(current => ({ ...current, [key]: value }));
@@ -106,7 +115,7 @@ export function EventsPage({
   }
 
   function resetFilters() {
-    setFilters({ ...defaultFilters, appId, environment, issueId: issueId ?? '' });
+    setFilters({ ...defaultFilters, environment, issueId: issueId ?? '' });
     setSelected(null);
     setPage(1);
   }
@@ -118,6 +127,7 @@ export function EventsPage({
 
   const events = response?.items ?? [];
   const total = response?.total ?? 0;
+  const appDisplayName = getAppDisplayName(app);
 
   return (
     <div className="page-stack">
@@ -125,7 +135,11 @@ export function EventsPage({
         <div>
           <span className="eyebrow">原始遥测</span>
           <h1>事件</h1>
-          <p>查看原始健康事件、会话、用户、面包屑和完整 payload。</p>
+          <p>查看 {appDisplayName} 的原始健康事件、会话、用户、面包屑和完整 payload。</p>
+          <div className="context-meta">
+            <span>App ID: {app.appId}</span>
+            <span>{environment || '全部环境'}</span>
+          </div>
         </div>
         <Button onClick={() => void load()}>刷新</Button>
       </div>
@@ -133,14 +147,6 @@ export function EventsPage({
       <Card>
         <CardHeader title="筛选" description="按事件类型、级别、版本、会话、指纹或消息搜索。" />
         <div className="filters" aria-label="事件筛选">
-          <label>
-            App ID
-            <input
-              value={filters.appId}
-              onChange={event => updateFilter('appId', event.target.value)}
-              placeholder="mobile-app"
-            />
-          </label>
           <label>
             问题 ID
             <input
@@ -159,30 +165,22 @@ export function EventsPage({
           </label>
           <label>
             级别
-            <select
+            <DropdownSelect
               value={filters.level}
-              onChange={event => updateFilter('level', event.target.value)}
-            >
-              <option value="">全部</option>
-              <option value="fatal">致命</option>
-              <option value="error">错误</option>
-              <option value="warning">警告</option>
-              <option value="info">信息</option>
-            </select>
+              options={eventLevelOptions}
+              onChange={value => updateFilter('level', value)}
+            />
           </label>
           <label>
             类型
-            <select
+            <DropdownSelect
               value={filters.type}
-              onChange={event => updateFilter('type', event.target.value)}
-            >
-              <option value="">全部</option>
-              {appHealthEventTypes.map(type => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: '全部' },
+                ...appHealthEventTypes.map(type => ({ value: type, label: type })),
+              ]}
+              onChange={value => updateFilter('type', value)}
+            />
           </label>
           <label>
             开始时间

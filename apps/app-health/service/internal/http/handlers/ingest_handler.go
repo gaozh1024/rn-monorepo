@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/domain"
+	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/http/middleware"
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/security"
 	appsvc "github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/service"
 )
@@ -39,6 +40,14 @@ func (h *IngestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(bytes.NewReader(encoded)).Decode(&request); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid ingest payload")
 		return
+	}
+	if application, ok := middleware.IngestApplicationFromContext(r.Context()); ok {
+		for i := range request.Events {
+			if request.Events[i].App.ID != application.Slug {
+				writeError(w, http.StatusForbidden, "event app id does not match ingest token")
+				return
+			}
+		}
 	}
 	response, err := h.ingest.Ingest(r.Context(), request.Events)
 	if err != nil {

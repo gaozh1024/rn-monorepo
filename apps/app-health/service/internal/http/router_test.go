@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -61,6 +62,126 @@ func TestRouterIngestAndAdminQueries(t *testing.T) {
 	assertRequest(t, router, http.MethodGet, "/api/app-health/stats/overview", "Bearer admin_test", "", http.StatusOK, `"openIssues":1`)
 }
 
+func TestRouterCreatesApplicationAndUsesApplicationIngestToken(t *testing.T) {
+	cfg := config.Config{
+		IngestToken: "ingest_test",
+		AdminToken:  "admin_test",
+		CORSOrigins: []string{"*"},
+		Env:         "test",
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	createBody := `{"name":"Mobile App","slug":"mobile-app","defaultEnvironment":"production","platforms":["ios","android"]}`
+	request := httptest.NewRequest(http.MethodPost, "/api/app-health/applications", strings.NewReader(createBody))
+	request.Header.Set("authorization", "Bearer admin_test")
+	request.Header.Set("content-type", "application/json")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("create status = %d, body=%s", response.Code, response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), `"plainText":"ah_ingest_`) {
+		t.Fatalf("create body did not include one-time token: %s", response.Body.String())
+	}
+	plainText := extractJSONValue(t, response.Body.String(), "plainText")
+
+	assertRequest(t, router, http.MethodGet, "/api/app-health/applications", "Bearer admin_test", "", http.StatusOK, `"total":1`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/applications", "Bearer admin_test", createBody, http.StatusConflict, `"application already exists"`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer "+plainText, examplePayload, http.StatusOK, `"accepted":1`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer "+plainText, strings.Replace(examplePayload, "mobile-app", "other-app", 1), http.StatusForbidden, `"event app id does not match ingest token"`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", strings.Replace(examplePayload, "evt_test_001", "evt_global_001", 1), http.StatusOK, `"accepted":1`)
+}
+
+func TestRouterPreservesDottedApplicationID(t *testing.T) {
+	cfg := config.Config{
+		IngestToken: "ingest_test",
+		AdminToken:  "admin_test",
+		CORSOrigins: []string{"*"},
+		Env:         "test",
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	createBody := `{"name":"Dev App","slug":"com.llys.app.dev","defaultEnvironment":"production","platforms":["android"]}`
+	assertRequest(t, router, http.MethodPost, "/api/app-health/applications", "Bearer admin_test", createBody, http.StatusCreated, `"slug":"com.llys.app.dev"`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/applications", "Bearer admin_test", "", http.StatusOK, `"slug":"com.llys.app.dev"`)
+}
+
+func TestRouterApplicationLifecycleActions(t *testing.T) {
+	cfg := config.Config{
+		IngestToken: "ingest_test",
+		AdminToken:  "admin_test",
+		CORSOrigins: []string{"*"},
+		Env:         "test",
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	createBody := `{"name":"Lifecycle App","slug":"lifecycle-app","defaultEnvironment":"production","platforms":["ios"]}`
+	response := performRequest(router, http.MethodPost, "/api/app-health/applications", "Bearer admin_test", createBody)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("create status = %d, body=%s", response.Code, response.Body.String())
+	}
+	plainText := extractJSONValue(t, response.Body.String(), "plainText")
+
+	lifecyclePayload := strings.Replace(examplePayload, "mobile-app", "lifecycle-app", 1)
+	lifecyclePayload = strings.Replace(lifecyclePayload, "evt_test_001", "evt_lifecycle_001", 1)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer "+plainText, lifecyclePayload, http.StatusOK, `"accepted":1`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/applications/lifecycle-app/disable", "Bearer admin_test", "", http.StatusOK, `"status":"disabled"`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer "+plainText, strings.Replace(lifecyclePayload, "evt_lifecycle_001", "evt_lifecycle_002", 1), http.StatusUnauthorized, `"unauthorized"`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/applications/lifecycle-app/enable", "Bearer admin_test", "", http.StatusOK, `"status":"active"`)
+
+	assertRequest(t, router, http.MethodDelete, "/api/app-health/applications/lifecycle-app", "Bearer admin_test", "", http.StatusOK, `"slug":"lifecycle-app"`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/applications", "Bearer admin_test", "", http.StatusOK, `"total":0`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/events?appId=lifecycle-app", "Bearer admin_test", "", http.StatusOK, `"total":1`)
+}
+
+func TestRouterDeletesApplicationWithDataAfterConfirmation(t *testing.T) {
+	cfg := config.Config{
+		IngestToken: "ingest_test",
+		AdminToken:  "admin_test",
+		CORSOrigins: []string{"*"},
+		Env:         "test",
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	createBody := `{"name":"Delete App","slug":"delete-app","defaultEnvironment":"production","platforms":["android"]}`
+	response := performRequest(router, http.MethodPost, "/api/app-health/applications", "Bearer admin_test", createBody)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("create status = %d, body=%s", response.Code, response.Body.String())
+	}
+	plainText := extractJSONValue(t, response.Body.String(), "plainText")
+	deletePayload := strings.Replace(examplePayload, "mobile-app", "delete-app", 1)
+	deletePayload = strings.Replace(deletePayload, "evt_test_001", "evt_delete_001", 1)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer "+plainText, deletePayload, http.StatusOK, `"accepted":1`)
+	assertRequest(t, router, http.MethodDelete, "/api/app-health/applications/delete-app/data", "Bearer admin_test", `{"confirmAppId":"wrong"}`, http.StatusBadRequest, `"invalid application"`)
+	assertRequest(t, router, http.MethodDelete, "/api/app-health/applications/delete-app/data", "Bearer admin_test", `{"confirmAppId":"delete-app"}`, http.StatusOK, `"deletedEvents":1`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/events?appId=delete-app", "Bearer admin_test", "", http.StatusOK, `"total":0`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/issues?appId=delete-app", "Bearer admin_test", "", http.StatusOK, `"total":0`)
+}
+
 func TestRouterAdminSessionLoginMeAndLogout(t *testing.T) {
 	hash, err := bcrypt.GenerateFromPassword([]byte("secret-pass"), bcrypt.MinCost)
 	if err != nil {
@@ -118,6 +239,23 @@ func TestRouterAdminSessionLoginMeAndLogout(t *testing.T) {
 	if len(logoutResponse.Result().Cookies()) == 0 || logoutResponse.Result().Cookies()[0].MaxAge != -1 {
 		t.Fatalf("logout did not clear the session cookie")
 	}
+}
+
+func extractJSONValue(t *testing.T, body string, key string) string {
+	t.Helper()
+	var decoded map[string]any
+	if err := json.NewDecoder(strings.NewReader(body)).Decode(&decoded); err != nil {
+		t.Fatal(err)
+	}
+	token, ok := decoded["token"].(map[string]any)
+	if !ok {
+		t.Fatalf("missing token object: %s", body)
+	}
+	value, ok := token[key].(string)
+	if !ok || value == "" {
+		t.Fatalf("missing token.%s: %s", key, body)
+	}
+	return value
 }
 
 func TestRouterAdminSessionLoginRequiresConfiguredAuth(t *testing.T) {
@@ -227,6 +365,16 @@ func TestRouterRejectsInvalidIngestEvents(t *testing.T) {
 
 func assertRequest(t *testing.T, handler http.Handler, method string, path string, token string, body string, wantStatus int, wantBody string) {
 	t.Helper()
+	response := performRequest(handler, method, path, token, body)
+	if response.Code != wantStatus {
+		t.Fatalf("status = %d, want %d, body=%s", response.Code, wantStatus, response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), wantBody) {
+		t.Fatalf("body %q does not contain %q", response.Body.String(), wantBody)
+	}
+}
+
+func performRequest(handler http.Handler, method string, path string, token string, body string) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(method, path, bytes.NewBufferString(body))
 	if token != "" {
 		request.Header.Set("authorization", token)
@@ -236,10 +384,5 @@ func assertRequest(t *testing.T, handler http.Handler, method string, path strin
 	}
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
-	if response.Code != wantStatus {
-		t.Fatalf("status = %d, want %d, body=%s", response.Code, wantStatus, response.Body.String())
-	}
-	if !strings.Contains(response.Body.String(), wantBody) {
-		t.Fatalf("body %q does not contain %q", response.Body.String(), wantBody)
-	}
+	return response
 }

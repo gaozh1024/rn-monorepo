@@ -48,6 +48,42 @@ export async function apiPatch<T>(
   return response.json() as Promise<T>;
 }
 
+export async function apiDelete<T>(
+  path: string,
+  body?: unknown,
+  options: ApiClientOptions = {}
+): Promise<T> {
+  const response = await fetch(`${options.baseUrl ?? apiBaseUrl}${path}`, {
+    credentials: 'include',
+    method: 'DELETE',
+    headers: {
+      ...adminHeaders(options),
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`请求失败：${response.status}`);
+  return response.json() as Promise<T>;
+}
+
+export async function apiPost<T>(
+  path: string,
+  body?: unknown,
+  options: ApiClientOptions = {}
+): Promise<T> {
+  const response = await fetch(`${options.baseUrl ?? apiBaseUrl}${path}`, {
+    credentials: 'include',
+    method: 'POST',
+    headers: {
+      ...adminHeaders(options),
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`请求失败：${response.status}`);
+  return response.json() as Promise<T>;
+}
+
 function adminHeaders(options: ApiClientOptions) {
   const token = options.adminToken ?? defaultAdminToken;
   return token ? { authorization: `Bearer ${token}` } : undefined;

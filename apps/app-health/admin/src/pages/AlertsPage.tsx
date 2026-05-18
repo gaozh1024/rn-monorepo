@@ -1,8 +1,10 @@
+import { getAppDisplayName } from '../app/appScope';
+import type { ProjectAppOption } from '../app/appScope';
 import { Card, CardHeader } from '../components/ui/Card';
 import { MetricCard } from '../components/ui/MetricCard';
 import { Button } from '../components/ui/Button';
 
-export function AlertsPage({ appId }: { appId: string }) {
+export function AlertsPage({ app }: { app: ProjectAppOption }) {
   return (
     <div className="page-stack">
       <div className="page-heading">
@@ -18,7 +20,7 @@ export function AlertsPage({ appId }: { appId: string }) {
         <MetricCard label="Webhook 模式" value="环境变量 MVP" tone="info" />
         <MetricCard label="最低级别" value="fatal" tone="danger" />
         <MetricCard label="冷却时间" value="300 秒" />
-        <MetricCard label="当前应用" value={appId || '全部应用'} />
+        <MetricCard label="当前应用" value={getAppDisplayName(app)} />
       </div>
 
       <Card>

@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { getStatsOverview } from '../api/stats';
 import type { StatsOverview } from '../api/types';
+import { getAppDisplayName } from '../app/appScope';
+import type { ProjectAppOption } from '../app/appScope';
 import { ErrorState, LoadingState } from '../components/PageState';
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader } from '../components/ui/Card';
 import { MetricCard } from '../components/ui/MetricCard';
 
-export function StatsPage({ appId }: { appId: string }) {
+export function StatsPage({ app }: { app: ProjectAppOption }) {
   const [stats, setStats] = useState<StatsOverview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function load(currentAppId = appId) {
+  async function load(currentAppId = app.appId) {
     setLoading(true);
     setError(null);
     try {
@@ -24,8 +26,10 @@ export function StatsPage({ appId }: { appId: string }) {
   }
 
   useEffect(() => {
-    void load(appId);
-  }, [appId]);
+    void load(app.appId);
+  }, [app.appId]);
+
+  const appDisplayName = getAppDisplayName(app);
 
   return (
     <div className="page-stack">
@@ -33,7 +37,7 @@ export function StatsPage({ appId }: { appId: string }) {
         <div>
           <span className="eyebrow">健康总览</span>
           <h1>总览</h1>
-          <p>跟踪 {appId || '全部应用'} 的未处理问题、致命事件和受影响用户。</p>
+          <p>跟踪 {appDisplayName} 的未处理问题、致命事件和受影响用户。</p>
         </div>
         <Button onClick={() => void load()}>刷新</Button>
       </div>
@@ -41,8 +45,8 @@ export function StatsPage({ appId }: { appId: string }) {
       <div className="hero-panel">
         <div>
           <span className="eyebrow">当前应用</span>
-          <h2>{appId || '全部应用'}</h2>
-          <p>使用顶部栏切换应用、环境和时间范围。</p>
+          <h2>{appDisplayName}</h2>
+          <p>App ID: {app.appId}。使用顶部栏切换项目、应用、环境和时间范围。</p>
         </div>
         <div className="hero-status">
           <span className="pulse" />

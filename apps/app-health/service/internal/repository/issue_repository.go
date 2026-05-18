@@ -17,6 +17,7 @@ type IssueRepository interface {
 	UpdateStatus(context.Context, string, domain.IssueStatus) (domain.HealthIssue, error)
 	CountOpen(context.Context, string) (int, error)
 	ProtectedEventIDs(context.Context) ([]string, error)
+	DeleteByAppID(context.Context, string) (int, error)
 }
 
 type MemoryIssueRepository struct {
@@ -176,6 +177,22 @@ func (r *MemoryIssueRepository) ProtectedEventIDs(_ context.Context) ([]string, 
 		add(issue.LastEventID)
 	}
 	return ids, nil
+}
+
+func (r *MemoryIssueRepository) DeleteByAppID(_ context.Context, appID string) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	deleted := 0
+	for id, issue := range r.issues {
+		if issue.AppID != appID {
+			continue
+		}
+		delete(r.issues, id)
+		delete(r.byFingerprint, fingerprintKey(issue.AppID, issue.Fingerprint))
+		delete(r.affectedUsers, id)
+		deleted++
+	}
+	return deleted, nil
 }
 
 func (r *MemoryIssueRepository) trackUser(issueID string, event domain.HealthEvent) {

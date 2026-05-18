@@ -163,6 +163,14 @@ WHERE created_at < $1 AND NOT (id = ANY($2::text[]))`, before, protectedIDs)
 	return int(commandTag.RowsAffected()), nil
 }
 
+func (r *PostgresEventRepository) DeleteByAppID(ctx context.Context, appID string) (int, error) {
+	commandTag, err := r.pool.Exec(ctx, `DELETE FROM app_health_events WHERE app_id = $1`, appID)
+	if err != nil {
+		return 0, err
+	}
+	return int(commandTag.RowsAffected()), nil
+}
+
 func eventWhere(query domain.EventQuery) (string, []any) {
 	clauses := []string{}
 	args := []any{}

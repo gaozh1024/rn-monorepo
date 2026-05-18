@@ -8,7 +8,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'overview', label: '总览' },
-  { id: 'applications', label: '应用管理', badge: '即将支持' },
+  { id: 'applications', label: '应用管理' },
   { id: 'issues', label: '问题' },
   { id: 'events', label: '事件' },
   { id: 'alerts', label: '告警', badge: '测试版' },

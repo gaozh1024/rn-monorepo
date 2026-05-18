@@ -19,6 +19,7 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 	issuesHandler := handlers.NewIssuesHandler(container.Issue)
 	statsHandler := handlers.NewStatsHandler(container.Stats)
 	authHandler := handlers.NewAuthHandler(container.Auth, container.Session, cfg.CookieSecure)
+	applicationsHandler := handlers.NewApplicationsHandler(container.Application)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -45,7 +46,7 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 		_ = json.NewEncoder(w).Encode(payload)
 	})
 
-	requireIngest := middleware.RequireBearer(cfg.IngestToken)
+	requireIngest := middleware.RequireIngest(container.IngestAuth)
 	requireAdmin := middleware.RequireAdmin(cfg.AdminToken, container.Session)
 
 	ingestPipeline := middleware.MaxBodyBytes(cfg.MaxBodyBytes)(ingestHandler)
@@ -61,6 +62,16 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 	mux.Handle("GET /api/app-health/issues/{id}", requireAdmin(http.HandlerFunc(issuesHandler.Get)))
 	mux.Handle("PATCH /api/app-health/issues/{id}/status", requireAdmin(http.HandlerFunc(issuesHandler.UpdateStatus)))
 	mux.Handle("GET /api/app-health/stats/overview", requireAdmin(http.HandlerFunc(statsHandler.Overview)))
+	mux.Handle("GET /api/app-health/applications", requireAdmin(http.HandlerFunc(applicationsHandler.List)))
+	mux.Handle("POST /api/app-health/applications", requireAdmin(http.HandlerFunc(applicationsHandler.Create)))
+	mux.Handle("GET /api/app-health/applications/{id}", requireAdmin(http.HandlerFunc(applicationsHandler.Get)))
+	mux.Handle("PATCH /api/app-health/applications/{id}", requireAdmin(http.HandlerFunc(applicationsHandler.Update)))
+	mux.Handle("POST /api/app-health/applications/{id}/enable", requireAdmin(http.HandlerFunc(applicationsHandler.Enable)))
+	mux.Handle("POST /api/app-health/applications/{id}/disable", requireAdmin(http.HandlerFunc(applicationsHandler.Disable)))
+	mux.Handle("DELETE /api/app-health/applications/{id}", requireAdmin(http.HandlerFunc(applicationsHandler.Delete)))
+	mux.Handle("DELETE /api/app-health/applications/{id}/data", requireAdmin(http.HandlerFunc(applicationsHandler.DeleteData)))
+	mux.Handle("POST /api/app-health/applications/{id}/tokens", requireAdmin(http.HandlerFunc(applicationsHandler.CreateToken)))
+	mux.Handle("POST /api/app-health/tokens/{id}/revoke", requireAdmin(http.HandlerFunc(applicationsHandler.RevokeToken)))
 
 	return middleware.Recover(logger)(middleware.CORS(cfg.CORSOrigins)(mux))
 }

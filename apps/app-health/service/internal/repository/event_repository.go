@@ -24,6 +24,7 @@ type EventRepository interface {
 	ListByIssue(context.Context, string, int) ([]domain.HealthEvent, error)
 	CountToday(context.Context, string) (events int, fatal int, users int, err error)
 	DeleteBefore(context.Context, time.Time, []string, bool) (int, error)
+	DeleteByAppID(context.Context, string) (int, error)
 }
 
 type MemoryEventRepository struct {
@@ -157,6 +158,27 @@ func (r *MemoryEventRepository) DeleteBefore(_ context.Context, before time.Time
 	if !dryRun {
 		r.order = nextOrder
 	}
+	return deleted, nil
+}
+
+func (r *MemoryEventRepository) DeleteByAppID(_ context.Context, appID string) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	deleted := 0
+	nextOrder := make([]string, 0, len(r.order))
+	for _, id := range r.order {
+		event, ok := r.events[id]
+		if !ok {
+			continue
+		}
+		if event.App.ID == appID {
+			delete(r.events, id)
+			deleted++
+			continue
+		}
+		nextOrder = append(nextOrder, id)
+	}
+	r.order = nextOrder
 	return deleted, nil
 }
 

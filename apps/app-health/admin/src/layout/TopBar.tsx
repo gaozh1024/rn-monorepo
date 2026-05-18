@@ -1,5 +1,10 @@
+import type { ProjectAppOption } from '../app/appScope';
+import { DropdownSelect } from '../components/ui/DropdownSelect';
+import type { DropdownOption } from '../components/ui/DropdownSelect';
+
 interface TopBarProps {
   appId: string;
+  applications: ProjectAppOption[];
   environment: string;
   timeRange: string;
   userEmail?: string;
@@ -9,8 +14,23 @@ interface TopBarProps {
   onTimeRangeChange: (value: string) => void;
 }
 
+const environmentOptions: DropdownOption[] = [
+  { value: '', label: '全部' },
+  { value: 'production', label: '生产' },
+  { value: 'staging', label: '预发' },
+  { value: 'development', label: '开发' },
+];
+
+const timeRangeOptions: DropdownOption[] = [
+  { value: '1h', label: '最近 1 小时' },
+  { value: '24h', label: '最近 24 小时' },
+  { value: '7d', label: '最近 7 天' },
+  { value: '30d', label: '最近 30 天' },
+];
+
 export function TopBar({
   appId,
+  applications,
   environment,
   timeRange,
   userEmail,
@@ -19,34 +39,47 @@ export function TopBar({
   onEnvironmentChange,
   onTimeRangeChange,
 }: TopBarProps) {
+  const appOptions = applications.length
+    ? applications.map(application => ({
+        value: application.appId,
+        label: application.appName,
+        description: `${application.projectName} · App ID: ${application.appId}`,
+      }))
+    : [
+        {
+          value: appId,
+          label: appId,
+          description: 'App Health',
+        },
+      ];
+
   return (
     <div className="topbar">
       <div className="topbar-controls">
         <label className="topbar-field">
-          应用
-          <input
+          项目 / 应用
+          <DropdownSelect
+            className="app-scope-select"
             value={appId}
-            onChange={event => onAppIdChange(event.target.value)}
-            placeholder="mobile-app"
+            options={appOptions}
+            onChange={onAppIdChange}
           />
         </label>
         <label className="topbar-field">
           环境
-          <select value={environment} onChange={event => onEnvironmentChange(event.target.value)}>
-            <option value="">全部</option>
-            <option value="production">生产</option>
-            <option value="staging">预发</option>
-            <option value="development">开发</option>
-          </select>
+          <DropdownSelect
+            value={environment}
+            options={environmentOptions}
+            onChange={onEnvironmentChange}
+          />
         </label>
         <label className="topbar-field">
           时间范围
-          <select value={timeRange} onChange={event => onTimeRangeChange(event.target.value)}>
-            <option value="1h">最近 1 小时</option>
-            <option value="24h">最近 24 小时</option>
-            <option value="7d">最近 7 天</option>
-            <option value="30d">最近 30 天</option>
-          </select>
+          <DropdownSelect
+            value={timeRange}
+            options={timeRangeOptions}
+            onChange={onTimeRangeChange}
+          />
         </label>
       </div>
       <div className="user-menu" aria-label="当前管理员">

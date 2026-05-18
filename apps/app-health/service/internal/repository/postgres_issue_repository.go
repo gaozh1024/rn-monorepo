@@ -158,6 +158,14 @@ FROM (
 	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
+func (r *PostgresIssueRepository) DeleteByAppID(ctx context.Context, appID string) (int, error) {
+	commandTag, err := r.pool.Exec(ctx, `DELETE FROM app_health_issues WHERE app_id = $1`, appID)
+	if err != nil {
+		return 0, err
+	}
+	return int(commandTag.RowsAffected()), nil
+}
+
 func issueColumns() string {
 	return `id, app_id, fingerprint, title, level, status, event_count, affected_user_count,
   first_seen_at, last_seen_at, last_event_id, sample_event_id,

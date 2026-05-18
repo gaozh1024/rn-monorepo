@@ -2,15 +2,18 @@ import { useEffect, useState } from 'react';
 import { listIssues } from '../api/issues';
 import type { IssueListParams } from '../api/issues';
 import type { HealthIssue, ListResponse } from '../api/types';
+import { getAppDisplayName } from '../app/appScope';
+import type { ProjectAppOption } from '../app/appScope';
 import { IssueStatusBadge } from '../components/IssueStatusBadge';
 import { LevelBadge } from '../components/LevelBadge';
 import { Pagination } from '../components/Pagination';
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader } from '../components/ui/Card';
+import { DropdownSelect } from '../components/ui/DropdownSelect';
+import type { DropdownOption } from '../components/ui/DropdownSelect';
 
 interface IssueFilters {
-  appId: string;
   status: HealthIssue['status'] | '';
   level: string;
   platform: string;
@@ -23,7 +26,6 @@ interface IssueFilters {
 }
 
 const defaultFilters: IssueFilters = {
-  appId: '',
   status: 'open',
   level: '',
   platform: '',
@@ -35,14 +37,33 @@ const defaultFilters: IssueFilters = {
   message: '',
 };
 
+const issueStatusOptions: DropdownOption[] = [
+  { value: '', label: '全部' },
+  { value: 'open', label: '未处理' },
+  { value: 'resolved', label: '已解决' },
+  { value: 'ignored', label: '已忽略' },
+];
+
+const issueLevelOptions: DropdownOption[] = [
+  { value: '', label: '全部' },
+  { value: 'fatal', label: '致命' },
+  { value: 'error', label: '错误' },
+  { value: 'warning', label: '警告' },
+  { value: 'info', label: '信息' },
+];
+
 export function IssuesPage({
-  appId,
+  app,
+  environment,
+  timeRange,
   onSelectIssue,
 }: {
-  appId: string;
+  app: ProjectAppOption;
+  environment: string;
+  timeRange: string;
   onSelectIssue: (id: string) => void;
 }) {
-  const [filters, setFilters] = useState<IssueFilters>({ ...defaultFilters, appId });
+  const [filters, setFilters] = useState<IssueFilters>({ ...defaultFilters });
   const [response, setResponse] = useState<ListResponse<HealthIssue> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +76,7 @@ export function IssuesPage({
     try {
       setResponse(
         await listIssues({
+          appId: app.appId,
           ...toIssueListParams(currentFilters),
           page: currentPage,
           pageSize: currentPageSize,
@@ -69,12 +91,11 @@ export function IssuesPage({
 
   useEffect(() => {
     void load(filters, page, pageSize);
-  }, [filters, page, pageSize]);
+  }, [app.appId, filters, page, pageSize]);
 
   useEffect(() => {
-    setFilters(current => ({ ...current, appId }));
     setPage(1);
-  }, [appId]);
+  }, [app.appId]);
 
   function updateFilter<K extends keyof IssueFilters>(key: K, value: IssueFilters[K]) {
     setFilters(current => ({ ...current, [key]: value }));
@@ -82,7 +103,7 @@ export function IssuesPage({
   }
 
   function resetFilters() {
-    setFilters({ ...defaultFilters, appId });
+    setFilters({ ...defaultFilters });
     setPage(1);
   }
 
@@ -93,6 +114,7 @@ export function IssuesPage({
 
   const issues = response?.items ?? [];
   const total = response?.total ?? 0;
+  const appDisplayName = getAppDisplayName(app);
 
   return (
     <div className="page-stack">
@@ -100,7 +122,13 @@ export function IssuesPage({
         <div>
           <span className="eyebrow">问题处理</span>
           <h1>问题</h1>
-          <p>{filters.appId || '全部应用'} 的崩溃和错误聚合。</p>
+          <p>{appDisplayName} 的崩溃和错误聚合。</p>
+          <div className="context-meta">
+            <span>App ID: {app.appId}</span>
+            <CopyAppIdButton value={app.appId} />
+            <span>{environment ? getEnvironmentLabel(environment) : '全部环境'}</span>
+            <span>{getTimeRangeLabel(timeRange)}</span>
+          </div>
         </div>
         <Button onClick={() => void load()}>刷新</Button>
       </div>
@@ -109,39 +137,20 @@ export function IssuesPage({
         <CardHeader title="筛选" description="按状态、级别、版本、平台、指纹或错误消息缩小范围。" />
         <div className="filters" aria-label="问题筛选">
           <label>
-            App ID
-            <input
-              value={filters.appId}
-              onChange={event => updateFilter('appId', event.target.value)}
-              placeholder="mobile-app"
+            状态
+            <DropdownSelect
+              value={filters.status}
+              options={issueStatusOptions}
+              onChange={value => updateFilter('status', value as IssueFilters['status'])}
             />
           </label>
           <label>
-            状态
-            <select
-              value={filters.status}
-              onChange={event =>
-                updateFilter('status', event.target.value as IssueFilters['status'])
-              }
-            >
-              <option value="">全部</option>
-              <option value="open">未处理</option>
-              <option value="resolved">已解决</option>
-              <option value="ignored">已忽略</option>
-            </select>
-          </label>
-          <label>
             级别
-            <select
+            <DropdownSelect
               value={filters.level}
-              onChange={event => updateFilter('level', event.target.value)}
-            >
-              <option value="">全部</option>
-              <option value="fatal">致命</option>
-              <option value="error">错误</option>
-              <option value="warning">警告</option>
-              <option value="info">信息</option>
-            </select>
+              options={issueLevelOptions}
+              onChange={value => updateFilter('level', value)}
+            />
           </label>
           <label>
             平台
@@ -207,7 +216,7 @@ export function IssuesPage({
       {loading ? <LoadingState label="正在加载问题..." /> : null}
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {!loading && !error && !issues.length ? (
-        <EmptyState label="当前筛选条件下暂无问题。" />
+        <EmptyState label={`当前筛选条件下，${appDisplayName} 暂无问题。`} />
       ) : null}
       {!loading && !error && issues.length ? (
         <>
@@ -276,4 +285,41 @@ function toIssueListParams(filters: IssueFilters): IssueListParams {
 
 function toISOStringOrEmpty(value: string) {
   return value ? new Date(value).toISOString() : '';
+}
+
+function getEnvironmentLabel(environment: string) {
+  const labels: Record<string, string> = {
+    production: '生产环境',
+    staging: '预发环境',
+    development: '开发环境',
+  };
+
+  return labels[environment] ?? environment;
+}
+
+function getTimeRangeLabel(timeRange: string) {
+  const labels: Record<string, string> = {
+    '1h': '最近 1 小时',
+    '24h': '最近 24 小时',
+    '7d': '最近 7 天',
+    '30d': '最近 30 天',
+  };
+
+  return labels[timeRange] ?? timeRange;
+}
+
+function CopyAppIdButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  return (
+    <button className="copy-chip" type="button" onClick={() => void copy()}>
+      {copied ? '已复制' : '复制'}
+    </button>
+  );
 }

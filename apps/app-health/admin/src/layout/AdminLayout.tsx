@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import type { Page } from '../app/App';
+import type { ProjectAppOption } from '../app/appScope';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 
 interface AdminLayoutProps {
   activePage: Page;
   appId: string;
+  applications: ProjectAppOption[];
   environment: string;
   timeRange: string;
   userEmail?: string;
@@ -20,6 +22,7 @@ interface AdminLayoutProps {
 export function AdminLayout({
   activePage,
   appId,
+  applications,
   environment,
   timeRange,
   userEmail,
@@ -36,6 +39,7 @@ export function AdminLayout({
       <div className="admin-main">
         <TopBar
           appId={appId}
+          applications={applications}
           environment={environment}
           timeRange={timeRange}
           userEmail={userEmail}

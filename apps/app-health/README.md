@@ -9,6 +9,8 @@ It is intentionally split into two deployable applications:
 
 Shared API contracts live in `contracts/openapi.yaml`.
 
+For mobile app configuration, see `docs/app-integration.md`.
+
 ## Directory layout
 
 ```text

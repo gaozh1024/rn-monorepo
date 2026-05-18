@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { listApplications } from '../api/applications';
 import { AdminLayout } from '../layout/AdminLayout';
 import { AlertsPage } from '../pages/AlertsPage';
 import { ApplicationsPage } from '../pages/ApplicationsPage';
@@ -9,6 +10,8 @@ import { LoginPage } from '../pages/LoginPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { StatsPage } from '../pages/StatsPage';
 import { AuthProvider, useAuth } from './AuthProvider';
+import { createFallbackAppOption, toProjectAppOption } from './appScope';
+import type { ProjectAppOption } from './appScope';
 
 export type Page = 'overview' | 'applications' | 'issues' | 'events' | 'alerts' | 'settings';
 
@@ -25,8 +28,38 @@ function AuthenticatedApp() {
   const [page, setPage] = useState<Page>('overview');
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [appId, setAppId] = useState('mobile-app');
+  const [applications, setApplications] = useState<ProjectAppOption[]>([]);
   const [environment, setEnvironment] = useState('');
   const [timeRange, setTimeRange] = useState('24h');
+
+  useEffect(() => {
+    if (!auth.user) return;
+
+    async function loadApplications() {
+      try {
+        const response = await listApplications();
+        const nextApplications = response.items.map(toProjectAppOption);
+        setApplications(nextApplications);
+        setAppId(currentAppId => {
+          if (!nextApplications.length) return currentAppId;
+          return nextApplications.some(application => application.appId === currentAppId)
+            ? currentAppId
+            : nextApplications[0].appId;
+        });
+      } catch (cause) {
+        console.error(cause);
+      }
+    }
+
+    void loadApplications();
+  }, [auth.user]);
+
+  const selectedApp = useMemo(
+    () =>
+      applications.find(application => application.appId === appId) ??
+      createFallbackAppOption(appId),
+    [appId, applications]
+  );
 
   if (auth.loading) {
     return (
@@ -53,6 +86,7 @@ function AuthenticatedApp() {
       <AdminLayout
         activePage="issues"
         appId={appId}
+        applications={applications}
         environment={environment}
         timeRange={timeRange}
         userEmail={auth.user.email}
@@ -74,6 +108,7 @@ function AuthenticatedApp() {
     <AdminLayout
       activePage={page}
       appId={appId}
+      applications={applications}
       environment={environment}
       timeRange={timeRange}
       userEmail={auth.user.email}
@@ -83,11 +118,18 @@ function AuthenticatedApp() {
       onEnvironmentChange={setEnvironment}
       onTimeRangeChange={setTimeRange}
     >
-      {page === 'overview' ? <StatsPage appId={appId} /> : null}
-      {page === 'applications' ? <ApplicationsPage appId={appId} /> : null}
-      {page === 'issues' ? <IssuesPage appId={appId} onSelectIssue={setSelectedIssueId} /> : null}
-      {page === 'events' ? <EventsPage appId={appId} environment={environment} /> : null}
-      {page === 'alerts' ? <AlertsPage appId={appId} /> : null}
+      {page === 'overview' ? <StatsPage app={selectedApp} /> : null}
+      {page === 'applications' ? <ApplicationsPage /> : null}
+      {page === 'issues' ? (
+        <IssuesPage
+          app={selectedApp}
+          environment={environment}
+          timeRange={timeRange}
+          onSelectIssue={setSelectedIssueId}
+        />
+      ) : null}
+      {page === 'events' ? <EventsPage app={selectedApp} environment={environment} /> : null}
+      {page === 'alerts' ? <AlertsPage app={selectedApp} /> : null}
       {page === 'settings' ? <SettingsPage /> : null}
     </AdminLayout>
   );

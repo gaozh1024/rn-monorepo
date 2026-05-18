@@ -1,3 +1,6 @@
+import { DropdownSelect } from './ui/DropdownSelect';
+import type { DropdownOption } from './ui/DropdownSelect';
+
 export interface PaginationProps {
   page: number;
   pageSize: number;
@@ -7,6 +10,10 @@ export interface PaginationProps {
 }
 
 const pageSizeOptions = [10, 20, 50, 100];
+const pageSizeDropdownOptions: DropdownOption[] = pageSizeOptions.map(value => ({
+  value: String(value),
+  label: String(value),
+}));
 
 export function Pagination({
   page,
@@ -30,13 +37,12 @@ export function Pagination({
       </button>
       <label>
         每页数量
-        <select value={pageSize} onChange={event => onPageSizeChange(Number(event.target.value))}>
-          {pageSizeOptions.map(value => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
+        <DropdownSelect
+          className="page-size-select"
+          value={String(pageSize)}
+          options={pageSizeDropdownOptions}
+          onChange={value => onPageSizeChange(Number(value))}
+        />
       </label>
     </div>
   );
