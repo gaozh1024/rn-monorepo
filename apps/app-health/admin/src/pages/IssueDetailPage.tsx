@@ -7,6 +7,9 @@ import { JsonViewer } from '../components/JsonViewer';
 import { LevelBadge } from '../components/LevelBadge';
 import { ErrorState, LoadingState } from '../components/PageState';
 import { StackTraceView } from '../components/StackTraceView';
+import { Button } from '../components/ui/Button';
+import { Card, CardHeader } from '../components/ui/Card';
+import { MetricCard } from '../components/ui/MetricCard';
 
 interface IssueDetailState {
   issue: HealthIssue;
@@ -44,14 +47,17 @@ export function IssueDetailPage({ issueId, onBack }: { issueId: string; onBack: 
   }
 
   return (
-    <section>
-      <button onClick={onBack}>← Back</button>
+    <div className="page-stack">
+      <Button variant="ghost" onClick={onBack}>
+        ← Back to issues
+      </Button>
       {loading ? <LoadingState label="Loading issue..." /> : null}
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {!loading && !error && detail ? (
         <>
-          <div className="section-header detail-title">
+          <div className="page-heading detail-title">
             <div>
+              <span className="eyebrow">Issue detail</span>
               <h2>{detail.issue.title}</h2>
               <p className="muted">{detail.issue.fingerprint}</p>
             </div>
@@ -61,38 +67,40 @@ export function IssueDetailPage({ issueId, onBack }: { issueId: string; onBack: 
             </div>
           </div>
           <div className="actions">
-            <button onClick={() => void setStatus('open')}>Open</button>
-            <button onClick={() => void setStatus('resolved')}>Resolved</button>
-            <button onClick={() => void setStatus('ignored')}>Ignored</button>
+            <Button variant="ghost" onClick={() => void setStatus('open')}>
+              Open
+            </Button>
+            <Button variant="primary" onClick={() => void setStatus('resolved')}>
+              Resolved
+            </Button>
+            <Button variant="ghost" onClick={() => void setStatus('ignored')}>
+              Ignored
+            </Button>
           </div>
           <div className="stats-grid stats-grid-compact">
-            <article>
-              <strong>{detail.issue.eventCount}</strong>
-              <span>Events</span>
-            </article>
-            <article>
-              <strong>{detail.issue.affectedUserCount}</strong>
-              <span>Users</span>
-            </article>
-            <article>
-              <strong>{detail.issue.lastPlatform ?? '-'}</strong>
-              <span>Platform</span>
-            </article>
-            <article>
-              <strong>{detail.issue.lastAppVersion ?? '-'}</strong>
-              <span>Version</span>
-            </article>
+            <MetricCard label="Events" value={detail.issue.eventCount} />
+            <MetricCard label="Users" value={detail.issue.affectedUserCount} tone="warning" />
+            <MetricCard label="Platform" value={detail.issue.lastPlatform ?? '-'} />
+            <MetricCard label="Version" value={detail.issue.lastAppVersion ?? '-'} />
           </div>
-          <h3>Stack</h3>
-          <StackTraceView stack={detail.sampleEvent?.error?.stack} />
-          <h3>Breadcrumbs</h3>
-          <BreadcrumbTimeline breadcrumbs={detail.sampleEvent?.breadcrumbs} />
-          <h3>Recent Events</h3>
-          <JsonViewer value={detail.recentEvents} />
-          <h3>Sample Event</h3>
-          <JsonViewer value={detail.sampleEvent ?? {}} />
+          <Card>
+            <CardHeader title="Stack trace" />
+            <StackTraceView stack={detail.sampleEvent?.error?.stack} />
+          </Card>
+          <Card>
+            <CardHeader title="Breadcrumbs" />
+            <BreadcrumbTimeline breadcrumbs={detail.sampleEvent?.breadcrumbs} />
+          </Card>
+          <Card>
+            <CardHeader title="Recent events" />
+            <JsonViewer value={detail.recentEvents} />
+          </Card>
+          <Card>
+            <CardHeader title="Sample event" />
+            <JsonViewer value={detail.sampleEvent ?? {}} />
+          </Card>
         </>
       ) : null}
-    </section>
+    </div>
   );
 }

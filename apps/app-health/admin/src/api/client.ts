@@ -6,7 +6,7 @@ export interface ApiClientOptions {
 export type QueryValue = boolean | number | string | null | undefined;
 export type QueryParams = Record<string, QueryValue>;
 
-const defaultBaseUrl = import.meta.env.VITE_APP_HEALTH_API_BASE_URL || 'http://localhost:8080';
+export const apiBaseUrl = import.meta.env.VITE_APP_HEALTH_API_BASE_URL || 'http://localhost:8080';
 const defaultAdminToken = import.meta.env.VITE_APP_HEALTH_ADMIN_TOKEN || 'admin_dev';
 
 export function buildQuery(params: object = {}) {
@@ -22,7 +22,8 @@ export function buildQuery(params: object = {}) {
 }
 
 export async function apiGet<T>(path: string, options: ApiClientOptions = {}): Promise<T> {
-  const response = await fetch(`${options.baseUrl ?? defaultBaseUrl}${path}`, {
+  const response = await fetch(`${options.baseUrl ?? apiBaseUrl}${path}`, {
+    credentials: 'include',
     headers: {
       authorization: `Bearer ${options.adminToken ?? defaultAdminToken}`,
     },
@@ -36,7 +37,8 @@ export async function apiPatch<T>(
   body: unknown,
   options: ApiClientOptions = {}
 ): Promise<T> {
-  const response = await fetch(`${options.baseUrl ?? defaultBaseUrl}${path}`, {
+  const response = await fetch(`${options.baseUrl ?? apiBaseUrl}${path}`, {
+    credentials: 'include',
     method: 'PATCH',
     headers: {
       authorization: `Bearer ${options.adminToken ?? defaultAdminToken}`,

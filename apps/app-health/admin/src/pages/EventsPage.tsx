@@ -7,6 +7,8 @@ import { JsonViewer } from '../components/JsonViewer';
 import { LevelBadge } from '../components/LevelBadge';
 import { Pagination } from '../components/Pagination';
 import { EmptyState, ErrorState, LoadingState } from '../components/PageState';
+import { Button } from '../components/ui/Button';
+import { Card, CardHeader } from '../components/ui/Card';
 
 interface EventFilters {
   appId: string;
@@ -44,10 +46,20 @@ const defaultFilters: EventFilters = {
   message: '',
 };
 
-export function EventsPage({ issueId }: { issueId?: string }) {
+export function EventsPage({
+  issueId,
+  appId = '',
+  environment = '',
+}: {
+  issueId?: string;
+  appId?: string;
+  environment?: string;
+}) {
   const [filters, setFilters] = useState<EventFilters>({
     ...defaultFilters,
+    appId,
     issueId: issueId ?? '',
+    environment,
   });
   const [response, setResponse] = useState<ListResponse<HealthEvent> | null>(null);
   const [selected, setSelected] = useState<HealthEvent | null>(null);
@@ -78,13 +90,23 @@ export function EventsPage({ issueId }: { issueId?: string }) {
     void load(filters, page, pageSize);
   }, [filters, page, pageSize]);
 
+  useEffect(() => {
+    setFilters(current => ({
+      ...current,
+      appId,
+      environment,
+      issueId: issueId ?? current.issueId,
+    }));
+    setPage(1);
+  }, [appId, environment, issueId]);
+
   function updateFilter<K extends keyof EventFilters>(key: K, value: EventFilters[K]) {
     setFilters(current => ({ ...current, [key]: value }));
     setPage(1);
   }
 
   function resetFilters() {
-    setFilters({ ...defaultFilters, issueId: issueId ?? '' });
+    setFilters({ ...defaultFilters, appId, environment, issueId: issueId ?? '' });
     setSelected(null);
     setPage(1);
   }
@@ -98,142 +120,158 @@ export function EventsPage({ issueId }: { issueId?: string }) {
   const total = response?.total ?? 0;
 
   return (
-    <section>
-      <div className="section-header">
-        <h2>Events</h2>
-        <button onClick={() => void load()}>Refresh</button>
+    <div className="page-stack">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">Raw telemetry</span>
+          <h1>Events</h1>
+          <p>Inspect raw app health events, sessions, users, breadcrumbs, and payloads.</p>
+        </div>
+        <Button onClick={() => void load()}>Refresh</Button>
       </div>
-      <div className="filters" aria-label="Event filters">
-        <label>
-          App ID
-          <input
-            value={filters.appId}
-            onChange={event => updateFilter('appId', event.target.value)}
-            placeholder="mobile-app"
-          />
-        </label>
-        <label>
-          Issue ID
-          <input
-            value={filters.issueId}
-            onChange={event => updateFilter('issueId', event.target.value)}
-            placeholder="issue_..."
-          />
-        </label>
-        <label>
-          User ID
-          <input
-            value={filters.userId}
-            onChange={event => updateFilter('userId', event.target.value)}
-            placeholder="user_..."
-          />
-        </label>
-        <label>
-          Level
-          <select
-            value={filters.level}
-            onChange={event => updateFilter('level', event.target.value)}
-          >
-            <option value="">All</option>
-            <option value="fatal">Fatal</option>
-            <option value="error">Error</option>
-            <option value="warning">Warning</option>
-            <option value="info">Info</option>
-          </select>
-        </label>
-        <label>
-          Type
-          <select value={filters.type} onChange={event => updateFilter('type', event.target.value)}>
-            <option value="">All</option>
-            {appHealthEventTypes.map(type => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          From
-          <input
-            type="datetime-local"
-            value={filters.from}
-            onChange={event => updateFilter('from', event.target.value)}
-          />
-        </label>
-        <label>
-          To
-          <input
-            type="datetime-local"
-            value={filters.to}
-            onChange={event => updateFilter('to', event.target.value)}
-          />
-        </label>
-        <label>
-          App Version
-          <input
-            value={filters.appVersion}
-            onChange={event => updateFilter('appVersion', event.target.value)}
-            placeholder="1.0.0"
-          />
-        </label>
-        <label>
-          Build
-          <input
-            value={filters.buildNumber}
-            onChange={event => updateFilter('buildNumber', event.target.value)}
-            placeholder="45"
-          />
-        </label>
-        <label>
-          Environment
-          <input
-            value={filters.environment}
-            onChange={event => updateFilter('environment', event.target.value)}
-            placeholder="production"
-          />
-        </label>
-        <label>
-          Platform
-          <input
-            value={filters.platform}
-            onChange={event => updateFilter('platform', event.target.value)}
-            placeholder="ios / android / web"
-          />
-        </label>
-        <label>
-          OS Version
-          <input
-            value={filters.osVersion}
-            onChange={event => updateFilter('osVersion', event.target.value)}
-            placeholder="17.0"
-          />
-        </label>
-        <label>
-          Session ID
-          <input
-            value={filters.sessionId}
-            onChange={event => updateFilter('sessionId', event.target.value)}
-            placeholder="sess_..."
-          />
-        </label>
-        <label>
-          Fingerprint
-          <input
-            value={filters.fingerprint}
-            onChange={event => updateFilter('fingerprint', event.target.value)}
-            placeholder="fp_..."
-          />
-        </label>
-        <label>
-          Message
-          <input
-            value={filters.message}
-            onChange={event => updateFilter('message', event.target.value)}
-            placeholder="boom"
-          />
-        </label>
-        <button onClick={resetFilters}>Reset</button>
-      </div>
+
+      <Card>
+        <CardHeader
+          title="Filters"
+          description="Search by event type, severity, app version, session, fingerprint, or message."
+        />
+        <div className="filters" aria-label="Event filters">
+          <label>
+            App ID
+            <input
+              value={filters.appId}
+              onChange={event => updateFilter('appId', event.target.value)}
+              placeholder="mobile-app"
+            />
+          </label>
+          <label>
+            Issue ID
+            <input
+              value={filters.issueId}
+              onChange={event => updateFilter('issueId', event.target.value)}
+              placeholder="issue_..."
+            />
+          </label>
+          <label>
+            User ID
+            <input
+              value={filters.userId}
+              onChange={event => updateFilter('userId', event.target.value)}
+              placeholder="user_..."
+            />
+          </label>
+          <label>
+            Level
+            <select
+              value={filters.level}
+              onChange={event => updateFilter('level', event.target.value)}
+            >
+              <option value="">All</option>
+              <option value="fatal">Fatal</option>
+              <option value="error">Error</option>
+              <option value="warning">Warning</option>
+              <option value="info">Info</option>
+            </select>
+          </label>
+          <label>
+            Type
+            <select
+              value={filters.type}
+              onChange={event => updateFilter('type', event.target.value)}
+            >
+              <option value="">All</option>
+              {appHealthEventTypes.map(type => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            From
+            <input
+              type="datetime-local"
+              value={filters.from}
+              onChange={event => updateFilter('from', event.target.value)}
+            />
+          </label>
+          <label>
+            To
+            <input
+              type="datetime-local"
+              value={filters.to}
+              onChange={event => updateFilter('to', event.target.value)}
+            />
+          </label>
+          <label>
+            App Version
+            <input
+              value={filters.appVersion}
+              onChange={event => updateFilter('appVersion', event.target.value)}
+              placeholder="1.0.0"
+            />
+          </label>
+          <label>
+            Build
+            <input
+              value={filters.buildNumber}
+              onChange={event => updateFilter('buildNumber', event.target.value)}
+              placeholder="45"
+            />
+          </label>
+          <label>
+            Environment
+            <input
+              value={filters.environment}
+              onChange={event => updateFilter('environment', event.target.value)}
+              placeholder="production"
+            />
+          </label>
+          <label>
+            Platform
+            <input
+              value={filters.platform}
+              onChange={event => updateFilter('platform', event.target.value)}
+              placeholder="ios / android / web"
+            />
+          </label>
+          <label>
+            OS Version
+            <input
+              value={filters.osVersion}
+              onChange={event => updateFilter('osVersion', event.target.value)}
+              placeholder="17.0"
+            />
+          </label>
+          <label>
+            Session ID
+            <input
+              value={filters.sessionId}
+              onChange={event => updateFilter('sessionId', event.target.value)}
+              placeholder="sess_..."
+            />
+          </label>
+          <label>
+            Fingerprint
+            <input
+              value={filters.fingerprint}
+              onChange={event => updateFilter('fingerprint', event.target.value)}
+              placeholder="fp_..."
+            />
+          </label>
+          <label>
+            Message
+            <input
+              value={filters.message}
+              onChange={event => updateFilter('message', event.target.value)}
+              placeholder="boom"
+            />
+          </label>
+          <Button variant="ghost" onClick={resetFilters}>
+            Reset
+          </Button>
+        </div>
+      </Card>
       {loading ? <LoadingState label="Loading events..." /> : null}
       {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
       {!loading && !error && !events.length ? (
@@ -251,34 +289,36 @@ export function EventsPage({ issueId }: { issueId?: string }) {
             onPageChange={setPage}
             onPageSizeChange={updatePageSize}
           />
-          <table>
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Level</th>
-                <th>App</th>
-                <th>User</th>
-                <th>Message</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map(event => (
-                <tr key={event.id} onClick={() => setSelected(event)}>
-                  <td>{event.type}</td>
-                  <td>
-                    <LevelBadge level={event.level} />
-                  </td>
-                  <td>
-                    {event.app.id}@{event.app.version ?? '-'}
-                  </td>
-                  <td>{event.user?.id ?? '-'}</td>
-                  <td>{event.error?.message ?? '-'}</td>
-                  <td>{event.createdAt ? new Date(event.createdAt).toLocaleString() : '-'}</td>
+          <div className="table-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Level</th>
+                  <th>App</th>
+                  <th>User</th>
+                  <th>Message</th>
+                  <th>Created</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {events.map(event => (
+                  <tr key={event.id} onClick={() => setSelected(event)}>
+                    <td>{event.type}</td>
+                    <td>
+                      <LevelBadge level={event.level} />
+                    </td>
+                    <td>
+                      {event.app.id}@{event.app.version ?? '-'}
+                    </td>
+                    <td>{event.user?.id ?? '-'}</td>
+                    <td>{event.error?.message ?? '-'}</td>
+                    <td>{event.createdAt ? new Date(event.createdAt).toLocaleString() : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <Pagination
             page={page}
             pageSize={pageSize}
@@ -288,8 +328,13 @@ export function EventsPage({ issueId }: { issueId?: string }) {
           />
         </>
       ) : null}
-      {selected ? <JsonViewer value={selected} /> : null}
-    </section>
+      {selected ? (
+        <Card>
+          <CardHeader title="Selected event payload" description={selected.id} />
+          <JsonViewer value={selected} />
+        </Card>
+      ) : null}
+    </div>
   );
 }
 
