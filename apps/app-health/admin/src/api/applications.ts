@@ -71,6 +71,10 @@ export function revokeToken(id: string) {
   return apiPost<{ token: IngestToken }>(`/api/app-health/tokens/${id}/revoke`);
 }
 
+export function deleteToken(id: string) {
+  return apiDelete<{ token: IngestToken }>(`/api/app-health/tokens/${id}`);
+}
+
 export function enableApplication(id: string) {
   return apiPost<{ application: Application }>(`/api/app-health/applications/${id}/enable`);
 }

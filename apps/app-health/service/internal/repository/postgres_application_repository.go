@@ -159,6 +159,22 @@ ORDER BY created_at DESC`, applicationID)
 	return pgx.CollectRows(rows, scanIngestToken)
 }
 
+func (r *PostgresIngestTokenRepository) Get(ctx context.Context, id string) (domain.IngestToken, error) {
+	rows, err := r.pool.Query(ctx, `
+SELECT id, application_id, name, token_hash, token_prefix, last_used_at, revoked_at, created_at
+FROM app_health_ingest_tokens
+WHERE id = $1`, id)
+	if err != nil {
+		return domain.IngestToken{}, err
+	}
+	defer rows.Close()
+	token, err := pgx.CollectOneRow(rows, scanIngestToken)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.IngestToken{}, ErrNotFound
+	}
+	return token, err
+}
+
 func (r *PostgresIngestTokenRepository) FindActiveByHash(ctx context.Context, tokenHash string) (domain.IngestToken, error) {
 	rows, err := r.pool.Query(ctx, `
 SELECT id, application_id, name, token_hash, token_prefix, last_used_at, revoked_at, created_at
@@ -201,6 +217,17 @@ RETURNING id, application_id, name, token_hash, token_prefix, last_used_at, revo
 		return domain.IngestToken{}, ErrNotFound
 	}
 	return token, err
+}
+
+func (r *PostgresIngestTokenRepository) Delete(ctx context.Context, id string) error {
+	commandTag, err := r.pool.Exec(ctx, `DELETE FROM app_health_ingest_tokens WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (r *PostgresIngestTokenRepository) RevokeByApplication(ctx context.Context, applicationID string) (int, error) {

@@ -1,5 +1,7 @@
 # @gaozh1024/rn-health 0.2.0 Release Notes
 
+发布日期：2026-05-19
+
 `0.2.0` focuses on reliable production capture: persistent storage ergonomics, bounded upload time, React Native unhandled rejection coverage, and API error monitoring helpers.
 
 ## Changes
@@ -18,6 +20,12 @@
 - `pnpm --dir packages/rn-health build`
 - `pnpm ai:check`
 - `npm_config_cache=/tmp/rn-health-npm-cache npm pack --dry-run`（在 `packages/rn-health` 目录）
+
+## App Health Service Compatibility
+
+- Built-in fetch transport targets `POST /api/app-health/events` when `endpoint` is configured with the self-hosted App Health service URL.
+- Use `ingestToken` for bearer authentication; application-level tokens are created from the App Health admin console and are shown only once.
+- The admin/service stack is validated separately with `pnpm verify:app-health`.
 
 ## Notes
 

@@ -16,6 +16,7 @@ import (
 var (
 	ErrInvalidApplication = errors.New("invalid application")
 	ErrInvalidToken       = errors.New("invalid ingest token")
+	ErrTokenStillActive   = errors.New("token is still active")
 )
 
 type ApplicationService struct {
@@ -110,6 +111,20 @@ func (s *ApplicationService) CreateToken(ctx context.Context, applicationID stri
 
 func (s *ApplicationService) RevokeToken(ctx context.Context, id string) (domain.IngestToken, error) {
 	return s.tokens.Revoke(ctx, id)
+}
+
+func (s *ApplicationService) DeleteDisabledToken(ctx context.Context, id string) (domain.IngestToken, error) {
+	token, err := s.tokens.Get(ctx, id)
+	if err != nil {
+		return domain.IngestToken{}, err
+	}
+	if token.RevokedAt == nil {
+		return domain.IngestToken{}, ErrTokenStillActive
+	}
+	if err := s.tokens.Delete(ctx, id); err != nil {
+		return domain.IngestToken{}, err
+	}
+	return token, nil
 }
 
 func (s *ApplicationService) Enable(ctx context.Context, id string) (domain.Application, error) {

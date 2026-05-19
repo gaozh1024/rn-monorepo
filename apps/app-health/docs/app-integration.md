@@ -4,12 +4,12 @@ This document explains how a mobile app should configure App Health ingestion.
 
 ## Required Values
 
-| Field         | Where to get it                                          | Example                                            | Notes                                                                                                         |
-| ------------- | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `appId`       | Admin console -> Application Management -> App ID        | `com.llys.app.dev`                                 | Must match the registered application. Events using a different `app.id` are rejected for application tokens. |
-| `endpoint`    | App Health service public URL + `/api/app-health/events` | `https://health.example.com/api/app-health/events` | Use the URL reachable by the mobile app, not the admin UI URL.                                                |
-| `token`       | Admin console -> Application detail -> Token Management  | `ah_ingest_xxx`                                    | Full token is shown only once after creation. Store it in app config or a secure release secret.              |
-| `environment` | Release environment name                                 | `production`                                       | Recommended values: `production`, `staging`, `development`.                                                   |
+| Field         | Where to get it                                          | Example                                            | Notes                                                                                                                                           |
+| ------------- | -------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `appId`       | Admin console -> Application Management -> App ID        | `com.llys.app.dev`                                 | Must match the registered application. Events using a different `app.id` are rejected for application tokens.                                   |
+| `endpoint`    | App Health service public URL + `/api/app-health/events` | `https://health.example.com/api/app-health/events` | Use the URL reachable by the mobile app, not the admin UI URL.                                                                                  |
+| `ingestToken` | Admin console -> Application detail -> Token Management  | `ah_ingest_xxx`                                    | Full token is shown only once after creation. Pass it to `AppHealthProvider.ingestToken` and store it in app config or a secure release secret. |
+| `environment` | Release environment name                                 | `production`                                       | Recommended values: `production`, `staging`, `development`.                                                                                     |
 
 ## React Native Provider
 
@@ -19,7 +19,7 @@ Configure the app at the root of the React Native tree:
 <AppHealthProvider
   appId="com.llys.app.dev"
   endpoint="https://health.example.com/api/app-health/events"
-  token="ah_ingest_xxx"
+  ingestToken="ah_ingest_xxx"
   environment="production"
 >
   <App />
@@ -77,3 +77,4 @@ Expected result:
 - Reusing a revoked token.
 - Losing the full token after closing the creation panel. Generate a new token if this happens.
 - Shipping a staging token in a production build.
+- Passing `token` to `AppHealthProvider`; the SDK prop is named `ingestToken`.

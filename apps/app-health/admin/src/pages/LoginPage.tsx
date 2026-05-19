@@ -7,6 +7,7 @@ export function LoginPage() {
   const auth = useAuth();
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function submit(event: FormEvent) {
@@ -46,12 +47,23 @@ export function LoginPage() {
           </label>
           <label>
             密码
-            <input
-              value={password}
-              onChange={event => setPassword(event.target.value)}
-              type="password"
-              required
-            />
+            <span className="password-field">
+              <input
+                value={password}
+                onChange={event => setPassword(event.target.value)}
+                type={showPassword ? 'text' : 'password'}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword(current => !current)}
+              >
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </span>
           </label>
           {auth.error ? <p className="login-error">{auth.error}</p> : null}
           <Button variant="primary" disabled={submitting}>
@@ -68,5 +80,25 @@ export function LoginPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="password-toggle-icon">
+      <path d="M2.2 12s3.5-6 9.8-6 9.8 6 9.8 6-3.5 6-9.8 6-9.8-6-9.8-6Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="password-toggle-icon">
+      <path d="M3 3l18 18" />
+      <path d="M10.6 6.2A10.5 10.5 0 0 1 12 6c6.3 0 9.8 6 9.8 6a18 18 0 0 1-2.7 3.3" />
+      <path d="M14.1 14.1A3 3 0 0 1 9.9 9.9" />
+      <path d="M6.5 6.8A17.8 17.8 0 0 0 2.2 12s3.5 6 9.8 6a10.4 10.4 0 0 0 4.1-.8" />
+    </svg>
   );
 }

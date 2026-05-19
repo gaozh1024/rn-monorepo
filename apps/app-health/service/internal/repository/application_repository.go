@@ -21,10 +21,12 @@ type ApplicationRepository interface {
 
 type IngestTokenRepository interface {
 	Create(context.Context, domain.IngestToken) (domain.IngestToken, error)
+	Get(context.Context, string) (domain.IngestToken, error)
 	ListByApplication(context.Context, string) ([]domain.IngestToken, error)
 	FindActiveByHash(context.Context, string) (domain.IngestToken, error)
 	MarkUsed(context.Context, string, time.Time) error
 	Revoke(context.Context, string) (domain.IngestToken, error)
+	Delete(context.Context, string) error
 	RevokeByApplication(context.Context, string) (int, error)
 	DeleteByApplication(context.Context, string) (int, error)
 }
@@ -195,6 +197,17 @@ func (r *MemoryIngestTokenRepository) ListByApplication(_ context.Context, appli
 	return tokens, nil
 }
 
+func (r *MemoryIngestTokenRepository) Get(_ context.Context, id string) (domain.IngestToken, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	token, ok := r.tokens[id]
+	if !ok {
+		return domain.IngestToken{}, ErrNotFound
+	}
+	token.PlainText = ""
+	return token, nil
+}
+
 func (r *MemoryIngestTokenRepository) FindActiveByHash(_ context.Context, tokenHash string) (domain.IngestToken, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -229,6 +242,16 @@ func (r *MemoryIngestTokenRepository) Revoke(_ context.Context, id string) (doma
 	token.RevokedAt = &now
 	r.tokens[id] = token
 	return token, nil
+}
+
+func (r *MemoryIngestTokenRepository) Delete(_ context.Context, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.tokens[id]; !ok {
+		return ErrNotFound
+	}
+	delete(r.tokens, id)
+	return nil
 }
 
 func (r *MemoryIngestTokenRepository) RevokeByApplication(_ context.Context, applicationID string) (int, error) {

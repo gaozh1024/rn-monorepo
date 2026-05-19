@@ -114,6 +114,48 @@ curl http://localhost:8080/healthz
 curl http://localhost:8080/readyz
 ```
 
+## Full-stack smoke test
+
+Run the Docker-based smoke test before publishing or handing the stack to another environment:
+
+```bash
+pnpm smoke:app-health
+```
+
+The smoke script uses Docker Compose for PostgreSQL and runs the service/admin locally by default, with project name `app-health-smoke`. This avoids pulling Go/Node base images during the fast local smoke path while still verifying the real PostgreSQL, migrations, API, auth, and admin UI. It verifies:
+
+- PostgreSQL is healthy.
+- Migrations run successfully.
+- Service `/healthz` and `/readyz` are reachable.
+- Admin static UI is reachable.
+- Password login creates a valid session cookie.
+- Application creation returns a one-time ingest token.
+- The token can upload an event for the matching app ID.
+- Events, issues, and overview stats can query the uploaded event.
+- Alert rule CRUD, test delivery failure, and delivery history work.
+- Settings summary and retention dry-run APIs work.
+- Retention run refuses missing destructive confirmation.
+- Token revoke/delete and logout work.
+
+Optional overrides:
+
+```bash
+APP_HEALTH_SMOKE_PROJECT=app-health-smoke \
+APP_HEALTH_SMOKE_SERVICE_PORT=18080 \
+APP_HEALTH_SMOKE_ADMIN_PORT=15173 \
+APP_HEALTH_SMOKE_POSTGRES_PORT=15433 \
+APP_HEALTH_SMOKE_APP_ID=smoke-app \
+pnpm smoke:app-health
+```
+
+The smoke defaults intentionally use ports `18080`, `15173`, and `15433` so they can run next to the normal local development stack on `8080`, `5173`, and `15432`.
+
+To force all services through Docker Compose, use:
+
+```bash
+APP_HEALTH_SMOKE_MODE=compose pnpm smoke:app-health
+```
+
 Admin login smoke test:
 
 ```bash
@@ -125,6 +167,7 @@ curl -i -X POST http://localhost:8080/api/app-health/auth/login \
 Auth notes:
 
 - Password login uses `APP_HEALTH_ADMIN_EMAIL` + bcrypt `APP_HEALTH_ADMIN_PASSWORD_HASH`. Generate a hash with `go run ./cmd/app-health-password '<password>'`.
+- In `docker-compose.yml`, escape bcrypt `$` characters as `$$` so Compose does not treat hash segments as environment-variable references.
 - Session cookies are signed with `APP_HEALTH_SESSION_SECRET`; production should use a random secret of at least 32 characters.
 - The old `APP_HEALTH_ADMIN_TOKEN` bearer mode remains as a compatibility fallback for scripts and private deployments, but the admin UI now prefers HttpOnly cookie login.
 - Set `APP_HEALTH_COOKIE_SECURE=true` behind HTTPS. Keep it `false` for plain `http://localhost` development.
@@ -151,7 +194,9 @@ Ingest safety behavior:
 
 The service can send a generic JSON webhook after an ingested event has been persisted, grouped into an issue, and linked back to that issue. Webhook delivery is best-effort: a webhook timeout or non-2xx response never rejects the ingest request.
 
-Enable it with:
+Recommended mode: create alert rules in the admin console. Rules are stored in PostgreSQL, can target all apps or one app, can target all environments or one environment, and record delivery history.
+
+Compatibility mode: if there are no enabled database alert rules, the service falls back to the environment-variable webhook:
 
 ```bash
 APP_HEALTH_ALERT_WEBHOOK_URL='https://example.internal/app-health-webhook?token=replace_me' \
@@ -179,15 +224,66 @@ Alert payload shape:
 
 Alert notes:
 
+- Database alert rules take precedence over `APP_HEALTH_ALERT_WEBHOOK_URL` to avoid duplicate delivery.
+- Alert rule webhook URLs are stored server-side and returned to the admin UI only as masked values.
+- Test deliveries are recorded in alert delivery history.
 - Default `APP_HEALTH_ALERT_MIN_LEVEL=fatal` means `error`, `warning`, and `info` are stored but do not alert.
 - Set `APP_HEALTH_ALERT_MIN_LEVEL=error` if JavaScript/API errors should alert too.
-- Cooldown is keyed by `appId + fingerprint + level`, so one crash storm sends at most one alert per cooldown window.
+- Cooldown is keyed by `ruleId + appId + fingerprint + level`, so one crash storm sends at most one alert per rule per cooldown window.
 - Do not commit webhook URLs containing tokens. Put them in your runtime secret manager.
 - Service config logs only whether alerting is enabled; it does not log the webhook URL.
+
+Alert rule API examples:
+
+```bash
+curl -X POST http://localhost:8080/api/app-health/alert-rules \
+  -H 'authorization: Bearer admin_dev' \
+  -H 'content-type: application/json' \
+  --data '{"name":"Mobile App errors","appId":"mobile-app","environment":"production","minLevel":"error","webhookUrl":"https://example.internal/webhook?token=replace_me","cooldownSeconds":300}'
+
+curl http://localhost:8080/api/app-health/alert-rules \
+  -H 'authorization: Bearer admin_dev'
+
+curl -X POST http://localhost:8080/api/app-health/alert-rules/<rule_id>/test \
+  -H 'authorization: Bearer admin_dev' \
+  -H 'content-type: application/json' \
+  --data '{"message":"Test alert from App Health"}'
+
+curl http://localhost:8080/api/app-health/alert-deliveries \
+  -H 'authorization: Bearer admin_dev'
+```
 
 Admin API examples:
 
 ```bash
+# Create an application and copy the one-time ingest token.
+curl -X POST http://localhost:8080/api/app-health/applications \
+  -H 'authorization: Bearer admin_dev' \
+  -H 'content-type: application/json' \
+  --data '{"name":"Mobile App","slug":"mobile-app","defaultEnvironment":"production","platforms":["ios","android"]}'
+
+# Create an additional token, revoke it, then delete the revoked token record.
+curl -X POST http://localhost:8080/api/app-health/applications/mobile-app/tokens \
+  -H 'authorization: Bearer admin_dev' \
+  -H 'content-type: application/json' \
+  --data '{"name":"iOS release token"}'
+
+curl -X POST http://localhost:8080/api/app-health/tokens/<token_id>/revoke \
+  -H 'authorization: Bearer admin_dev'
+
+curl -X DELETE http://localhost:8080/api/app-health/tokens/<token_id> \
+  -H 'authorization: Bearer admin_dev'
+
+# Delete only the registration and keep historical events/issues.
+curl -X DELETE http://localhost:8080/api/app-health/applications/mobile-app \
+  -H 'authorization: Bearer admin_dev'
+
+# Delete registration plus all app data. confirmAppId must equal the app slug/appId.
+curl -X DELETE http://localhost:8080/api/app-health/applications/mobile-app/data \
+  -H 'authorization: Bearer admin_dev' \
+  -H 'content-type: application/json' \
+  --data '{"confirmAppId":"mobile-app"}'
+
 curl http://localhost:8080/api/app-health/issues \
   -H 'authorization: Bearer admin_dev'
 
@@ -203,6 +299,36 @@ curl 'http://localhost:8080/api/app-health/events?appId=mobile-app&level=error' 
 curl 'http://localhost:8080/api/app-health/events?appVersion=1.0.0&platform=ios&type=js_error&message=boom' \
   -H 'authorization: Bearer admin_dev'
 ```
+
+Settings and retention API examples:
+
+```bash
+# Redacted runtime/config summary. Secrets are never returned.
+curl http://localhost:8080/api/app-health/settings/summary \
+  -H 'authorization: Bearer admin_dev'
+
+# Safe preview. Records history and does not delete events.
+curl -X POST http://localhost:8080/api/app-health/retention/dry-run \
+  -H 'authorization: Bearer admin_dev' \
+  -H 'content-type: application/json' \
+  --data '{"eventRetentionDays":30}'
+
+# Destructive cleanup. Requires a recent successful dry-run ID with the same eventRetentionDays.
+curl -X POST http://localhost:8080/api/app-health/retention/run \
+  -H 'authorization: Bearer admin_dev' \
+  -H 'content-type: application/json' \
+  --data '{"eventRetentionDays":30,"dryRunId":"ret_...","confirmText":"DELETE_OLD_EVENTS","acknowledgedBackup":true,"acknowledgedDryRun":true}'
+
+curl http://localhost:8080/api/app-health/retention/runs?limit=20 \
+  -H 'authorization: Bearer admin_dev'
+```
+
+Application management notes:
+
+- The application `slug` is the SDK `appId` / event `app.id`. Application-scoped ingest tokens reject events whose `app.id` does not match.
+- New tokens return `plainText` only in the creation response; copy it immediately. Later reads expose only the token prefix.
+- Active tokens must be revoked before their token records can be deleted.
+- Deleting an application registration keeps historical events and issues; deleting with `/data` requires `confirmAppId` and removes historical events/issues for that appId.
 
 Query notes:
 
@@ -331,7 +457,9 @@ Retention behavior:
 - `run` deletes events whose `created_at` is older than `now - APP_HEALTH_EVENT_RETENTION_DAYS`.
 - Issue rows are not deleted by this job.
 - Event IDs referenced by issue `sample_event_id` or `last_event_id` are protected from deletion.
-- `APP_HEALTH_DATABASE_URL` is required so the runner cannot accidentally report success against an empty in-memory repository.
+- `APP_HEALTH_DATABASE_URL` is required for the CLI runner so it cannot accidentally report success against an empty in-memory repository.
+- The admin Settings page exposes the same retention logic through service APIs and stores dry-run/run history in `app_health_retention_runs`.
+- Admin retention run requires a successful dry-run from the last 30 minutes, matching retention days, backup acknowledgement, dry-run acknowledgement, and `confirmText=DELETE_OLD_EVENTS`.
 
 Example cron:
 
@@ -347,6 +475,9 @@ Current admin capabilities:
 - issue list with app/status/level/platform/time/version/fingerprint/message filters and pagination;
 - event list with app/issue/user/level/type/time/version/platform/session/fingerprint/message filters and pagination;
 - issue detail with status transitions, stack trace, breadcrumbs, recent events, and raw sample event JSON;
+- application and ingest-token lifecycle management;
+- alert rule CRUD, test delivery, and delivery history;
+- Settings page for service health, redacted runtime config, retention dry-run/run, and retention operation history;
 - loading, empty, retry, and error states for each page.
 
 ## Verification
@@ -370,8 +501,8 @@ This runs:
 - Set a strong `APP_HEALTH_INGEST_TOKEN`, bcrypt admin password hash, and random `APP_HEALTH_SESSION_SECRET`; keep `APP_HEALTH_ADMIN_TOKEN` only for script/back-compat access if you still need it.
 - Terminate TLS and rate-limit ingestion at your gateway or load balancer. The service also has a per-process ingest token bucket for a first local guard.
 - Keep `APP_HEALTH_MAX_BODY_BYTES` enabled so malformed or oversized ingest requests cannot consume unbounded memory.
-- Configure `APP_HEALTH_ALERT_WEBHOOK_URL` for fatal/error alert routing, and keep the URL in a secret manager.
-- Schedule `app-health-retention dry-run` and then `app-health-retention run` after backup/operational review.
+- Prefer database alert rules from the admin console; use `APP_HEALTH_ALERT_WEBHOOK_URL` only as a compatibility fallback and keep the URL in a secret manager.
+- Schedule `app-health-retention dry-run` and then `app-health-retention run` after backup/operational review, or use the Settings page for manual retention with audit history.
 - Use `/healthz` for process liveness and `/readyz` for dependency readiness checks.
 - Deploy `admin/` as static assets with `VITE_APP_HEALTH_API_BASE_URL` pointing at the service.
 - Keep admin access private; the admin token is intended as a first deployable guard, not a full multi-user RBAC system.
@@ -381,4 +512,4 @@ This runs:
 - No source-map symbolication yet.
 - No alert retry/outbox yet; webhook delivery is best-effort.
 - No archival export before retention yet.
-- Admin auth is token-based only; add SSO/RBAC before exposing it to a wider internal audience.
+- Admin auth supports password sessions plus bearer-token compatibility; add SSO/RBAC before exposing it to a wider internal audience.

@@ -4,6 +4,7 @@ import {
   createToken,
   deleteApplication,
   deleteApplicationWithData,
+  deleteToken,
   disableApplication,
   enableApplication,
   getApplication,
@@ -57,6 +58,13 @@ interface SelectedApplication {
 interface DeleteTarget {
   application: ApplicationSummary;
   mode: 'data' | 'registration';
+}
+
+type TokenFilter = 'active' | 'disabled' | 'all';
+
+interface TokenActionTarget {
+  mode: 'disable' | 'delete';
+  token: IngestToken;
 }
 
 export function ApplicationsPage() {
@@ -320,6 +328,11 @@ export function ApplicationsPage() {
             await load();
             await loadDetail(selected.application.id);
           }}
+          onTokenDeleted={async tokenId => {
+            await deleteToken(tokenId);
+            await load();
+            await loadDetail(selected.application.id);
+          }}
           onDeleteData={() => {
             const summary = applications.find(item => item.id === selected.application.id);
             if (summary) setDeleteTarget({ application: summary, mode: 'data' });
@@ -465,6 +478,7 @@ function ApplicationDetailDrawer({
   onRefresh,
   onTokenCreated,
   onTokenRevoked,
+  onTokenDeleted,
   onDeleteData,
 }: {
   detail: SelectedApplication;
@@ -474,13 +488,22 @@ function ApplicationDetailDrawer({
   onRefresh: () => void;
   onTokenCreated: (token: IngestToken) => Promise<void>;
   onTokenRevoked: (tokenId: string) => Promise<void>;
+  onTokenDeleted: (tokenId: string) => Promise<void>;
   onDeleteData: () => void;
 }) {
   const [tokenPurpose, setTokenPurpose] = useState<TokenPurposeKey>('default');
   const [tokenName, setTokenName] = useState<string>(tokenPurposeOptions[0].name);
+  const [tokenFilter, setTokenFilter] = useState<TokenFilter>('active');
+  const [tokenActionTarget, setTokenActionTarget] = useState<TokenActionTarget | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const { application, tokens } = detail;
   const activeTokenCount = tokens.filter(token => !token.revokedAt).length;
+  const disabledTokenCount = tokens.length - activeTokenCount;
+  const visibleTokens = tokens.filter(token => {
+    if (tokenFilter === 'active') return !token.revokedAt;
+    if (tokenFilter === 'disabled') return Boolean(token.revokedAt);
+    return true;
+  });
   const hasActiveDefaultToken = tokens.some(
     token => !token.revokedAt && token.name === tokenPurposeOptions[0].name
   );
@@ -505,6 +528,16 @@ function ApplicationDetailDrawer({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function confirmTokenAction() {
+    if (!tokenActionTarget) return;
+    if (tokenActionTarget.mode === 'disable') {
+      await onTokenRevoked(tokenActionTarget.token.id);
+    } else {
+      await onTokenDeleted(tokenActionTarget.token.id);
+    }
+    setTokenActionTarget(null);
   }
 
   return (
@@ -560,7 +593,7 @@ function ApplicationDetailDrawer({
             <div className="section-header">
               <div>
                 <h3>Token 管理</h3>
-                <p>完整 Token 只在生成后显示一次，已吊销 Token 不能继续上报。</p>
+                <p>完整 Token 只在生成后显示一次，已禁用 Token 不能继续上报。</p>
               </div>
             </div>
             <div className="token-form" aria-label="添加 Token">
@@ -609,50 +642,92 @@ function ApplicationDetailDrawer({
               </div>
             </div>
             {createdToken?.plainText ? <TokenRevealPanel token={createdToken} /> : null}
+            <div className="token-list-toolbar">
+              <span>查看</span>
+              <div className="token-purpose-options" role="group" aria-label="Token 筛选">
+                {[
+                  { key: 'active', label: `有效 ${activeTokenCount}` },
+                  { key: 'disabled', label: `已禁用 ${disabledTokenCount}` },
+                  { key: 'all', label: `全部 ${tokens.length}` },
+                ].map(option => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className={`token-purpose-option ${tokenFilter === option.key ? 'is-active' : ''}`}
+                    onClick={() => setTokenFilter(option.key as TokenFilter)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="table-card">
-              <table>
-                <thead>
-                  <tr>
-                    <th>名称</th>
-                    <th>前缀</th>
-                    <th>创建时间</th>
-                    <th>最近使用</th>
-                    <th>状态</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tokens.map(token => (
-                    <tr key={token.id}>
-                      <td>{token.name}</td>
-                      <td>
-                        <code>{token.prefix}</code>
-                      </td>
-                      <td>{token.createdAt ? new Date(token.createdAt).toLocaleString() : '-'}</td>
-                      <td>
-                        {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleString() : '-'}
-                      </td>
-                      <td>
-                        <span
-                          className={`badge ${token.revokedAt ? 'status-disabled' : 'status-active'}`}
-                        >
-                          {token.revokedAt ? '已吊销' : '有效'}
-                        </span>
-                      </td>
-                      <td>
-                        <Button
-                          type="button"
-                          variant="danger"
-                          disabled={Boolean(token.revokedAt)}
-                          onClick={() => void onTokenRevoked(token.id)}
-                        >
-                          吊销
-                        </Button>
-                      </td>
+              {visibleTokens.length ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>名称</th>
+                      <th>前缀</th>
+                      <th>创建时间</th>
+                      <th>最近使用</th>
+                      <th>状态</th>
+                      <th>操作</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {visibleTokens.map(token => (
+                      <tr key={token.id}>
+                        <td>{token.name}</td>
+                        <td>
+                          <code>{token.prefix}</code>
+                        </td>
+                        <td>
+                          {token.createdAt ? new Date(token.createdAt).toLocaleString() : '-'}
+                        </td>
+                        <td>
+                          {token.lastUsedAt ? new Date(token.lastUsedAt).toLocaleString() : '-'}
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${token.revokedAt ? 'status-disabled' : 'status-active'}`}
+                          >
+                            {token.revokedAt ? '已禁用' : '有效'}
+                          </span>
+                        </td>
+                        <td>
+                          {token.revokedAt ? (
+                            <Button
+                              type="button"
+                              variant="danger"
+                              onClick={() => setTokenActionTarget({ mode: 'delete', token })}
+                            >
+                              删除
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="warning"
+                              onClick={() => setTokenActionTarget({ mode: 'disable', token })}
+                            >
+                              禁用
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <EmptyState
+                  label={
+                    tokenFilter === 'active'
+                      ? '暂无有效 Token'
+                      : tokenFilter === 'disabled'
+                        ? '暂无已禁用 Token'
+                        : '暂无 Token'
+                  }
+                />
+              )}
             </div>
           </div>
           <div className="drawer-section">
@@ -674,6 +749,69 @@ function ApplicationDetailDrawer({
           </div>
         </div>
       </aside>
+      {tokenActionTarget ? (
+        <TokenActionDialog
+          target={tokenActionTarget}
+          onClose={() => setTokenActionTarget(null)}
+          onConfirm={() => void confirmTokenAction()}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function TokenActionDialog({
+  target,
+  onClose,
+  onConfirm,
+}: {
+  target: TokenActionTarget;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const isDelete = target.mode === 'delete';
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section
+        className="modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label={isDelete ? '删除 Token' : '禁用 Token'}
+      >
+        <div className="card-header">
+          <div>
+            <h2>{isDelete ? '删除已禁用 Token 记录？' : '禁用 Token？'}</h2>
+            <p>
+              {isDelete
+                ? '只删除这条 Token 记录，不删除历史事件和问题。删除后列表中不再显示。'
+                : '禁用后，使用该 Token 的 App 将不能继续上报。历史事件和问题不会删除。'}
+            </p>
+          </div>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            关闭
+          </Button>
+        </div>
+        <dl className="definition-list">
+          <div>
+            <dt>名称</dt>
+            <dd>{target.token.name}</dd>
+          </div>
+          <div>
+            <dt>前缀</dt>
+            <dd>
+              <code>{target.token.prefix}</code>
+            </dd>
+          </div>
+        </dl>
+        <div className="actions">
+          <Button type="button" onClick={onClose}>
+            取消
+          </Button>
+          <Button type="button" variant={isDelete ? 'danger' : 'warning'} onClick={onConfirm}>
+            {isDelete ? '确认删除' : '确认禁用'}
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }

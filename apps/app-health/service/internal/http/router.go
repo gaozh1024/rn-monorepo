@@ -20,6 +20,8 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 	statsHandler := handlers.NewStatsHandler(container.Stats)
 	authHandler := handlers.NewAuthHandler(container.Auth, container.Session, cfg.CookieSecure)
 	applicationsHandler := handlers.NewApplicationsHandler(container.Application)
+	alertsHandler := handlers.NewAlertsHandler(container.Alert)
+	settingsHandler := handlers.NewSettingsHandler(container.Settings, container.Retention)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -72,6 +74,20 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 	mux.Handle("DELETE /api/app-health/applications/{id}/data", requireAdmin(http.HandlerFunc(applicationsHandler.DeleteData)))
 	mux.Handle("POST /api/app-health/applications/{id}/tokens", requireAdmin(http.HandlerFunc(applicationsHandler.CreateToken)))
 	mux.Handle("POST /api/app-health/tokens/{id}/revoke", requireAdmin(http.HandlerFunc(applicationsHandler.RevokeToken)))
+	mux.Handle("DELETE /api/app-health/tokens/{id}", requireAdmin(http.HandlerFunc(applicationsHandler.DeleteToken)))
+	mux.Handle("GET /api/app-health/alert-rules", requireAdmin(http.HandlerFunc(alertsHandler.ListRules)))
+	mux.Handle("POST /api/app-health/alert-rules", requireAdmin(http.HandlerFunc(alertsHandler.CreateRule)))
+	mux.Handle("GET /api/app-health/alert-rules/{id}", requireAdmin(http.HandlerFunc(alertsHandler.GetRule)))
+	mux.Handle("PATCH /api/app-health/alert-rules/{id}", requireAdmin(http.HandlerFunc(alertsHandler.UpdateRule)))
+	mux.Handle("DELETE /api/app-health/alert-rules/{id}", requireAdmin(http.HandlerFunc(alertsHandler.DeleteRule)))
+	mux.Handle("POST /api/app-health/alert-rules/{id}/enable", requireAdmin(http.HandlerFunc(alertsHandler.EnableRule)))
+	mux.Handle("POST /api/app-health/alert-rules/{id}/disable", requireAdmin(http.HandlerFunc(alertsHandler.DisableRule)))
+	mux.Handle("POST /api/app-health/alert-rules/{id}/test", requireAdmin(http.HandlerFunc(alertsHandler.TestRule)))
+	mux.Handle("GET /api/app-health/alert-deliveries", requireAdmin(http.HandlerFunc(alertsHandler.ListDeliveries)))
+	mux.Handle("GET /api/app-health/settings/summary", requireAdmin(http.HandlerFunc(settingsHandler.Summary)))
+	mux.Handle("POST /api/app-health/retention/dry-run", requireAdmin(http.HandlerFunc(settingsHandler.RetentionDryRun)))
+	mux.Handle("POST /api/app-health/retention/run", requireAdmin(http.HandlerFunc(settingsHandler.RetentionRun)))
+	mux.Handle("GET /api/app-health/retention/runs", requireAdmin(http.HandlerFunc(settingsHandler.RetentionRuns)))
 
 	return middleware.Recover(logger)(middleware.CORS(cfg.CORSOrigins)(mux))
 }

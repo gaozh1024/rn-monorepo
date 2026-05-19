@@ -506,10 +506,15 @@ section {
 }
 
 .btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
   border: 1px solid transparent;
   border-radius: 10px;
   padding: 9px 13px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .btn-primary {
@@ -1111,7 +1116,23 @@ tbody tr:hover {
   width: min(100%, 620px);
   max-height: calc(100vh - 48px);
   overflow: auto;
+  border-color: #dbe3ef;
   border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgb(15 23 42 / 0.28);
+  isolation: isolate;
+}
+
+.modal-panel .card-header {
+  align-items: flex-start;
+}
+
+.modal-panel .card-header > div {
+  min-width: 0;
+}
+
+.modal-panel .actions {
+  margin-top: 14px;
 }
 
 .app-form {
@@ -1214,6 +1235,19 @@ tbody tr:hover {
   color: #9a3412;
   padding: 10px 12px;
   font-size: 13px;
+}
+
+.token-list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.token-list-toolbar > span {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .token-panel {
@@ -1347,6 +1381,51 @@ tbody tr:hover {
   padding: 12px 13px;
 }
 
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 46px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 0;
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover {
+  background: #e2e8f0;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.password-toggle-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .login-error {
   border-radius: 12px;
   margin: 0;
@@ -1386,4 +1465,80 @@ tbody tr:hover {
 
 .user-logout:hover {
   background: #e2e8f0;
+}
+
+.settings-wide-card {
+  grid-column: 1 / -1;
+}
+
+.retention-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.retention-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+
+.retention-controls label,
+.warning-panel label {
+  display: grid;
+  gap: 7px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.retention-controls input {
+  width: 180px;
+}
+
+.retention-result {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.retention-result div {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.retention-result span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.retention-result strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.checkbox-row {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center;
+  gap: 9px !important;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.retention-table-card {
+  overflow-x: auto;
+}
+
+.retention-table-card table {
+  min-width: 980px;
 }

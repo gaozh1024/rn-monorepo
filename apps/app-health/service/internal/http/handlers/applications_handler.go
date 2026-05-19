@@ -90,6 +90,15 @@ func (h *ApplicationsHandler) RevokeToken(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, map[string]any{"token": token})
 }
 
+func (h *ApplicationsHandler) DeleteToken(w http.ResponseWriter, r *http.Request) {
+	token, err := h.applications.DeleteDisabledToken(r.Context(), r.PathValue("id"))
+	if err != nil {
+		writeApplicationError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"token": token})
+}
+
 func (h *ApplicationsHandler) Enable(w http.ResponseWriter, r *http.Request) {
 	application, err := h.applications.Enable(r.Context(), r.PathValue("id"))
 	if err != nil {
@@ -147,6 +156,10 @@ func writeApplicationError(w http.ResponseWriter, err error) {
 	}
 	if errors.Is(err, repository.ErrDuplicate) {
 		writeError(w, http.StatusConflict, "application already exists")
+		return
+	}
+	if errors.Is(err, appsvc.ErrTokenStillActive) {
+		writeError(w, http.StatusConflict, "disable token before deleting")
 		return
 	}
 	writeServiceError(w, err)

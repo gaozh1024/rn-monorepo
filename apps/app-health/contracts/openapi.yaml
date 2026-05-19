@@ -137,6 +137,7 @@ paths:
       summary: List raw app health events for admin UI
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/AppId'
         - $ref: '#/components/parameters/IssueId'
@@ -167,6 +168,7 @@ paths:
       summary: Get raw event details
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: id
           in: path
@@ -185,6 +187,7 @@ paths:
       summary: List aggregated issues for admin UI
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/AppId'
         - name: status
@@ -214,6 +217,7 @@ paths:
       summary: Get issue details
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: id
           in: path
@@ -232,6 +236,7 @@ paths:
       summary: Update issue status
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: id
           in: path
@@ -251,11 +256,468 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IssueResponse'
+  /api/app-health/applications:
+    get:
+      summary: List registered applications for admin UI
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Application list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationListResponse'
+    post:
+      summary: Create an application and its initial ingest token
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        '201':
+          description: Application created; token.plainText is shown only once
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateApplicationResponse'
+        '400':
+          description: Invalid application input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Application slug already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/applications/{id}:
+    get:
+      summary: Get an application and its ingest tokens
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Application detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationDetailResponse'
+    patch:
+      summary: Update application metadata
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicationRequest'
+      responses:
+        '200':
+          description: Updated application
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+    delete:
+      summary: Delete an application registration but keep historical events and issues
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Deleted application registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+  /api/app-health/applications/{id}/enable:
+    post:
+      summary: Enable application ingestion
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Application enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+  /api/app-health/applications/{id}/disable:
+    post:
+      summary: Disable application ingestion and revoke its active tokens
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Application disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+  /api/app-health/applications/{id}/data:
+    delete:
+      summary: Delete an application registration plus all events and issues for its appId
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteApplicationDataRequest'
+      responses:
+        '200':
+          description: Application and associated data deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteApplicationDataResponse'
+  /api/app-health/applications/{id}/tokens:
+    post:
+      summary: Create a new ingest token for an application
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenRequest'
+      responses:
+        '201':
+          description: Token created; token.plainText is shown only once
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestTokenResponse'
+  /api/app-health/tokens/{id}/revoke:
+    post:
+      summary: Revoke an ingest token so it can no longer upload events
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Token revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestTokenResponse'
+  /api/app-health/tokens/{id}:
+    delete:
+      summary: Delete a revoked ingest token record
+      description: Active tokens must be revoked before deletion.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Revoked token deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestTokenResponse'
+        '409':
+          description: Token is still active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/alert-rules:
+    get:
+      summary: List alert rules
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppId'
+        - name: enabled
+          in: query
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Alert rule list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleListResponse'
+    post:
+      summary: Create an alert rule
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAlertRuleRequest'
+      responses:
+        '201':
+          description: Alert rule created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleResponse'
+        '400':
+          description: Invalid alert rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/alert-rules/{id}:
+    get:
+      summary: Get an alert rule
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Alert rule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleResponse'
+    patch:
+      summary: Update an alert rule
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAlertRuleRequest'
+      responses:
+        '200':
+          description: Alert rule updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleResponse'
+    delete:
+      summary: Delete an alert rule
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Alert rule deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleResponse'
+  /api/app-health/alert-rules/{id}/enable:
+    post:
+      summary: Enable an alert rule
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Alert rule enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleResponse'
+  /api/app-health/alert-rules/{id}/disable:
+    post:
+      summary: Disable an alert rule
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Alert rule disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleResponse'
+  /api/app-health/alert-rules/{id}/test:
+    post:
+      summary: Send a test alert through a rule
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestAlertRuleRequest'
+      responses:
+        '200':
+          description: Test delivery result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertDeliveryResponse'
+  /api/app-health/alert-deliveries:
+    get:
+      summary: List alert delivery history
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: ruleId
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/AppId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [success, failed]
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Alert delivery list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertDeliveryListResponse'
+  /api/app-health/settings/summary:
+    get:
+      summary: Get admin settings and redacted runtime configuration summary
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Settings summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsSummaryResponse'
+  /api/app-health/retention/dry-run:
+    post:
+      summary: Run retention in dry-run mode and record history
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetentionDryRunRequest'
+      responses:
+        '200':
+          description: Retention dry-run result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionRunResponse'
+        '400':
+          description: Invalid retention request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/retention/run:
+    post:
+      summary: Run retention after recent dry-run and explicit confirmation
+      description: Requires a successful recent dry-run, matching retention days, backup acknowledgement, dry-run acknowledgement, and confirmText=DELETE_OLD_EVENTS.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetentionRunRequest'
+      responses:
+        '200':
+          description: Retention run result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionRunResponse'
+        '400':
+          description: Retention run was not confirmed or dry-run is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/retention/runs:
+    get:
+      summary: List retention operation history
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Retention operation history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetentionRunListResponse'
   /api/app-health/stats/overview:
     get:
       summary: Overview stats for admin dashboard
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/AppId'
       responses:
@@ -275,6 +737,12 @@ components:
       in: cookie
       name: app_health_session
   parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
     AppId:
       name: appId
       in: query
@@ -639,6 +1107,463 @@ components:
         status:
           type: string
           enum: [open, resolved, ignored]
+    Application:
+      type: object
+      required: [id, name, slug, description, defaultEnvironment, platforms, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+          description: Application appId used by rn-health event app.id.
+        description:
+          type: string
+        defaultEnvironment:
+          type: string
+        platforms:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, disabled]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApplicationSummary:
+      allOf:
+        - $ref: '#/components/schemas/Application'
+        - type: object
+          properties:
+            effectiveTokenCount:
+              type: integer
+            eventCount:
+              type: integer
+            issueCount:
+              type: integer
+            lastEventAt:
+              type: string
+              format: date-time
+    IngestToken:
+      type: object
+      required: [id, applicationId, name, prefix]
+      properties:
+        id:
+          type: string
+        applicationId:
+          type: string
+        name:
+          type: string
+        prefix:
+          type: string
+        plainText:
+          type: string
+          description: Full token value. Returned only immediately after token creation.
+        lastUsedAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    CreateApplicationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        defaultEnvironment:
+          type: string
+          default: production
+        platforms:
+          type: array
+          items:
+            type: string
+    UpdateApplicationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        defaultEnvironment:
+          type: string
+        platforms:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, disabled]
+    CreateTokenRequest:
+      type: object
+      properties:
+        name:
+          type: string
+    DeleteApplicationDataRequest:
+      type: object
+      required: [confirmAppId]
+      properties:
+        confirmAppId:
+          type: string
+          description: Must equal the application slug/appId.
+    ApplicationListResponse:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationSummary'
+        total:
+          type: integer
+    ApplicationResponse:
+      type: object
+      required: [application]
+      properties:
+        application:
+          $ref: '#/components/schemas/Application'
+    ApplicationDetailResponse:
+      type: object
+      required: [application, tokens]
+      properties:
+        application:
+          $ref: '#/components/schemas/Application'
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestToken'
+    CreateApplicationResponse:
+      type: object
+      required: [application, token]
+      properties:
+        application:
+          $ref: '#/components/schemas/Application'
+        token:
+          $ref: '#/components/schemas/IngestToken'
+    IngestTokenResponse:
+      type: object
+      required: [token]
+      properties:
+        token:
+          $ref: '#/components/schemas/IngestToken'
+    DeleteApplicationDataResponse:
+      type: object
+      required: [application, deletedEvents, deletedIssues]
+      properties:
+        application:
+          $ref: '#/components/schemas/Application'
+        deletedEvents:
+          type: integer
+        deletedIssues:
+          type: integer
+    AlertRule:
+      type: object
+      required: [id, name, appId, environment, minLevel, webhookUrlMasked, cooldownSeconds, enabled]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        appId:
+          type: string
+          description: Empty string means all applications.
+        environment:
+          type: string
+          description: Empty string means all environments.
+        minLevel:
+          type: string
+          enum: [info, warning, error, fatal]
+        webhookUrlMasked:
+          type: string
+        cooldownSeconds:
+          type: integer
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AlertDelivery:
+      type: object
+      required: [id, ruleId, appId, environment, level, fingerprint, eventId, issueId, status, durationMs, test]
+      properties:
+        id:
+          type: string
+        ruleId:
+          type: string
+        ruleName:
+          type: string
+        appId:
+          type: string
+        environment:
+          type: string
+        level:
+          type: string
+          enum: [info, warning, error, fatal]
+        fingerprint:
+          type: string
+        eventId:
+          type: string
+        issueId:
+          type: string
+        status:
+          type: string
+          enum: [success, failed]
+        httpStatus:
+          type: integer
+        errorMessage:
+          type: string
+        durationMs:
+          type: integer
+        test:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    CreateAlertRuleRequest:
+      type: object
+      required: [name, webhookUrl]
+      properties:
+        name:
+          type: string
+        appId:
+          type: string
+        environment:
+          type: string
+        minLevel:
+          type: string
+          enum: [info, warning, error, fatal]
+          default: fatal
+        webhookUrl:
+          type: string
+          format: uri
+        cooldownSeconds:
+          type: integer
+          default: 300
+        enabled:
+          type: boolean
+          default: true
+    UpdateAlertRuleRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        appId:
+          type: string
+        environment:
+          type: string
+        minLevel:
+          type: string
+          enum: [info, warning, error, fatal]
+        webhookUrl:
+          type: string
+          format: uri
+          description: Empty keeps the previous webhook URL.
+        cooldownSeconds:
+          type: integer
+        enabled:
+          type: boolean
+    TestAlertRuleRequest:
+      type: object
+      properties:
+        message:
+          type: string
+    AlertRuleListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertRule'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+    AlertRuleResponse:
+      type: object
+      required: [rule]
+      properties:
+        rule:
+          $ref: '#/components/schemas/AlertRule'
+    AlertDeliveryListResponse:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertDelivery'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+    AlertDeliveryResponse:
+      type: object
+      required: [delivery]
+      properties:
+        delivery:
+          $ref: '#/components/schemas/AlertDelivery'
+    SettingsSummaryResponse:
+      type: object
+      required: [service, retention, alerts, admin, warnings]
+      properties:
+        service:
+          $ref: '#/components/schemas/RuntimeConfigSummary'
+        retention:
+          $ref: '#/components/schemas/RetentionConfigSummary'
+        alerts:
+          $ref: '#/components/schemas/AlertConfigSummary'
+        admin:
+          $ref: '#/components/schemas/AdminConfigSummary'
+        warnings:
+          type: array
+          items:
+            type: string
+    RuntimeConfigSummary:
+      type: object
+      properties:
+        env:
+          type: string
+        databaseConfigured:
+          type: boolean
+        databaseReady:
+          type: boolean
+        corsOrigins:
+          type: array
+          items:
+            type: string
+        maxBodyBytes:
+          type: integer
+          format: int64
+        ingestRateLimitRps:
+          type: integer
+        ingestRateLimitBurst:
+          type: integer
+    RetentionConfigSummary:
+      type: object
+      properties:
+        eventRetentionDays:
+          type: integer
+        retentionDryRun:
+          type: boolean
+    AlertConfigSummary:
+      type: object
+      properties:
+        envFallbackEnabled:
+          type: boolean
+        minLevel:
+          type: string
+        cooldownSeconds:
+          type: integer
+        timeoutSeconds:
+          type: integer
+    AdminConfigSummary:
+      type: object
+      properties:
+        email:
+          type: string
+        adminTokenConfigured:
+          type: boolean
+        adminPasswordConfigured:
+          type: boolean
+        sessionSecretConfigured:
+          type: boolean
+        cookieSecure:
+          type: boolean
+        sessionTtlHours:
+          type: integer
+    RetentionDryRunRequest:
+      type: object
+      properties:
+        eventRetentionDays:
+          type: integer
+          default: 30
+    RetentionRunRequest:
+      type: object
+      required: [eventRetentionDays, dryRunId, confirmText, acknowledgedBackup, acknowledgedDryRun]
+      properties:
+        eventRetentionDays:
+          type: integer
+        dryRunId:
+          type: string
+        confirmText:
+          type: string
+          enum: [DELETE_OLD_EVENTS]
+        acknowledgedBackup:
+          type: boolean
+        acknowledgedDryRun:
+          type: boolean
+    RetentionRun:
+      type: object
+      required: [id, mode, eventRetentionDays, protectedEventIds, deletedEvents, dryRun, status, source, createdAt]
+      properties:
+        id:
+          type: string
+        mode:
+          type: string
+          enum: [dry-run, run]
+        eventRetentionDays:
+          type: integer
+        cutoff:
+          type: string
+          format: date-time
+        protectedEventIds:
+          type: integer
+        deletedEvents:
+          type: integer
+        dryRun:
+          type: boolean
+        status:
+          type: string
+          enum: [success, failed]
+        errorMessage:
+          type: string
+        requestedBy:
+          type: string
+        source:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    RetentionRunResponse:
+      type: object
+      required: [run]
+      properties:
+        run:
+          $ref: '#/components/schemas/RetentionRun'
+    RetentionRunListResponse:
+      type: object
+      required: [items, total, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RetentionRun'
+        total:
+          type: integer
+        limit:
+          type: integer
     StatsOverviewResponse:
       type: object
       properties:

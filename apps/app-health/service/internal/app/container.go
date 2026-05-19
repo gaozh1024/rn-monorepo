@@ -14,19 +14,25 @@ import (
 )
 
 type Container struct {
-	Pool         *pgxpool.Pool
-	Events       repository.EventRepository
-	Issues       repository.IssueRepository
-	Applications repository.ApplicationRepository
-	Tokens       repository.IngestTokenRepository
-	Ingest       *appsvc.IngestService
-	IngestAuth   *appsvc.IngestAuthService
-	Application  *appsvc.ApplicationService
-	Event        *appsvc.EventService
-	Issue        *appsvc.IssueService
-	Stats        *appsvc.StatsService
-	Auth         *appsvc.AuthService
-	Session      *appsvc.SessionService
+	Pool          *pgxpool.Pool
+	Events        repository.EventRepository
+	Issues        repository.IssueRepository
+	Applications  repository.ApplicationRepository
+	Tokens        repository.IngestTokenRepository
+	AlertRules    repository.AlertRuleRepository
+	Deliveries    repository.AlertDeliveryRepository
+	RetentionRuns repository.RetentionRunRepository
+	Ingest        *appsvc.IngestService
+	IngestAuth    *appsvc.IngestAuthService
+	Application   *appsvc.ApplicationService
+	Alert         *appsvc.AlertRuleService
+	Event         *appsvc.EventService
+	Issue         *appsvc.IssueService
+	Stats         *appsvc.StatsService
+	Auth          *appsvc.AuthService
+	Session       *appsvc.SessionService
+	Retention     *appsvc.RetentionOperationService
+	Settings      *appsvc.SettingsService
 }
 
 func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Container, error) {
@@ -35,6 +41,9 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 	var issues repository.IssueRepository
 	var applications repository.ApplicationRepository
 	var tokens repository.IngestTokenRepository
+	var alertRules repository.AlertRuleRepository
+	var deliveries repository.AlertDeliveryRepository
+	var retentionRuns repository.RetentionRunRepository
 
 	if cfg.DatabaseURL != "" {
 		openedPool, err := db.Open(ctx, cfg.DatabaseURL)
@@ -46,6 +55,9 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 		issues = repository.NewPostgresIssueRepository(pool)
 		applications = repository.NewPostgresApplicationRepository(pool)
 		tokens = repository.NewPostgresIngestTokenRepository(pool)
+		alertRules = repository.NewPostgresAlertRuleRepository(pool)
+		deliveries = repository.NewPostgresAlertDeliveryRepository(pool)
+		retentionRuns = repository.NewPostgresRetentionRunRepository(pool)
 		logger.Info("using postgres app-health repositories")
 	} else {
 		events = repository.NewMemoryEventRepository()
@@ -55,6 +67,9 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 		memoryApplications.AttachTokens(memoryTokens)
 		applications = memoryApplications
 		tokens = memoryTokens
+		alertRules = repository.NewMemoryAlertRuleRepository()
+		deliveries = repository.NewMemoryAlertDeliveryRepository()
+		retentionRuns = repository.NewMemoryRetentionRunRepository()
 		logger.Warn("APP_HEALTH_DATABASE_URL is empty; using in-memory app-health repositories")
 	}
 
@@ -72,22 +87,30 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 	if err != nil {
 		return nil, err
 	}
+	dispatcher := alert.NewRuleDispatcher(alertRules, deliveries, notifier, time.Duration(cfg.AlertTimeoutSeconds)*time.Second)
 
-	return &Container{
-		Pool:         pool,
-		Events:       events,
-		Issues:       issues,
-		Applications: applications,
-		Tokens:       tokens,
-		Ingest:       appsvc.NewIngestService(events, issues, notifier),
-		IngestAuth:   appsvc.NewIngestAuthService(cfg.IngestToken, applications, tokens),
-		Application:  appsvc.NewApplicationService(applications, tokens, events, issues),
-		Event:        appsvc.NewEventService(events),
-		Issue:        appsvc.NewIssueService(issues, events),
-		Stats:        appsvc.NewStatsService(events, issues),
-		Auth:         appsvc.NewAuthService(cfg.AdminEmail, cfg.AdminPasswordHash),
-		Session:      appsvc.NewSessionService(cfg.SessionSecret, time.Duration(cfg.SessionTTLHours)*time.Hour),
-	}, nil
+	container := &Container{
+		Pool:          pool,
+		Events:        events,
+		Issues:        issues,
+		Applications:  applications,
+		Tokens:        tokens,
+		AlertRules:    alertRules,
+		Deliveries:    deliveries,
+		RetentionRuns: retentionRuns,
+		Ingest:        appsvc.NewIngestService(events, issues, dispatcher),
+		IngestAuth:    appsvc.NewIngestAuthService(cfg.IngestToken, applications, tokens),
+		Application:   appsvc.NewApplicationService(applications, tokens, events, issues),
+		Alert:         appsvc.NewAlertRuleService(alertRules, deliveries, dispatcher),
+		Event:         appsvc.NewEventService(events),
+		Issue:         appsvc.NewIssueService(issues, events),
+		Stats:         appsvc.NewStatsService(events, issues),
+		Auth:          appsvc.NewAuthService(cfg.AdminEmail, cfg.AdminPasswordHash),
+		Session:       appsvc.NewSessionService(cfg.SessionSecret, time.Duration(cfg.SessionTTLHours)*time.Hour),
+		Retention:     appsvc.NewRetentionOperationService(appsvc.NewRetentionService(events, issues), retentionRuns, cfg.EventRetentionDays),
+	}
+	container.Settings = appsvc.NewSettingsService(cfg, container)
+	return container, nil
 }
 
 func (c *Container) Close() {

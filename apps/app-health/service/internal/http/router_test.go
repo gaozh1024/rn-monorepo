@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -152,6 +153,34 @@ func TestRouterApplicationLifecycleActions(t *testing.T) {
 	assertRequest(t, router, http.MethodGet, "/api/app-health/events?appId=lifecycle-app", "Bearer admin_test", "", http.StatusOK, `"total":1`)
 }
 
+func TestRouterDeletesOnlyDisabledIngestTokens(t *testing.T) {
+	cfg := config.Config{
+		IngestToken: "ingest_test",
+		AdminToken:  "admin_test",
+		CORSOrigins: []string{"*"},
+		Env:         "test",
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	createBody := `{"name":"Token App","slug":"token-app","defaultEnvironment":"production","platforms":["ios"]}`
+	response := performRequest(router, http.MethodPost, "/api/app-health/applications", "Bearer admin_test", createBody)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("create status = %d, body=%s", response.Code, response.Body.String())
+	}
+	tokenID := extractJSONValue(t, response.Body.String(), "id")
+
+	assertRequest(t, router, http.MethodDelete, "/api/app-health/tokens/"+tokenID, "Bearer admin_test", "", http.StatusConflict, `"disable token before deleting"`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/tokens/"+tokenID+"/revoke", "Bearer admin_test", "", http.StatusOK, `"revokedAt"`)
+	assertRequest(t, router, http.MethodDelete, "/api/app-health/tokens/"+tokenID, "Bearer admin_test", "", http.StatusOK, `"name":"Default ingest token"`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/applications/token-app", "Bearer admin_test", "", http.StatusOK, `"tokens":[]`)
+}
+
 func TestRouterDeletesApplicationWithDataAfterConfirmation(t *testing.T) {
 	cfg := config.Config{
 		IngestToken: "ingest_test",
@@ -254,6 +283,23 @@ func extractJSONValue(t *testing.T, body string, key string) string {
 	value, ok := token[key].(string)
 	if !ok || value == "" {
 		t.Fatalf("missing token.%s: %s", key, body)
+	}
+	return value
+}
+
+func extractNestedJSONValue(t *testing.T, body string, objectKey string, key string) string {
+	t.Helper()
+	var decoded map[string]any
+	if err := json.NewDecoder(strings.NewReader(body)).Decode(&decoded); err != nil {
+		t.Fatal(err)
+	}
+	object, ok := decoded[objectKey].(map[string]any)
+	if !ok {
+		t.Fatalf("missing %s object: %s", objectKey, body)
+	}
+	value, ok := object[key].(string)
+	if !ok || value == "" {
+		t.Fatalf("missing %s.%s: %s", objectKey, key, body)
 	}
 	return value
 }
@@ -363,6 +409,95 @@ func TestRouterRejectsInvalidIngestEvents(t *testing.T) {
 	assertRequest(t, router, http.MethodGet, "/api/app-health/events", "Bearer admin_test", "", http.StatusOK, `"total":0`)
 }
 
+func TestRouterSettingsSummaryAndRetentionDryRun(t *testing.T) {
+	cfg := config.Config{
+		IngestToken:          "ingest_secret",
+		AdminToken:           "admin_secret",
+		CORSOrigins:          []string{"*"},
+		Env:                  "test",
+		AlertWebhookURL:      "http://example.com/hook?token=secret",
+		AlertMinLevel:        "error",
+		AlertTimeoutSeconds:  2,
+		AlertCooldownSeconds: 60,
+		EventRetentionDays:   30,
+		RetentionDryRun:      true,
+		AdminEmail:           "admin@example.com",
+		AdminPasswordHash:    "hash_secret",
+		SessionSecret:        "session_secret",
+		SessionTTLHours:      24,
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	summary := performRequest(router, http.MethodGet, "/api/app-health/settings/summary", "Bearer admin_secret", "")
+	if summary.Code != http.StatusOK {
+		t.Fatalf("summary status = %d, body=%s", summary.Code, summary.Body.String())
+	}
+	body := summary.Body.String()
+	for _, secret := range []string{"ingest_secret", "admin_secret", "hash_secret", "session_secret", "token=secret"} {
+		if strings.Contains(body, secret) {
+			t.Fatalf("summary leaked secret %q: %s", secret, body)
+		}
+	}
+	if !strings.Contains(body, `"env":"test"`) || !strings.Contains(body, `"eventRetentionDays":30`) || !strings.Contains(body, `"envFallbackEnabled":true`) {
+		t.Fatalf("summary missing expected config: %s", body)
+	}
+
+	assertRequest(t, router, http.MethodPost, "/api/app-health/retention/dry-run", "Bearer admin_secret", `{"eventRetentionDays":30}`, http.StatusOK, `"mode":"dry-run"`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/retention/run", "Bearer admin_secret", `{"eventRetentionDays":30}`, http.StatusBadRequest, `"retention run requires recent dry-run`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/retention/runs?limit=5", "Bearer admin_secret", "", http.StatusOK, `"total":1`)
+}
+
+func TestRouterManagesAlertRulesAndDeliveries(t *testing.T) {
+	webhookURL := "http://127.0.0.1:1/hook?token=secret"
+
+	cfg := config.Config{
+		IngestToken:          "ingest_test",
+		AdminToken:           "admin_test",
+		CORSOrigins:          []string{"*"},
+		Env:                  "test",
+		AlertTimeoutSeconds:  5,
+		AlertCooldownSeconds: 300,
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	createBody := `{"name":"Fatal webhook","appId":"mobile-app","environment":"","minLevel":"error","webhookUrl":"` + webhookURL + `","cooldownSeconds":0}`
+	response := performRequest(router, http.MethodPost, "/api/app-health/alert-rules", "Bearer admin_test", createBody)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("create status = %d, body=%s", response.Code, response.Body.String())
+	}
+	if strings.Contains(response.Body.String(), "token=secret") {
+		t.Fatalf("response leaked webhook secret: %s", response.Body.String())
+	}
+	ruleID := extractNestedJSONValue(t, response.Body.String(), "rule", "id")
+
+	assertRequest(t, router, http.MethodGet, "/api/app-health/alert-rules?appId=mobile-app", "Bearer admin_test", "", http.StatusOK, `"total":1`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/alert-rules/"+ruleID+"/test", "Bearer admin_test", `{"message":"hello"}`, http.StatusInternalServerError, `"error"`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/alert-deliveries?ruleId="+ruleID+"&status=failed", "Bearer admin_test", "", http.StatusOK, `"total":1`)
+
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", strings.Replace(examplePayload, "evt_test_001", "evt_alert_001", 1), http.StatusOK, `"accepted":1`)
+	assertEventually(t, func() bool {
+		response := performRequest(router, http.MethodGet, "/api/app-health/alert-deliveries?ruleId="+ruleID, "Bearer admin_test", "")
+		return strings.Contains(response.Body.String(), `"total":2`)
+	}, "failed ingest delivery should be recorded")
+
+	assertRequest(t, router, http.MethodPost, "/api/app-health/alert-rules/"+ruleID+"/disable", "Bearer admin_test", "", http.StatusOK, `"enabled":false`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", strings.Replace(examplePayload, "evt_test_001", "evt_alert_002", 1), http.StatusOK, `"accepted":1`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/alert-deliveries?ruleId="+ruleID, "Bearer admin_test", "", http.StatusOK, `"total":2`)
+	assertRequest(t, router, http.MethodDelete, "/api/app-health/alert-rules/"+ruleID, "Bearer admin_test", "", http.StatusOK, `"name":"Fatal webhook"`)
+}
+
 func assertRequest(t *testing.T, handler http.Handler, method string, path string, token string, body string, wantStatus int, wantBody string) {
 	t.Helper()
 	response := performRequest(handler, method, path, token, body)
@@ -385,4 +520,15 @@ func performRequest(handler http.Handler, method string, path string, token stri
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	return response
+}
+
+func assertEventually(t *testing.T, condition func() bool, message string) {
+	t.Helper()
+	for i := 0; i < 50; i++ {
+		if condition() {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatal(message)
 }
