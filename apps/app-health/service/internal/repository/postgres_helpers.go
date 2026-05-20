@@ -57,3 +57,38 @@ func nullableUser(id string) *domain.UserInfo {
 	}
 	return &domain.UserInfo{ID: id}
 }
+
+func analyticsName(event domain.HealthEvent) string {
+	if event.Analytics == nil {
+		return ""
+	}
+	return event.Analytics.Name
+}
+
+func analyticsProperties(event domain.HealthEvent) map[string]any {
+	if event.Analytics == nil {
+		return nil
+	}
+	return event.Analytics.Properties
+}
+
+func geoCountry(event domain.HealthEvent) string {
+	if event.Geo == nil {
+		return ""
+	}
+	return event.Geo.Country
+}
+
+func geoProvince(event domain.HealthEvent) string {
+	if event.Geo == nil {
+		return ""
+	}
+	return event.Geo.Province
+}
+
+func geoCity(event domain.HealthEvent) string {
+	if event.Geo == nil {
+		return ""
+	}
+	return event.Geo.City
+}

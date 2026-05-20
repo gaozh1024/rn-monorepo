@@ -256,6 +256,129 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IssueResponse'
+  /api/app-health/analytics/users/{userId}/timeline:
+    get:
+      summary: List behavior timeline for an anonymous user
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/AppId'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+      responses:
+        '200':
+          description: User behavior timeline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsTimelineResponse'
+        '400':
+          description: Invalid analytics query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/analytics/events/{eventId}/timeline:
+    get:
+      summary: List user behavior around an event
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: windowMinutes
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 1440
+      responses:
+        '200':
+          description: Event context timeline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsTimelineResponse'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/app-health/analytics/screens:
+    get:
+      summary: List screen visit statistics
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppId'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        '200':
+          description: Screen statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenStatsResponse'
+  /api/app-health/analytics/distribution:
+    get:
+      summary: List analytics distribution buckets
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: dimension
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [platform, osVersion, deviceModel, deviceBrand, appVersion, buildNumber, country, province, city]
+        - $ref: '#/components/parameters/AppId'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Distribution buckets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsDistributionResponse'
+        '400':
+          description: Invalid analytics query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/app-health/applications:
     get:
       summary: List registered applications for admin UI
@@ -935,6 +1058,10 @@ components:
           $ref: '#/components/schemas/UserInfo'
         error:
           $ref: '#/components/schemas/ErrorInfo'
+        analytics:
+          $ref: '#/components/schemas/AnalyticsInfo'
+        geo:
+          $ref: '#/components/schemas/GeoInfo'
         breadcrumbs:
           type: array
           maxItems: 100
@@ -969,6 +1096,28 @@ components:
         osVersion:
           type: string
         model:
+          type: string
+        brand:
+          type: string
+    AnalyticsInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 128
+        properties:
+          type: object
+          description: Lightweight analytics properties. JSON-encoded size is limited by the service. Do not send sensitive personal information.
+          additionalProperties: true
+    GeoInfo:
+      type: object
+      description: Server-owned coarse location fields; precise client location is not stored by default.
+      properties:
+        country:
+          type: string
+        province:
+          type: string
+        city:
           type: string
     SessionInfo:
       type: object
@@ -1100,6 +1249,82 @@ components:
       properties:
         event:
           $ref: '#/components/schemas/HealthEvent'
+    AnalyticsTimelineItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        level:
+          type: string
+          enum: [info, warning, error, fatal]
+        createdAt:
+          type: string
+          format: date-time
+        app:
+          $ref: '#/components/schemas/AppInfo'
+        device:
+          $ref: '#/components/schemas/DeviceInfo'
+        session:
+          $ref: '#/components/schemas/SessionInfo'
+        user:
+          $ref: '#/components/schemas/UserInfo'
+        analytics:
+          $ref: '#/components/schemas/AnalyticsInfo'
+        error:
+          $ref: '#/components/schemas/ErrorInfo'
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+    AnalyticsTimelineResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsTimelineItem'
+    ScreenStatsItem:
+      type: object
+      properties:
+        screen:
+          type: string
+        views:
+          type: integer
+        users:
+          type: integer
+        sessions:
+          type: integer
+        lastSeenAt:
+          type: string
+          format: date-time
+    ScreenStatsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScreenStatsItem'
+    AnalyticsDistributionItem:
+      type: object
+      properties:
+        value:
+          type: string
+        count:
+          type: integer
+    AnalyticsDistributionResponse:
+      type: object
+      required: [dimension, items]
+      properties:
+        dimension:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalyticsDistributionItem'
     IssueStatusUpdateRequest:
       type: object
       required: [status]

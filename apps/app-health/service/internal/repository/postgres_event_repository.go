@@ -33,18 +33,20 @@ func (r *PostgresEventRepository) Insert(ctx context.Context, event domain.Healt
 	commandTag, err := r.pool.Exec(ctx, `
 INSERT INTO app_health_events (
   id, app_id, app_version, build_number, environment,
-  type, level, platform, os_version, device_model,
+  type, level, platform, os_version, device_model, device_brand,
   user_id, session_id, error_name, error_message, error_stack,
   component_stack, fingerprint, breadcrumbs, tags, extra, raw_event,
-  event_timestamp, created_at
+  event_timestamp, created_at, analytics_name, analytics_properties,
+  geo_country, geo_province, geo_city, ip_hash
 ) VALUES (
-  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
+  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30
 ) ON CONFLICT (id) DO NOTHING`,
 		event.ID, event.App.ID, event.App.Version, event.App.BuildNumber, event.App.Environment,
-		event.Type, string(event.Level), event.Device.Platform, event.Device.OSVersion, event.Device.Model,
+		event.Type, string(event.Level), event.Device.Platform, event.Device.OSVersion, event.Device.Model, event.Device.Brand,
 		userID(event), event.Session.ID, event.Error.Name, event.Error.Message, event.Error.Stack,
 		event.Error.ComponentStack, event.Error.Fingerprint, jsonBytes(event.Breadcrumbs), jsonBytes(event.Tags), jsonBytes(event.Extra), jsonBytes(raw),
-		eventTimestamp(event.Timestamp), event.CreatedAt,
+		eventTimestamp(event.Timestamp), event.CreatedAt, analyticsName(event), jsonBytes(analyticsProperties(event)),
+		geoCountry(event), geoProvince(event), geoCity(event), "",
 	)
 	if err != nil {
 		return domain.HealthEvent{}, err
@@ -78,9 +80,10 @@ func (r *PostgresEventRepository) List(ctx context.Context, query domain.EventQu
 	pageSize := normalizeQueryPageSize(query.PageSize)
 	args = append(args, pageSize, (page-1)*pageSize)
 	rows, err := r.pool.Query(ctx, `
-SELECT id, app_id, app_version, build_number, environment, type, level, platform, os_version, device_model,
+SELECT id, app_id, app_version, build_number, environment, type, level, platform, os_version, device_model, device_brand,
   user_id, session_id, error_name, error_message, error_stack, component_stack, fingerprint,
-  breadcrumbs, tags, extra, issue_id, event_timestamp, created_at
+  breadcrumbs, tags, extra, issue_id, event_timestamp, created_at, analytics_name, analytics_properties,
+  geo_country, geo_province, geo_city
 FROM app_health_events`+where+`
 ORDER BY created_at DESC
 LIMIT $`+fmt.Sprint(len(args)-1)+` OFFSET $`+fmt.Sprint(len(args)), args...)
@@ -97,9 +100,10 @@ LIMIT $`+fmt.Sprint(len(args)-1)+` OFFSET $`+fmt.Sprint(len(args)), args...)
 
 func (r *PostgresEventRepository) Get(ctx context.Context, id string) (domain.HealthEvent, error) {
 	rows, err := r.pool.Query(ctx, `
-SELECT id, app_id, app_version, build_number, environment, type, level, platform, os_version, device_model,
+SELECT id, app_id, app_version, build_number, environment, type, level, platform, os_version, device_model, device_brand,
   user_id, session_id, error_name, error_message, error_stack, component_stack, fingerprint,
-  breadcrumbs, tags, extra, issue_id, event_timestamp, created_at
+  breadcrumbs, tags, extra, issue_id, event_timestamp, created_at, analytics_name, analytics_properties,
+  geo_country, geo_province, geo_city
 FROM app_health_events WHERE id = $1`, id)
 	if err != nil {
 		return domain.HealthEvent{}, err
@@ -117,9 +121,10 @@ func (r *PostgresEventRepository) ListByIssue(ctx context.Context, issueID strin
 		limit = 20
 	}
 	rows, err := r.pool.Query(ctx, `
-SELECT id, app_id, app_version, build_number, environment, type, level, platform, os_version, device_model,
+SELECT id, app_id, app_version, build_number, environment, type, level, platform, os_version, device_model, device_brand,
   user_id, session_id, error_name, error_message, error_stack, component_stack, fingerprint,
-  breadcrumbs, tags, extra, issue_id, event_timestamp, created_at
+  breadcrumbs, tags, extra, issue_id, event_timestamp, created_at, analytics_name, analytics_properties,
+  geo_country, geo_province, geo_city
 FROM app_health_events WHERE issue_id = $1 ORDER BY created_at DESC LIMIT $2`, issueID, limit)
 	if err != nil {
 		return nil, err
@@ -234,16 +239,19 @@ func scanEvent(row pgx.CollectableRow) (domain.HealthEvent, error) {
 	var level string
 	var userIDValue sql.NullString
 	var appVersion, buildNumber, environment sql.NullString
-	var platform, osVersion, model sql.NullString
+	var platform, osVersion, model, brand sql.NullString
 	var errorName, errorMessage, errorStack, componentStack, fingerprint sql.NullString
-	var breadcrumbsBytes, tagsBytes, extraBytes []byte
+	var analyticsName sql.NullString
+	var geoCountry, geoProvince, geoCity sql.NullString
+	var breadcrumbsBytes, tagsBytes, extraBytes, analyticsPropertiesBytes []byte
 	var issueID sql.NullString
 	var timestamp *time.Time
 	err := row.Scan(
 		&event.ID, &event.App.ID, &appVersion, &buildNumber, &environment,
-		&event.Type, &level, &platform, &osVersion, &model,
+		&event.Type, &level, &platform, &osVersion, &model, &brand,
 		&userIDValue, &event.Session.ID, &errorName, &errorMessage, &errorStack, &componentStack, &fingerprint,
-		&breadcrumbsBytes, &tagsBytes, &extraBytes, &issueID, &timestamp, &event.CreatedAt,
+		&breadcrumbsBytes, &tagsBytes, &extraBytes, &issueID, &timestamp, &event.CreatedAt, &analyticsName, &analyticsPropertiesBytes,
+		&geoCountry, &geoProvince, &geoCity,
 	)
 	if err != nil {
 		return domain.HealthEvent{}, err
@@ -254,6 +262,7 @@ func scanEvent(row pgx.CollectableRow) (domain.HealthEvent, error) {
 	event.Device.Platform = platform.String
 	event.Device.OSVersion = osVersion.String
 	event.Device.Model = model.String
+	event.Device.Brand = brand.String
 	event.Level = domain.EventLevel(level)
 	event.User = nullableUser(userIDValue.String)
 	event.Error = &domain.ErrorInfo{
@@ -266,6 +275,12 @@ func scanEvent(row pgx.CollectableRow) (domain.HealthEvent, error) {
 	event.Breadcrumbs = decodeJSON(breadcrumbsBytes, []domain.Breadcrumb{})
 	event.Tags = decodeJSON(tagsBytes, map[string]string{})
 	event.Extra = decodeJSON(extraBytes, map[string]any{})
+	if analyticsName.String != "" {
+		event.Analytics = &domain.AnalyticsInfo{Name: analyticsName.String, Properties: decodeJSON(analyticsPropertiesBytes, map[string]any{})}
+	}
+	if geoCountry.String != "" || geoProvince.String != "" || geoCity.String != "" {
+		event.Geo = &domain.GeoInfo{Country: geoCountry.String, Province: geoProvince.String, City: geoCity.String}
+	}
 	event.IssueID = issueID.String
 	event.Timestamp = eventTimestampMillis(timestamp)
 	return event, nil

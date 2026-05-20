@@ -4,14 +4,18 @@ export { useAppHealth } from './core/hooks';
 export { AppHealthContext, noopAppHealthReporter } from './core/context';
 export type {
   AppHealthAppInfo,
+  AppHealthAnalyticsPayload,
   AppHealthBreadcrumb,
   AppHealthCaptureContext,
   AppHealthClientConfig,
+  AppHealthConsentOptions,
   AppHealthDeviceInfo,
+  AppHealthDeviceInfoProvider,
   AppHealthErrorPayload,
   AppHealthEvent,
   AppHealthEventType,
   AppHealthLevel,
+  AppHealthIdentityOptions,
   AppHealthProviderProps,
   AppHealthReporter,
   AppHealthSanitizer,
@@ -32,6 +36,7 @@ export { createAsyncStorageHealthStorage, type AsyncStorageLike } from './queue/
 export { createFetchHealthTransport } from './transport/fetch-transport';
 export type { FetchHealthTransportOptions } from './transport/types';
 export { defaultAppHealthSanitizer, redactSensitiveValue } from './privacy/sanitizer';
+export { getOrCreateInstallId, DEFAULT_INSTALL_ID_STORAGE_KEY } from './identity/install-id';
 export { createAppHealthSessionManager } from './session/session';
 export { serializeError } from './utils/serialize-error';
 export { createFingerprint } from './utils/fingerprint';

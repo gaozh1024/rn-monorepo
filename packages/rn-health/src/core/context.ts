@@ -2,6 +2,12 @@ import { createContext } from 'react';
 import type { AppHealthReporter } from './types';
 
 export const noopAppHealthReporter: AppHealthReporter = {
+  async trackEvent() {
+    // noop by design
+  },
+  async trackScreen() {
+    // noop by design
+  },
   async captureException() {
     // noop by design
   },

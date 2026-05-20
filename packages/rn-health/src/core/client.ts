@@ -2,6 +2,8 @@ import type {
   AppHealthAppInfo,
   AppHealthBreadcrumb,
   AppHealthClientConfig,
+  AppHealthConsentOptions,
+  AppHealthDeviceInfo,
   AppHealthEvent,
   AppHealthReporter,
   AppHealthTransport,
@@ -16,6 +18,7 @@ import { installAppStateMonitor } from '../session/app-state';
 import { createFingerprint } from '../utils/fingerprint';
 import { createId } from '../utils/id';
 import { getDeviceInfo } from '../utils/platform';
+import { getOrCreateInstallId } from '../identity/install-id';
 import { serializeError } from '../utils/serialize-error';
 
 interface ClientRuntime {
@@ -29,10 +32,20 @@ const DEFAULT_MAX_BREADCRUMBS = 50;
 const DEFAULT_FLUSH_BATCH_SIZE = 20;
 const DEFAULT_FLUSH_INTERVAL_MS = 30_000;
 
+function resolveConsent(consent: AppHealthConsentOptions | undefined) {
+  return {
+    crash: consent?.crash ?? true,
+    analytics: consent?.analytics ?? false,
+    device: consent?.device ?? false,
+    performance: consent?.performance ?? false,
+  };
+}
+
 export async function createAppHealthClient(
   config: AppHealthClientConfig = {}
 ): Promise<AppHealthReporter> {
   const enabled = config.enabled ?? true;
+  const consent = resolveConsent(config.consent);
   const maxBreadcrumbs = config.maxBreadcrumbs ?? DEFAULT_MAX_BREADCRUMBS;
   const flushBatchSize = config.flushBatchSize ?? DEFAULT_FLUSH_BATCH_SIZE;
   const app: AppHealthAppInfo = {
@@ -53,10 +66,12 @@ export async function createAppHealthClient(
   const transports = resolveTransports(config);
   const sanitize = config.sanitize ?? defaultAppHealthSanitizer;
   const disposers: Array<() => void> = [];
+  const device = await resolveDeviceInfo(config, consent.device);
+  const identity = await resolveIdentity(config);
   const runtime: ClientRuntime = {
     breadcrumbs: [],
-    tags: {},
-    user: config.userId ? { id: config.userId } : undefined,
+    tags: identity.installId ? { installId: identity.installId } : {},
+    user: resolveInitialUser(config, identity.installId),
     session: sessionManager.session,
   };
 
@@ -76,7 +91,7 @@ export async function createAppHealthClient(
       level,
       timestamp: Date.now(),
       app,
-      device: getDeviceInfo(),
+      device,
       session: {
         id: runtime.session.sessionId,
         startedAt: runtime.session.startedAt,
@@ -109,8 +124,38 @@ export async function createAppHealthClient(
   }
 
   const client: AppHealthReporter = {
+    async trackEvent(name, properties, context = {}) {
+      await safeRun(async () => {
+        if (!consent.analytics) return;
+        await enqueueAndMaybeFlush({
+          ...createBaseEvent(context.type ?? 'analytics_event', context.level ?? 'info'),
+          analytics: { name, properties },
+          breadcrumbs: runtime.breadcrumbs,
+          extra: context.extra,
+          tags: { ...runtime.tags, ...context.tags, source: context.source ?? 'analytics.event' },
+        });
+      });
+    },
+    async trackScreen(screen, properties, context = {}) {
+      await safeRun(async () => {
+        if (!consent.analytics) return;
+        await enqueueAndMaybeFlush({
+          ...createBaseEvent(context.type ?? 'screen_view', context.level ?? 'info'),
+          analytics: { name: 'screen.view', properties: { screen, ...properties } },
+          breadcrumbs: runtime.breadcrumbs,
+          extra: context.extra,
+          tags: {
+            ...runtime.tags,
+            ...context.tags,
+            screen,
+            source: context.source ?? 'analytics.screen',
+          },
+        });
+      });
+    },
     async captureException(error, context = {}) {
       await safeRun(async () => {
+        if (!consent.crash) return;
         const payload = serializeError(error);
         const errorPayload = {
           ...payload,
@@ -122,12 +167,14 @@ export async function createAppHealthClient(
           error: errorPayload,
           breadcrumbs: runtime.breadcrumbs,
           extra: context.extra,
+          analytics: context.analytics,
           tags: { ...runtime.tags, ...context.tags, source: context.source ?? 'exception' },
         });
       });
     },
     async captureMessage(message, context = {}) {
       await safeRun(async () => {
+        if (!shouldCaptureMessage(context.type, consent)) return;
         await enqueueAndMaybeFlush({
           ...createBaseEvent(context.type ?? 'custom', context.level ?? 'info'),
           error:
@@ -136,6 +183,7 @@ export async function createAppHealthClient(
               : undefined,
           breadcrumbs: runtime.breadcrumbs,
           extra: context.extra,
+          analytics: context.analytics,
           tags: { ...runtime.tags, ...context.tags, source: context.source ?? 'message' },
         });
       });
@@ -168,7 +216,7 @@ export async function createAppHealthClient(
     },
   };
 
-  await initializeClient({ client, config, disposers, enabled, sessionManager });
+  await initializeClient({ client, config, consent, disposers, enabled, sessionManager });
 
   const interval =
     enabled && transports.length > 0 && config.flushIntervalMs !== 0
@@ -179,6 +227,58 @@ export async function createAppHealthClient(
   if (interval !== undefined) disposers.push(() => clearInterval(interval));
 
   return client;
+}
+
+async function resolveDeviceInfo(config: AppHealthClientConfig, allowExtendedDevice: boolean) {
+  const base = getDeviceInfo();
+  if (!allowExtendedDevice || !config.deviceInfoProvider) return base;
+  const extra = await config.deviceInfoProvider();
+  return { ...base, ...compactDeviceInfo(extra) } satisfies AppHealthDeviceInfo;
+}
+
+function compactDeviceInfo(value: Partial<AppHealthDeviceInfo>) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, item]) => item !== undefined && item !== '')
+  ) as Partial<AppHealthDeviceInfo>;
+}
+
+async function resolveIdentity(config: AppHealthClientConfig) {
+  const identity = config.identity;
+  if (identity?.anonymousUserId) return { installId: identity.anonymousUserId };
+  if (!identity?.autoInstallId) return { installId: undefined };
+  return {
+    installId: await getOrCreateInstallId(config.storage, identity.installIdStorageKey),
+  };
+}
+
+function resolveInitialUser(config: AppHealthClientConfig, installId: string | undefined) {
+  if (config.userId) return { id: config.userId };
+  if (installId && (config.identity?.useInstallIdAsUserId ?? true)) return { id: installId };
+  return undefined;
+}
+
+function shouldCaptureMessage(
+  type: AppHealthEvent['type'] | undefined,
+  consent: ReturnType<typeof resolveConsent>
+) {
+  if (type === 'analytics_event' || type === 'screen_view') return consent.analytics;
+  if (
+    type === 'js_error' ||
+    type === 'react_error' ||
+    type === 'unhandled_rejection' ||
+    type === 'previous_session_crash' ||
+    type === 'native_crash' ||
+    type === 'api_error'
+  )
+    return consent.crash;
+  if (
+    type === 'app_start' ||
+    type === 'app_ready' ||
+    type === 'app_background' ||
+    type === 'app_foreground'
+  )
+    return consent.analytics;
+  return true;
 }
 
 function resolveTransports(config: AppHealthClientConfig) {
@@ -202,28 +302,34 @@ function resolveTransports(config: AppHealthClientConfig) {
 async function initializeClient({
   client,
   config,
+  consent,
   disposers,
   enabled,
   sessionManager,
 }: {
   client: AppHealthReporter;
   config: AppHealthClientConfig;
+  consent: ReturnType<typeof resolveConsent>;
   disposers: Array<() => void>;
   enabled: boolean;
   sessionManager: Awaited<ReturnType<typeof createAppHealthSessionManager>>;
 }) {
   if (!enabled) return;
 
-  await config.nativeCrashAdapter?.install?.();
+  if (consent.crash) {
+    await config.nativeCrashAdapter?.install?.();
+  }
 
-  disposers.push(
-    installGlobalErrorHandlers(client, {
-      captureGlobalErrors: config.captureGlobalErrors,
-      captureUnhandledRejections: config.captureUnhandledRejections,
-    })
-  );
+  if (consent.crash)
+    disposers.push(
+      installGlobalErrorHandlers(client, {
+        captureGlobalErrors: config.captureGlobalErrors,
+        captureUnhandledRejections: config.captureUnhandledRejections,
+      })
+    );
 
   if (
+    consent.crash &&
     (config.detectPreviousCrash ?? true) &&
     sessionManager.previousSession?.closedGracefully === false
   ) {
@@ -245,7 +351,9 @@ async function initializeClient({
     source: 'session',
   });
 
-  const pendingNativeCrashes = await config.nativeCrashAdapter?.getPendingCrashReports?.();
+  const pendingNativeCrashes = consent.crash
+    ? await config.nativeCrashAdapter?.getPendingCrashReports?.()
+    : undefined;
   if (pendingNativeCrashes?.length) {
     await Promise.all(
       pendingNativeCrashes.map(report =>

@@ -21,11 +21,17 @@ type IngestService struct {
 }
 
 const (
-	maxIngestEvents       = 100
-	maxBreadcrumbsPerItem = 100
-	maxTagsPerItem        = 50
-	maxExtraBytesPerItem  = 64 * 1024
-	maxFutureClockSkew    = 24 * time.Hour
+	maxIngestEvents             = 100
+	maxBreadcrumbsPerItem       = 100
+	maxTagsPerItem              = 50
+	maxExtraBytesPerItem        = 64 * 1024
+	maxAnalyticsNameLength      = 128
+	maxAnalyticsPropertiesBytes = 16 * 1024
+	maxAnalyticsPropertyKeySize = 64
+	maxAnalyticsDepth           = 3
+	maxDeviceBrandLength        = 64
+	maxDeviceModelLength        = 128
+	maxFutureClockSkew          = 24 * time.Hour
 )
 
 func NewIngestService(events repository.EventRepository, issues repository.IssueRepository, notifiers ...alert.Notifier) *IngestService {
@@ -113,7 +119,77 @@ func normalizeEvent(event domain.HealthEvent, now time.Time) (domain.HealthEvent
 	if !isJSONSizeAllowed(event.Extra, maxExtraBytesPerItem) {
 		return domain.HealthEvent{}, false
 	}
+	if !normalizeAnalytics(&event) {
+		return domain.HealthEvent{}, false
+	}
+	if !normalizeDevice(&event) {
+		return domain.HealthEvent{}, false
+	}
+	// Geo enrichment is server-owned. Ignore client-supplied geo data to avoid
+	// accidentally storing precise or over-granular location data from SDK input.
+	event.Geo = nil
 	return event, true
+}
+
+func normalizeAnalytics(event *domain.HealthEvent) bool {
+	if event.Analytics == nil {
+		return true
+	}
+	event.Analytics.Name = strings.TrimSpace(event.Analytics.Name)
+	if event.Analytics.Name == "" {
+		event.Analytics = nil
+		return true
+	}
+	if len(event.Analytics.Name) > maxAnalyticsNameLength {
+		return false
+	}
+	if event.Analytics.Properties == nil {
+		return true
+	}
+	if !isJSONSizeAllowed(event.Analytics.Properties, maxAnalyticsPropertiesBytes) {
+		return false
+	}
+	return isAnalyticsValueAllowed(event.Analytics.Properties, 0)
+}
+
+func normalizeDevice(event *domain.HealthEvent) bool {
+	event.Device.Model = strings.TrimSpace(event.Device.Model)
+	event.Device.Brand = strings.TrimSpace(event.Device.Brand)
+	return len(event.Device.Model) <= maxDeviceModelLength && len(event.Device.Brand) <= maxDeviceBrandLength
+}
+
+func isAnalyticsValueAllowed(value any, depth int) bool {
+	if depth > maxAnalyticsDepth {
+		return false
+	}
+	switch typed := value.(type) {
+	case nil, string, bool, float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return true
+	case map[string]any:
+		for key, child := range typed {
+			if strings.TrimSpace(key) == "" || len(key) > maxAnalyticsPropertyKeySize || !isAnalyticsValueAllowed(child, depth+1) {
+				return false
+			}
+		}
+		return true
+	case []any:
+		for _, child := range typed {
+			if !isAnalyticsValueAllowed(child, depth+1) {
+				return false
+			}
+		}
+		return true
+	default:
+		encoded, err := json.Marshal(typed)
+		if err != nil {
+			return false
+		}
+		var decoded any
+		if err := json.Unmarshal(encoded, &decoded); err != nil {
+			return false
+		}
+		return isAnalyticsValueAllowed(decoded, depth)
+	}
 }
 
 func isValidLevel(level domain.EventLevel) bool {

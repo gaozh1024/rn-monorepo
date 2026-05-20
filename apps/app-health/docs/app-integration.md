@@ -78,3 +78,38 @@ Expected result:
 - Losing the full token after closing the creation panel. Generate a new token if this happens.
 - Shipping a staging token in a production build.
 - Passing `token` to `AppHealthProvider`; the SDK prop is named `ingestToken`.
+
+## Behavior analytics integration
+
+After the user has granted analytics consent, apps can send lightweight behavior events:
+
+```ts
+await appHealth.trackScreen('Home');
+await appHealth.trackEvent('checkout.tap', { sku: 'demo' });
+```
+
+Recommended SDK setup:
+
+```ts
+<AppHealthProvider
+  config={{
+    endpoint: 'https://your-app-health.example.com/api/app-health/events',
+    token: 'app-ingest-token',
+    appId: 'com.example.app',
+    identity: { autoInstallId: true, useInstallIdAsUserId: true },
+    consent: {
+      crash: diagnosticsConsent,
+      analytics: analyticsConsent,
+      device: analyticsConsent,
+    },
+  }}
+>
+  <App />
+</AppHealthProvider>
+```
+
+Privacy notes:
+
+- Use anonymous IDs unless your privacy policy explicitly allows linking to account IDs.
+- Do not put sensitive personal information into `trackEvent` properties.
+- `app-health` ignores client-supplied precise geo data by default. If region analytics is needed, prefer server-side coarse IP geolocation and avoid storing raw IP.

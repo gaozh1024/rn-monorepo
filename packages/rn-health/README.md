@@ -44,6 +44,84 @@ export default function App() {
 
 When connected to `rn-kit`, React render errors from `AppErrorBoundary` are reported through `captureException`, and logger writes become health breadcrumbs.
 
+## Anonymous identity and consent
+
+For behavior analytics, use a stable anonymous install ID instead of phone numbers, emails, or real names. `rn-health` can generate and persist an install ID through the configured storage adapter:
+
+```tsx
+<AppHealthProvider
+  enabled={!__DEV__}
+  appId="mobile-app"
+  endpoint="https://api.example.com/api/app-health/events"
+  ingestToken="your-ingest-token"
+  storage={createAsyncStorageHealthStorage(AsyncStorage)}
+  identity={{ autoInstallId: true }}
+  consent={{
+    crash: privacyConsent.diagnostics,
+    analytics: privacyConsent.analytics,
+    device: privacyConsent.analytics,
+  }}
+>
+  {health => (
+    <AppProvider enableErrorBoundary healthReporter={health}>
+      {children}
+    </AppProvider>
+  )}
+</AppHealthProvider>
+```
+
+When `identity.autoInstallId` is enabled, events are tagged with `installId`. If no `userId` is provided, the install ID is also used as the anonymous `user.id`. After login, prefer a hashed business user ID:
+
+```ts
+health.setUser({ id: `user_${hashUserId(user.id)}` });
+```
+
+After logout, switch back to the anonymous install ID if you still want anonymous diagnostics.
+
+`consent` separates diagnostics from analytics:
+
+- `crash`: JavaScript errors, React errors, unhandled rejections, previous-session crash inference, native crash adapter.
+- `analytics`: `trackEvent`, `trackScreen`, and app lifecycle analytics events.
+- `device`: optional extended device information such as model and brand.
+
+## Behavior analytics
+
+Use `trackScreen` for page visits and `trackEvent` for user actions. Both are no-ops unless `consent.analytics` is `true`.
+
+```ts
+const health = useAppHealth();
+
+await health.trackScreen('Home');
+
+await health.trackEvent('button.click', {
+  screen: 'Home',
+  target: 'submit-order',
+});
+
+await health.trackEvent('order.success', {
+  screen: 'Checkout',
+  paymentMethod: 'wechat',
+});
+```
+
+Analytics events are uploaded through the same queue and transport as error events, with `type: "analytics_event"` or `type: "screen_view"` and an `analytics` payload.
+
+## Extended device information
+
+The core SDK does not depend on `expo-device` or `react-native-device-info`. Provide device model/brand yourself when the user has granted analytics/device consent:
+
+```tsx
+import * as Device from 'expo-device';
+
+<AppHealthProvider
+  consent={{ analytics: privacyConsent.analytics, device: privacyConsent.analytics }}
+  deviceInfoProvider={() => ({
+    model: Device.modelName ?? undefined,
+    brand: Device.brand ?? undefined,
+  })}
+/>;
+```
+
 ## Manual capture
 
 ```tsx

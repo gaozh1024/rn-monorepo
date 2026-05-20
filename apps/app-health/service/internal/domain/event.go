@@ -21,6 +21,8 @@ type HealthEvent struct {
 	Session     SessionInfo            `json:"session"`
 	User        *UserInfo              `json:"user,omitempty"`
 	Error       *ErrorInfo             `json:"error,omitempty"`
+	Analytics   *AnalyticsInfo         `json:"analytics,omitempty"`
+	Geo         *GeoInfo               `json:"geo,omitempty"`
 	Breadcrumbs []Breadcrumb           `json:"breadcrumbs,omitempty"`
 	Tags        map[string]string      `json:"tags,omitempty"`
 	Extra       map[string]any         `json:"extra,omitempty"`
@@ -41,6 +43,18 @@ type DeviceInfo struct {
 	Platform  string `json:"platform,omitempty"`
 	OSVersion string `json:"osVersion,omitempty"`
 	Model     string `json:"model,omitempty"`
+	Brand     string `json:"brand,omitempty"`
+}
+
+type AnalyticsInfo struct {
+	Name       string         `json:"name,omitempty"`
+	Properties map[string]any `json:"properties,omitempty"`
+}
+
+type GeoInfo struct {
+	Country  string `json:"country,omitempty"`
+	Province string `json:"province,omitempty"`
+	City     string `json:"city,omitempty"`
 }
 
 type SessionInfo struct {

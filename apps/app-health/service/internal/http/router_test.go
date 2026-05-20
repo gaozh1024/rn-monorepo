@@ -532,3 +532,33 @@ func assertEventually(t *testing.T, condition func() bool, message string) {
 	}
 	t.Fatal(message)
 }
+
+func TestRouterAnalyticsEndpoints(t *testing.T) {
+	cfg := config.Config{
+		IngestToken: "ingest_test",
+		AdminToken:  "admin_test",
+		CORSOrigins: []string{"*"},
+		Env:         "test",
+	}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	container, err := app.NewContainer(t.Context(), cfg, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(container.Close)
+	router := NewRouter(cfg, logger, container)
+
+	payload := `{"events":[
+		{"id":"evt_screen_001","type":"screen_view","level":"info","timestamp":1710000000000,"app":{"id":"mobile-app","version":"1.0.0","buildNumber":"1"},"device":{"platform":"ios","osVersion":"17.0","model":"iPhone 15","brand":"Apple"},"session":{"id":"sess_analytics","startedAt":1710000000000},"user":{"id":"user_analytics"},"analytics":{"name":"screen.view","properties":{"screen":"Home"}},"tags":{"screen":"Home"}},
+		{"id":"evt_action_001","type":"analytics_event","level":"info","timestamp":1710000001000,"app":{"id":"mobile-app","version":"1.0.0","buildNumber":"1"},"device":{"platform":"ios","osVersion":"17.0","model":"iPhone 15","brand":"Apple"},"session":{"id":"sess_analytics","startedAt":1710000000000},"user":{"id":"user_analytics"},"analytics":{"name":"checkout.tap","properties":{"sku":"demo"}}},
+		{"id":"evt_error_analytics","type":"js_error","level":"error","timestamp":1710000002000,"app":{"id":"mobile-app","version":"1.0.0","buildNumber":"1"},"device":{"platform":"ios","osVersion":"17.0","model":"iPhone 15","brand":"Apple"},"session":{"id":"sess_analytics","startedAt":1710000000000},"user":{"id":"user_analytics"},"error":{"name":"TypeError","message":"boom","fingerprint":"fp_analytics"}}
+	]}`
+
+	assertRequest(t, router, http.MethodGet, "/api/app-health/analytics/screens", "", "", http.StatusUnauthorized, `"unauthorized"`)
+	assertRequest(t, router, http.MethodPost, "/api/app-health/events", "Bearer ingest_test", payload, http.StatusOK, `"accepted":3`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/analytics/users/user_analytics/timeline?appId=mobile-app", "Bearer admin_test", "", http.StatusOK, `"checkout.tap"`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/analytics/events/evt_error_analytics/timeline?windowMinutes=10", "Bearer admin_test", "", http.StatusOK, `"evt_screen_001"`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/analytics/screens?appId=mobile-app", "Bearer admin_test", "", http.StatusOK, `"screen":"Home"`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/analytics/distribution?dimension=deviceModel&appId=mobile-app", "Bearer admin_test", "", http.StatusOK, `"value":"iPhone 15"`)
+	assertRequest(t, router, http.MethodGet, "/api/app-health/analytics/distribution?dimension=rawSql", "Bearer admin_test", "", http.StatusBadRequest, `"invalid analytics query"`)
+}

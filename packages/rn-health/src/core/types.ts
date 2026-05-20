@@ -11,6 +11,8 @@ export type AppHealthEventType =
   | 'previous_session_crash'
   | 'native_crash'
   | 'api_error'
+  | 'analytics_event'
+  | 'screen_view'
   | 'custom';
 
 export type AppHealthLevel = 'info' | 'warning' | 'error' | 'fatal';
@@ -55,6 +57,11 @@ export interface AppHealthBreadcrumb {
   data?: unknown;
 }
 
+export interface AppHealthAnalyticsPayload {
+  name: string;
+  properties?: Record<string, unknown>;
+}
+
 export interface AppHealthEvent {
   id: string;
   type: AppHealthEventType;
@@ -68,6 +75,7 @@ export interface AppHealthEvent {
   breadcrumbs?: AppHealthBreadcrumb[];
   tags?: Record<string, string>;
   extra?: Record<string, unknown>;
+  analytics?: AppHealthAnalyticsPayload;
 }
 
 export interface AppHealthCaptureContext {
@@ -77,9 +85,20 @@ export interface AppHealthCaptureContext {
   componentStack?: string;
   tags?: Record<string, string>;
   extra?: Record<string, unknown>;
+  analytics?: AppHealthAnalyticsPayload;
 }
 
 export interface AppHealthReporter {
+  trackEvent: (
+    name: string,
+    properties?: Record<string, unknown>,
+    context?: AppHealthCaptureContext
+  ) => Promise<void>;
+  trackScreen: (
+    screen: string,
+    properties?: Record<string, unknown>,
+    context?: AppHealthCaptureContext
+  ) => Promise<void>;
   captureException: (error: unknown, context?: AppHealthCaptureContext) => Promise<void>;
   captureMessage: (message: string, context?: AppHealthCaptureContext) => Promise<void>;
   addBreadcrumb: (breadcrumb: AppHealthBreadcrumb) => void;
@@ -116,6 +135,24 @@ export interface NativeCrashAdapter {
   setTags?: (tags: Record<string, string>) => void | Promise<void>;
 }
 
+export interface AppHealthConsentOptions {
+  crash?: boolean;
+  analytics?: boolean;
+  device?: boolean;
+  performance?: boolean;
+}
+
+export interface AppHealthIdentityOptions {
+  autoInstallId?: boolean;
+  installIdStorageKey?: string;
+  anonymousUserId?: string;
+  useInstallIdAsUserId?: boolean;
+}
+
+export type AppHealthDeviceInfoProvider = () =>
+  | Partial<AppHealthDeviceInfo>
+  | Promise<Partial<AppHealthDeviceInfo>>;
+
 export interface AppHealthProviderProps extends AppHealthClientConfig {
   children: ReactNode | ((client: AppHealthReporter) => ReactNode);
 }
@@ -127,6 +164,9 @@ export interface AppHealthClientConfig {
   buildNumber?: string;
   environment?: string;
   userId?: string;
+  consent?: AppHealthConsentOptions;
+  identity?: AppHealthIdentityOptions;
+  deviceInfoProvider?: AppHealthDeviceInfoProvider;
   endpoint?: string;
   ingestToken?: string;
   headers?:

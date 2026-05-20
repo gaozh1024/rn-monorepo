@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { getEventTimeline } from '../api/analytics';
 import { getIssue, updateIssueStatus } from '../api/issues';
-import type { HealthEvent, HealthIssue } from '../api/types';
+import type { AnalyticsTimelineItem, HealthEvent, HealthIssue } from '../api/types';
 import { BreadcrumbTimeline } from '../components/BreadcrumbTimeline';
 import { IssueStatusBadge } from '../components/IssueStatusBadge';
 import { JsonViewer } from '../components/JsonViewer';
@@ -23,6 +24,9 @@ export function IssueDetailPage({ issueId, onBack }: { issueId: string; onBack: 
   const [detail, setDetail] = useState<IssueDetailState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [behaviorTimeline, setBehaviorTimeline] = useState<AnalyticsTimelineItem[]>([]);
+  const [behaviorError, setBehaviorError] = useState<string | null>(null);
+  const [behaviorLoading, setBehaviorLoading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -39,6 +43,19 @@ export function IssueDetailPage({ issueId, onBack }: { issueId: string; onBack: 
   useEffect(() => {
     void load();
   }, [issueId]);
+
+  async function loadBehaviorTimeline(eventId: string) {
+    setBehaviorLoading(true);
+    setBehaviorError(null);
+    try {
+      const response = await getEventTimeline(eventId, { windowMinutes: 10 });
+      setBehaviorTimeline(response.items);
+    } catch (cause) {
+      setBehaviorError(cause instanceof Error ? cause.message : '用户行为路径加载失败。');
+    } finally {
+      setBehaviorLoading(false);
+    }
+  }
 
   async function setStatus(status: HealthIssue['status']) {
     if (!detail) return;
@@ -90,6 +107,58 @@ export function IssueDetailPage({ issueId, onBack }: { issueId: string; onBack: 
           <Card>
             <CardHeader title="面包屑" />
             <BreadcrumbTimeline breadcrumbs={detail.sampleEvent?.breadcrumbs} />
+          </Card>
+          <Card>
+            <CardHeader
+              title="用户错误时间线"
+              description="查看样本事件前后 10 分钟内的匿名用户行为。"
+              actions={
+                detail.sampleEvent ? (
+                  <Button
+                    variant="ghost"
+                    onClick={() => void loadBehaviorTimeline(detail.sampleEvent!.id)}
+                  >
+                    查看行为路径
+                  </Button>
+                ) : null
+              }
+            />
+            {behaviorLoading ? <LoadingState label="正在加载行为路径..." /> : null}
+            {behaviorError ? <ErrorState message={behaviorError} /> : null}
+            {behaviorTimeline.length ? (
+              <div className="table-card analytics-timeline-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>时间</th>
+                      <th>类型</th>
+                      <th>行为 / 错误</th>
+                      <th>设备</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {behaviorTimeline.map(item => (
+                      <tr key={item.id}>
+                        <td>
+                          {new Date(item.createdAt).toLocaleString()}
+                          <span className="table-subtext">{item.id}</span>
+                        </td>
+                        <td>
+                          <span className={`badge level-${item.level}`}>{item.type}</span>
+                        </td>
+                        <td>
+                          {item.analytics?.name ?? item.error?.message ?? '-'}
+                          {item.tags?.screen ? (
+                            <span className="table-subtext">screen: {item.tags.screen}</span>
+                          ) : null}
+                        </td>
+                        <td>{item.device.model ?? item.device.platform ?? '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
           </Card>
           <Card>
             <CardHeader title="最近事件" />

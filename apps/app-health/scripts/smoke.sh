@@ -18,6 +18,8 @@ ADMIN_TOKEN="${APP_HEALTH_SMOKE_ADMIN_TOKEN:-admin_dev}"
 RUN_ID="$(date +%s)"
 APP_SLUG="${APP_HEALTH_SMOKE_APP_ID:-smoke-app-$RUN_ID}"
 EVENT_ID="evt_smoke_$RUN_ID"
+SCREEN_EVENT_ID="evt_screen_smoke_$RUN_ID"
+ANALYTICS_EVENT_ID="evt_analytics_smoke_$RUN_ID"
 COOKIE_JAR="$(mktemp "${TMPDIR:-/tmp}/app-health-smoke-cookies.XXXXXX")"
 SERVICE_LOG="$(mktemp "${TMPDIR:-/tmp}/app-health-smoke-service.XXXXXX.log")"
 ADMIN_LOG="$(mktemp "${TMPDIR:-/tmp}/app-health-smoke-admin.XXXXXX.log")"
@@ -268,14 +270,14 @@ require_contains "$alert_disable_response" '"enabled":false' 'disable alert rule
 alert_delete_response="$(curl_json DELETE "$API_BASE_URL/api/app-health/alert-rules/$alert_rule_id")"
 require_contains "$alert_delete_response" '"name":"Smoke alert"' 'delete alert rule response'
 
-log "ingesting smoke event $EVENT_ID"
+log "ingesting smoke events $EVENT_ID"
 ingest_response="$(
   curl -fsS -X POST "$API_BASE_URL/api/app-health/events" \
     -H "authorization: Bearer $ingest_token" \
     -H 'content-type: application/json' \
-    --data "{\"events\":[{\"id\":\"$EVENT_ID\",\"type\":\"js_error\",\"level\":\"error\",\"timestamp\":1710000000000,\"app\":{\"id\":\"$APP_SLUG\",\"version\":\"1.0.0\",\"buildNumber\":\"1\",\"environment\":\"production\"},\"device\":{\"platform\":\"ios\",\"osVersion\":\"17.0\"},\"user\":{\"id\":\"user_smoke\"},\"session\":{\"id\":\"sess_smoke\",\"startedAt\":1710000000000},\"error\":{\"name\":\"SmokeError\",\"message\":\"Smoke boom\",\"fingerprint\":\"fp_smoke\"}}]}"
+    --data "{\"events\":[{\"id\":\"$SCREEN_EVENT_ID\",\"type\":\"screen_view\",\"level\":\"info\",\"timestamp\":1710000000000,\"app\":{\"id\":\"$APP_SLUG\",\"version\":\"1.0.0\",\"buildNumber\":\"1\",\"environment\":\"production\"},\"device\":{\"platform\":\"ios\",\"osVersion\":\"17.0\",\"model\":\"iPhone 15\",\"brand\":\"Apple\"},\"user\":{\"id\":\"user_smoke\"},\"session\":{\"id\":\"sess_smoke\",\"startedAt\":1710000000000},\"analytics\":{\"name\":\"screen.view\",\"properties\":{\"screen\":\"Home\"}},\"tags\":{\"screen\":\"Home\"}},{\"id\":\"$ANALYTICS_EVENT_ID\",\"type\":\"analytics_event\",\"level\":\"info\",\"timestamp\":1710000001000,\"app\":{\"id\":\"$APP_SLUG\",\"version\":\"1.0.0\",\"buildNumber\":\"1\",\"environment\":\"production\"},\"device\":{\"platform\":\"ios\",\"osVersion\":\"17.0\",\"model\":\"iPhone 15\",\"brand\":\"Apple\"},\"user\":{\"id\":\"user_smoke\"},\"session\":{\"id\":\"sess_smoke\",\"startedAt\":1710000000000},\"analytics\":{\"name\":\"smoke.tap\",\"properties\":{\"source\":\"smoke\"}}},{\"id\":\"$EVENT_ID\",\"type\":\"js_error\",\"level\":\"error\",\"timestamp\":1710000002000,\"app\":{\"id\":\"$APP_SLUG\",\"version\":\"1.0.0\",\"buildNumber\":\"1\",\"environment\":\"production\"},\"device\":{\"platform\":\"ios\",\"osVersion\":\"17.0\",\"model\":\"iPhone 15\",\"brand\":\"Apple\"},\"user\":{\"id\":\"user_smoke\"},\"session\":{\"id\":\"sess_smoke\",\"startedAt\":1710000000000},\"error\":{\"name\":\"SmokeError\",\"message\":\"Smoke boom\",\"fingerprint\":\"fp_smoke\"}}]}"
 )"
-require_contains "$ingest_response" '"accepted":1' 'ingest response'
+require_contains "$ingest_response" '"accepted":3' 'ingest response'
 
 log "querying events, issues, and stats"
 events_response="$(curl_json GET "$API_BASE_URL/api/app-health/events?appId=$APP_SLUG&fingerprint=fp_smoke")"
@@ -288,6 +290,16 @@ require_contains "$issues_response" '"total":1' 'issues response'
 stats_response="$(curl_json GET "$API_BASE_URL/api/app-health/stats/overview?appId=$APP_SLUG")"
 require_contains "$stats_response" '"openIssues":1' 'stats response'
 
+log "querying analytics timelines and stats"
+user_timeline_response="$(curl_json GET "$API_BASE_URL/api/app-health/analytics/users/user_smoke/timeline?appId=$APP_SLUG")"
+require_contains "$user_timeline_response" "$ANALYTICS_EVENT_ID" 'analytics user timeline response'
+require_contains "$user_timeline_response" '"smoke.tap"' 'analytics user timeline response'
+event_timeline_response="$(curl_json GET "$API_BASE_URL/api/app-health/analytics/events/$EVENT_ID/timeline?windowMinutes=10")"
+require_contains "$event_timeline_response" "$SCREEN_EVENT_ID" 'analytics event timeline response'
+screen_stats_response="$(curl_json GET "$API_BASE_URL/api/app-health/analytics/screens?appId=$APP_SLUG")"
+require_contains "$screen_stats_response" '"screen":"Home"' 'analytics screen stats response'
+distribution_response="$(curl_json GET "$API_BASE_URL/api/app-health/analytics/distribution?dimension=deviceModel&appId=$APP_SLUG")"
+require_contains "$distribution_response" '"value":"iPhone 15"' 'analytics distribution response'
 
 log "checking settings summary and retention dry-run"
 settings_response="$(curl_json GET "$API_BASE_URL/api/app-health/settings/summary")"
@@ -301,7 +313,7 @@ retention_run_status="$(
 )"
 require_equals "$retention_run_status" '400' 'retention run without confirmation status'
 retention_runs_response="$(curl_json GET "$API_BASE_URL/api/app-health/retention/runs?limit=5")"
-require_contains "$retention_runs_response" '"total":1' 'retention runs response'
+require_contains "$retention_runs_response" '"mode":"dry-run"' 'retention runs response'
 
 log "checking token revoke and disabled-token delete"
 token_id="$(

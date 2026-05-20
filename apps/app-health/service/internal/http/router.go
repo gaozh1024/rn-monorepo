@@ -22,6 +22,7 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 	applicationsHandler := handlers.NewApplicationsHandler(container.Application)
 	alertsHandler := handlers.NewAlertsHandler(container.Alert)
 	settingsHandler := handlers.NewSettingsHandler(container.Settings, container.Retention)
+	analyticsHandler := handlers.NewAnalyticsHandler(container.AnalyticsSvc)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -64,6 +65,10 @@ func NewRouter(cfg config.Config, logger *slog.Logger, container *appcontainer.C
 	mux.Handle("GET /api/app-health/issues/{id}", requireAdmin(http.HandlerFunc(issuesHandler.Get)))
 	mux.Handle("PATCH /api/app-health/issues/{id}/status", requireAdmin(http.HandlerFunc(issuesHandler.UpdateStatus)))
 	mux.Handle("GET /api/app-health/stats/overview", requireAdmin(http.HandlerFunc(statsHandler.Overview)))
+	mux.Handle("GET /api/app-health/analytics/users/{userId}/timeline", requireAdmin(http.HandlerFunc(analyticsHandler.UserTimeline)))
+	mux.Handle("GET /api/app-health/analytics/events/{eventId}/timeline", requireAdmin(http.HandlerFunc(analyticsHandler.EventTimeline)))
+	mux.Handle("GET /api/app-health/analytics/screens", requireAdmin(http.HandlerFunc(analyticsHandler.ScreenStats)))
+	mux.Handle("GET /api/app-health/analytics/distribution", requireAdmin(http.HandlerFunc(analyticsHandler.Distribution)))
 	mux.Handle("GET /api/app-health/applications", requireAdmin(http.HandlerFunc(applicationsHandler.List)))
 	mux.Handle("POST /api/app-health/applications", requireAdmin(http.HandlerFunc(applicationsHandler.Create)))
 	mux.Handle("GET /api/app-health/applications/{id}", requireAdmin(http.HandlerFunc(applicationsHandler.Get)))

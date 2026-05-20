@@ -11,6 +11,7 @@ const navItems: NavItem[] = [
   { id: 'applications', label: '应用管理' },
   { id: 'issues', label: '问题' },
   { id: 'events', label: '事件' },
+  { id: 'analytics', label: '行为分析', badge: 'P1' },
   { id: 'alerts', label: '告警', badge: '测试版' },
   { id: 'settings', label: '设置' },
 ];

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-health",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "role": "feature-package",
   "summary": "App health and error monitoring SDK for Expo or React Native apps with event capture, breadcrumbs, local queueing, sanitized transports, and rn-kit integration.",
   "entrypoints": [
@@ -18,9 +18,7 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/rn-health",
-    "projectTypes": [
-      "react-native"
-    ],
+    "projectTypes": ["react-native"],
     "peerDependencies": {
       "react": ">=18.2.0",
       "react-native": ">=0.79 <0.82"
@@ -80,8 +78,5 @@
       "path": "packages/rn-health/src/capture/axios.ts"
     }
   ],
-  "docs": [
-    "README.md",
-    "AI_USAGE.md"
-  ]
+  "docs": ["README.md", "AI_USAGE.md"]
 }

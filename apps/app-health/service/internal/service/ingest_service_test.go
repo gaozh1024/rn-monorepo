@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/gaozh1024/rn-monorepo/apps/app-health/service/internal/alert"
@@ -101,5 +102,91 @@ func testHealthEvent(id string) domain.HealthEvent {
 			Message: "boom",
 			Stack:   "at App",
 		},
+	}
+}
+
+func TestIngestAcceptsAnalyticsAndDeviceBrand(t *testing.T) {
+	events := repository.NewMemoryEventRepository()
+	ingest := NewIngestService(events, repository.NewMemoryIssueRepository())
+	event := testHealthEvent("analytics_1")
+	event.Type = "analytics_event"
+	event.Level = domain.LevelInfo
+	event.Error = nil
+	event.Analytics = &domain.AnalyticsInfo{Name: " checkout.tap ", Properties: map[string]any{"sku": "demo", "count": 1}}
+	event.Device.Model = " iPhone 15 "
+	event.Device.Brand = " Apple "
+	event.Geo = &domain.GeoInfo{City: "Shanghai"}
+
+	response, err := ingest.Ingest(context.Background(), []domain.HealthEvent{event})
+	if err != nil {
+		t.Fatalf("ingest: %v", err)
+	}
+	if response.Accepted != 1 || response.Rejected != 0 {
+		t.Fatalf("unexpected response: %+v", response)
+	}
+	saved, err := events.Get(context.Background(), "analytics_1")
+	if err != nil {
+		t.Fatalf("get saved event: %v", err)
+	}
+	if saved.Analytics == nil || saved.Analytics.Name != "checkout.tap" {
+		t.Fatalf("analytics not normalized: %+v", saved.Analytics)
+	}
+	if saved.Device.Model != "iPhone 15" || saved.Device.Brand != "Apple" {
+		t.Fatalf("device not normalized: %+v", saved.Device)
+	}
+	if saved.Geo != nil {
+		t.Fatalf("client geo should be ignored: %+v", saved.Geo)
+	}
+}
+
+func TestIngestRejectsInvalidAnalyticsPayloads(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*domain.HealthEvent)
+	}{
+		{
+			name: "long analytics name",
+			mutate: func(event *domain.HealthEvent) {
+				event.Analytics = &domain.AnalyticsInfo{Name: strings.Repeat("a", maxAnalyticsNameLength+1)}
+			},
+		},
+		{
+			name: "long analytics property key",
+			mutate: func(event *domain.HealthEvent) {
+				event.Analytics = &domain.AnalyticsInfo{Name: "tap", Properties: map[string]any{strings.Repeat("k", maxAnalyticsPropertyKeySize+1): "value"}}
+			},
+		},
+		{
+			name: "deep analytics properties",
+			mutate: func(event *domain.HealthEvent) {
+				event.Analytics = &domain.AnalyticsInfo{Name: "tap", Properties: map[string]any{"a": map[string]any{"b": map[string]any{"c": map[string]any{"d": true}}}}}
+			},
+		},
+		{
+			name: "long device brand",
+			mutate: func(event *domain.HealthEvent) {
+				event.Device.Brand = strings.Repeat("b", maxDeviceBrandLength+1)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			events := repository.NewMemoryEventRepository()
+			ingest := NewIngestService(events, repository.NewMemoryIssueRepository())
+			event := testHealthEvent("invalid_" + strings.ReplaceAll(tt.name, " ", "_"))
+			event.Type = "analytics_event"
+			event.Level = domain.LevelInfo
+			event.Error = nil
+			tt.mutate(&event)
+
+			response, err := ingest.Ingest(context.Background(), []domain.HealthEvent{event})
+			if err != nil {
+				t.Fatalf("ingest: %v", err)
+			}
+			if response.Rejected != 1 || response.Accepted != 0 {
+				t.Fatalf("unexpected response: %+v", response)
+			}
+		})
 	}
 }

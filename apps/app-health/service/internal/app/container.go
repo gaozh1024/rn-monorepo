@@ -22,6 +22,7 @@ type Container struct {
 	AlertRules    repository.AlertRuleRepository
 	Deliveries    repository.AlertDeliveryRepository
 	RetentionRuns repository.RetentionRunRepository
+	Analytics     repository.AnalyticsRepository
 	Ingest        *appsvc.IngestService
 	IngestAuth    *appsvc.IngestAuthService
 	Application   *appsvc.ApplicationService
@@ -33,6 +34,7 @@ type Container struct {
 	Session       *appsvc.SessionService
 	Retention     *appsvc.RetentionOperationService
 	Settings      *appsvc.SettingsService
+	AnalyticsSvc  *appsvc.AnalyticsService
 }
 
 func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (*Container, error) {
@@ -44,6 +46,7 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 	var alertRules repository.AlertRuleRepository
 	var deliveries repository.AlertDeliveryRepository
 	var retentionRuns repository.RetentionRunRepository
+	var analytics repository.AnalyticsRepository
 
 	if cfg.DatabaseURL != "" {
 		openedPool, err := db.Open(ctx, cfg.DatabaseURL)
@@ -58,9 +61,11 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 		alertRules = repository.NewPostgresAlertRuleRepository(pool)
 		deliveries = repository.NewPostgresAlertDeliveryRepository(pool)
 		retentionRuns = repository.NewPostgresRetentionRunRepository(pool)
+		analytics = repository.NewPostgresAnalyticsRepository(pool)
 		logger.Info("using postgres app-health repositories")
 	} else {
-		events = repository.NewMemoryEventRepository()
+		memoryEvents := repository.NewMemoryEventRepository()
+		events = memoryEvents
 		issues = repository.NewMemoryIssueRepository()
 		memoryApplications := repository.NewMemoryApplicationRepository(events, issues)
 		memoryTokens := repository.NewMemoryIngestTokenRepository()
@@ -70,6 +75,7 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 		alertRules = repository.NewMemoryAlertRuleRepository()
 		deliveries = repository.NewMemoryAlertDeliveryRepository()
 		retentionRuns = repository.NewMemoryRetentionRunRepository()
+		analytics = repository.NewMemoryAnalyticsRepository(memoryEvents)
 		logger.Warn("APP_HEALTH_DATABASE_URL is empty; using in-memory app-health repositories")
 	}
 
@@ -98,6 +104,7 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 		AlertRules:    alertRules,
 		Deliveries:    deliveries,
 		RetentionRuns: retentionRuns,
+		Analytics:     analytics,
 		Ingest:        appsvc.NewIngestService(events, issues, dispatcher),
 		IngestAuth:    appsvc.NewIngestAuthService(cfg.IngestToken, applications, tokens),
 		Application:   appsvc.NewApplicationService(applications, tokens, events, issues),
@@ -108,6 +115,7 @@ func NewContainer(ctx context.Context, cfg config.Config, logger *slog.Logger) (
 		Auth:          appsvc.NewAuthService(cfg.AdminEmail, cfg.AdminPasswordHash),
 		Session:       appsvc.NewSessionService(cfg.SessionSecret, time.Duration(cfg.SessionTTLHours)*time.Hour),
 		Retention:     appsvc.NewRetentionOperationService(appsvc.NewRetentionService(events, issues), retentionRuns, cfg.EventRetentionDays),
+		AnalyticsSvc:  appsvc.NewAnalyticsService(analytics),
 	}
 	container.Settings = appsvc.NewSettingsService(cfg, container)
 	return container, nil

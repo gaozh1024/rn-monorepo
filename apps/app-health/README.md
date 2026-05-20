@@ -513,3 +513,29 @@ This runs:
 - No alert retry/outbox yet; webhook delivery is best-effort.
 - No archival export before retention yet.
 - Admin auth supports password sessions plus bearer-token compatibility; add SSO/RBAC before exposing it to a wider internal audience.
+
+## Analytics behavior backend
+
+`app-health` now accepts the P0 analytics payloads emitted by `@gaozh1024/rn-health`:
+
+- `analytics_event` from `trackEvent(name, properties)`
+- `screen_view` from `trackScreen(screen, properties)`
+- anonymous `user.id` / `installId` style identities
+- extended device fields such as `device.model` and `device.brand`
+
+Admin APIs:
+
+- `GET /api/app-health/analytics/users/{userId}/timeline` — behavior timeline for an anonymous user.
+- `GET /api/app-health/analytics/events/{eventId}/timeline` — behavior context around an error event.
+- `GET /api/app-health/analytics/screens` — screen visit stats.
+- `GET /api/app-health/analytics/distribution?dimension=deviceModel` — distribution stats for whitelisted dimensions.
+
+Supported distribution dimensions: `platform`, `osVersion`, `deviceModel`, `deviceBrand`, `appVersion`, `buildNumber`, `country`, `province`, `city`.
+
+Privacy defaults:
+
+- Analytics APIs are admin-only.
+- Raw IP storage is not enabled by default.
+- Client-supplied `geo` is ignored by ingest; coarse geo fields are reserved for server-side enrichment.
+- Keep analytics properties lightweight and do not send sensitive personal information such as phone numbers, ID numbers, precise addresses, contacts, or credentials.
+- Enable SDK analytics only after the app has obtained the appropriate user consent.

@@ -24,7 +24,7 @@ export interface HealthEvent {
   level: string;
   timestamp: number;
   app: { id: string; version?: string; buildNumber?: string; environment?: string };
-  device: { platform?: string; osVersion?: string; model?: string };
+  device: { platform?: string; osVersion?: string; model?: string; brand?: string };
   session: { id: string; startedAt: number };
   user?: { id?: string };
   error?: {
@@ -34,6 +34,8 @@ export interface HealthEvent {
     componentStack?: string;
     fingerprint?: string;
   };
+  analytics?: AnalyticsInfo;
+  geo?: { country?: string; province?: string; city?: string };
   breadcrumbs?: Array<{
     timestamp?: number;
     category?: string;
@@ -59,4 +61,49 @@ export interface StatsOverview {
   eventsToday: number;
   affectedUsersToday: number;
   fatalEventsToday: number;
+}
+
+export interface AnalyticsInfo {
+  name?: string;
+  properties?: Record<string, unknown>;
+}
+
+export interface AnalyticsTimelineItem {
+  id: string;
+  type: string;
+  level: string;
+  createdAt: string;
+  app: { id: string; version?: string; buildNumber?: string; environment?: string };
+  device: { platform?: string; osVersion?: string; model?: string; brand?: string };
+  session: { id: string; startedAt?: number };
+  user?: { id?: string };
+  analytics?: AnalyticsInfo;
+  error?: HealthEvent['error'];
+  tags?: Record<string, string>;
+}
+
+export interface AnalyticsTimelineResponse {
+  items: AnalyticsTimelineItem[];
+}
+
+export interface ScreenStatsItem {
+  screen: string;
+  views: number;
+  users: number;
+  sessions: number;
+  lastSeenAt: string;
+}
+
+export interface ScreenStatsResponse {
+  items: ScreenStatsItem[];
+}
+
+export interface AnalyticsDistributionItem {
+  value: string;
+  count: number;
+}
+
+export interface AnalyticsDistributionResponse {
+  dimension: string;
+  items: AnalyticsDistributionItem[];
 }

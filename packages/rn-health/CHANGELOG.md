@@ -1,5 +1,15 @@
 # @gaozh1024/rn-health
 
+## 0.3.0
+
+### Minor Changes
+
+- Add consent-gated behavior analytics with `trackEvent` and `trackScreen`.
+- Add anonymous install identity helpers through `identity.autoInstallId` and `getOrCreateInstallId`.
+- Add analytics event payloads for `analytics_event` and `screen_view`.
+- Add `deviceInfoProvider` plus `consent.device` so apps can explicitly control extended device model / brand collection.
+- Keep existing crash capture APIs compatible while allowing `consent.crash` to disable diagnostics capture.
+
 ## 0.2.0
 
 ### Minor Changes

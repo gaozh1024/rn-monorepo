@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { listApplications } from '../api/applications';
 import { AdminLayout } from '../layout/AdminLayout';
 import { AlertsPage } from '../pages/AlertsPage';
+import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { ApplicationsPage } from '../pages/ApplicationsPage';
 import { EventsPage } from '../pages/EventsPage';
 import { IssueDetailPage } from '../pages/IssueDetailPage';
@@ -13,7 +14,14 @@ import { AuthProvider, useAuth } from './AuthProvider';
 import { createFallbackAppOption, toProjectAppOption } from './appScope';
 import type { ProjectAppOption } from './appScope';
 
-export type Page = 'overview' | 'applications' | 'issues' | 'events' | 'alerts' | 'settings';
+export type Page =
+  | 'overview'
+  | 'applications'
+  | 'issues'
+  | 'events'
+  | 'analytics'
+  | 'alerts'
+  | 'settings';
 
 export function App() {
   return (
@@ -129,6 +137,7 @@ function AuthenticatedApp() {
         />
       ) : null}
       {page === 'events' ? <EventsPage app={selectedApp} environment={environment} /> : null}
+      {page === 'analytics' ? <AnalyticsPage app={selectedApp} /> : null}
       {page === 'alerts' ? <AlertsPage app={selectedApp} /> : null}
       {page === 'settings' ? <SettingsPage /> : null}
     </AdminLayout>
