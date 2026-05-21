@@ -1,5 +1,12 @@
 import * as React from 'react';
-import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -275,6 +282,64 @@ function MotionSegmentedTabsIndicator({
   );
 }
 
+function WebSegmentedTabsIndicator({
+  indicatorClassName,
+  indicatorInset,
+  indicatorStyle,
+  motionDuration,
+  motionReduceMotion,
+  motionSpringPreset,
+  resolvedHeight,
+  resolvedIndicatorColor,
+  roundedStyle,
+  targetWidth,
+  targetX,
+  testID,
+  visible,
+}: SegmentedTabsIndicatorProps) {
+  const { reduceMotion: systemReduceMotion, durationScale } = useReducedMotion();
+  const reduceMotion = motionReduceMotion ?? systemReduceMotion;
+  const duration = resolveDuration(
+    motionDuration,
+    motionSpringPreset ? motionDurations.medium : motionDurations.normal,
+    reduceMotion,
+    durationScale
+  );
+  const transitionStyle = React.useMemo<StyleProp<ViewStyle>>(() => {
+    if (duration <= 0) return undefined;
+    return {
+      transitionProperty: 'transform, width, opacity',
+      transitionDuration: `${duration}ms`,
+      transitionTimingFunction: motionSpringPreset ? 'cubic-bezier(0.22, 1, 0.36, 1)' : 'ease',
+      willChange: 'transform, width, opacity',
+    } as unknown as ViewStyle;
+  }, [duration, motionSpringPreset]);
+
+  return (
+    <AppView
+      testID={testID}
+      className={cn(indicatorClassName)}
+      pointerEvents="none"
+      style={[
+        styles.indicator,
+        roundedStyle,
+        getIndicatorBaseStyle({
+          indicatorInset,
+          resolvedHeight,
+          resolvedIndicatorColor,
+          visible,
+        }),
+        {
+          width: targetWidth,
+          transform: [{ translateX: targetX }],
+        },
+        transitionStyle,
+        indicatorStyle,
+      ]}
+    />
+  );
+}
+
 function findValueIndex<Value extends string | number>(
   options: Array<SegmentedTabOption<Value>>,
   value?: Value
@@ -376,6 +441,7 @@ export function SegmentedTabs<Value extends string | number = string>({
   const resolvedDisabledTintColor = disabledTintColor ?? colors.iconMuted;
   const indicatorTestID = testID ? `${testID}-indicator` : undefined;
   const shouldAnimateIndicator = animated && motionReduceMotion !== true;
+  const shouldUseWebIndicatorAnimation = Platform.OS === 'web' && shouldAnimateIndicator;
 
   return (
     <AppView
@@ -406,7 +472,23 @@ export function SegmentedTabs<Value extends string | number = string>({
         style,
       ]}
     >
-      {shouldAnimateIndicator ? (
+      {shouldUseWebIndicatorAnimation ? (
+        <WebSegmentedTabsIndicator
+          indicatorClassName={indicatorClassName}
+          indicatorInset={indicatorInset}
+          indicatorStyle={indicatorStyle}
+          motionDuration={motionDuration}
+          motionReduceMotion={motionReduceMotion}
+          motionSpringPreset={motionSpringPreset}
+          resolvedHeight={resolvedHeight}
+          resolvedIndicatorColor={resolvedIndicatorColor}
+          roundedStyle={roundedStyle}
+          targetWidth={targetWidth}
+          targetX={targetX}
+          testID={indicatorTestID}
+          visible={containerWidth > 0}
+        />
+      ) : shouldAnimateIndicator ? (
         <MotionSegmentedTabsIndicator
           indicatorClassName={indicatorClassName}
           indicatorInset={indicatorInset}

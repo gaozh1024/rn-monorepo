@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { AppView, AppText, AppPressable } from '@/ui/primitives';
 import { useThemeColors } from '@/theme';
 import { cn } from '@/utils';
 import type { ToggleMotionProps } from '../motion';
 import { useToggleMotion } from '../motion/hooks/useToggleMotion';
+import { useReducedMotion } from '../motion/hooks/useReducedMotion';
+import { motionDurations } from '../motion/tokens';
+import { resolveDuration } from '../motion/utils';
 import { type CommonLayoutProps, type LayoutSurface } from '../utils/layout-shortcuts';
 
 export interface RadioProps
@@ -54,12 +57,30 @@ interface RadioIndicatorProps extends Pick<
 > {
   checked: boolean;
   color: string;
+  transitionStyle?: StyleProp<ViewStyle>;
 }
 
 function PlainRadioIndicator({ checked, color }: RadioIndicatorProps) {
   if (!checked) return null;
 
   return <AppView className="rounded-full" style={[styles.inner, { backgroundColor: color }]} />;
+}
+
+function WebRadioIndicator({ checked, color, transitionStyle }: RadioIndicatorProps) {
+  return (
+    <AppView
+      className="rounded-full"
+      style={[
+        styles.inner,
+        {
+          backgroundColor: color,
+          opacity: checked ? 1 : 0,
+          transform: [{ scale: checked ? 1 : 0.6 }],
+        },
+        transitionStyle,
+      ]}
+    />
+  );
 }
 
 function MotionRadioIndicator({
@@ -124,9 +145,26 @@ export function Radio({
   motionReduceMotion,
 }: RadioProps) {
   const colors = useThemeColors();
+  const { reduceMotion: systemReduceMotion, durationScale } = useReducedMotion();
   const [internalChecked, setInternalChecked] = useState(defaultChecked || false);
   const isChecked = checked !== undefined ? checked : internalChecked;
   const shouldAnimateToggle = animated && motionReduceMotion !== true;
+  const shouldUseWebAnimatedIndicator = Platform.OS === 'web' && shouldAnimateToggle;
+  const webDuration = resolveDuration(
+    motionDuration,
+    motionDurations.normal,
+    motionReduceMotion ?? systemReduceMotion,
+    durationScale
+  );
+  const webTransitionStyle: StyleProp<ViewStyle> =
+    shouldUseWebAnimatedIndicator && webDuration > 0
+      ? ({
+          transitionProperty: 'opacity, transform',
+          transitionDuration: `${Math.max(0, webDuration)}ms`,
+          transitionTimingFunction: motionSpringPreset ? 'cubic-bezier(0.22, 1, 0.36, 1)' : 'ease',
+          willChange: 'opacity, transform',
+        } as unknown as ViewStyle)
+      : undefined;
 
   const toggle = () => {
     if (disabled) return;
@@ -185,15 +223,28 @@ export function Radio({
           },
         ]}
       >
-        {shouldAnimateToggle ? (
+        {shouldUseWebAnimatedIndicator ? (
+          <WebRadioIndicator
+            checked={isChecked}
+            color={colors.primary}
+            motionDuration={motionDuration}
+            motionSpringPreset={motionSpringPreset}
+            transitionStyle={webTransitionStyle}
+          />
+        ) : shouldAnimateToggle ? (
           <MotionRadioIndicator
             checked={isChecked}
             color={colors.primary}
             motionDuration={motionDuration}
             motionSpringPreset={motionSpringPreset}
+            transitionStyle={undefined}
           />
         ) : (
-          <PlainRadioIndicator checked={isChecked} color={colors.primary} />
+          <PlainRadioIndicator
+            checked={isChecked}
+            color={colors.primary}
+            transitionStyle={undefined}
+          />
         )}
       </AppView>
       {children && (

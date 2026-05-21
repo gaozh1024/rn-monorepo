@@ -1,5 +1,14 @@
 # @gaozh1024/rn-kit
 
+## 0.5.4
+
+### Patch Changes
+
+- Fix `SegmentedTabs` Web selected-indicator rendering when `animated=true` by switching the Web indicator path to CSS transition-based animation (`transform + width + opacity`) while keeping Native on Reanimated.
+- Add Web animation fallback paths for `Progress`, `Switch`, `Checkbox`, and `Radio` so default animated usage remains visible and smooth on React Native Web without requiring consumers to disable animation manually.
+- Expand tests for Web animated branches of `SegmentedTabs`, `Progress`, `Switch`, `Checkbox`, and `Radio`; keep `animated=false` and reduced-motion no-animation semantics unchanged.
+- Update README and Web support matrix to document cross-platform animation strategy (Native = Reanimated, Web = CSS transitions where applicable).
+
 ## 0.5.3
 
 ### Patch Changes

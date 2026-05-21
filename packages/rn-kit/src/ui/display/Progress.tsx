@@ -1,9 +1,13 @@
 import Animated from 'react-native-reanimated';
+import { Platform, type StyleProp, type ViewStyle } from 'react-native';
 import { AppView } from '@/ui/primitives';
 import { useTheme } from '@/theme';
 import { cn } from '@/utils';
 import type { ProgressMotionProps } from '../motion';
 import { useProgressMotion } from '../motion/hooks/useProgressMotion';
+import { useReducedMotion } from '../motion/hooks/useReducedMotion';
+import { motionDurations } from '../motion/tokens';
+import { resolveDuration } from '../motion/utils';
 import {
   type CommonLayoutProps,
   type LayoutSurface,
@@ -81,6 +85,7 @@ interface ProgressBarProps extends Pick<
   roundedClassName?: string;
   size: NonNullable<ProgressProps['size']>;
   value: number;
+  transitionStyle?: StyleProp<ViewStyle>;
 }
 
 function PlainProgressBar({
@@ -90,11 +95,12 @@ function PlainProgressBar({
   resolvedRounded,
   roundedClassName,
   size,
+  transitionStyle,
 }: ProgressBarProps) {
   return (
     <AppView
       className={cn(roundedClassName, sizeMap[size], colorMap[color], barClassName)}
-      style={[resolvedRounded, { width: `${percentage}%` }]}
+      style={[resolvedRounded, { width: `${percentage}%` }, transitionStyle]}
     />
   );
 }
@@ -159,7 +165,24 @@ export function Progress({
   motionReduceMotion,
 }: ProgressProps) {
   const { theme, isDark } = useTheme();
+  const { reduceMotion: systemReduceMotion, durationScale } = useReducedMotion();
+  const reduceMotion = motionReduceMotion ?? systemReduceMotion;
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
+  const shouldUseWebAnimatedBar = Platform.OS === 'web' && animated;
+  const webDuration = resolveDuration(
+    motionDuration,
+    motionDurations.medium,
+    reduceMotion,
+    durationScale
+  );
+  const webTransitionStyle: StyleProp<ViewStyle> = shouldUseWebAnimatedBar
+    ? ({
+        transitionProperty: 'width',
+        transitionDuration: `${Math.max(0, webDuration)}ms`,
+        transitionTimingFunction: motionSpringPreset ? 'cubic-bezier(0.22, 1, 0.36, 1)' : 'ease',
+        willChange: 'width',
+      } as unknown as ViewStyle)
+    : undefined;
 
   const trackBgColor =
     resolveSurfaceColor(surface, theme, isDark) ??
@@ -179,7 +202,22 @@ export function Progress({
       ]}
       testID={testID}
     >
-      {animated ? (
+      {shouldUseWebAnimatedBar ? (
+        <PlainProgressBar
+          barClassName={barClassName}
+          color={color}
+          max={max}
+          motionDuration={motionDuration}
+          motionReduceMotion={motionReduceMotion}
+          motionSpringPreset={motionSpringPreset}
+          percentage={percentage}
+          resolvedRounded={resolvedRounded}
+          roundedClassName={rounded === undefined ? 'rounded-full' : undefined}
+          size={size}
+          transitionStyle={webTransitionStyle}
+          value={value}
+        />
+      ) : animated ? (
         <MotionProgressBar
           barClassName={barClassName}
           color={color}
@@ -191,6 +229,7 @@ export function Progress({
           resolvedRounded={resolvedRounded}
           roundedClassName={rounded === undefined ? 'rounded-full' : undefined}
           size={size}
+          transitionStyle={undefined}
           value={value}
         />
       ) : (
@@ -205,6 +244,7 @@ export function Progress({
           resolvedRounded={resolvedRounded}
           roundedClassName={rounded === undefined ? 'rounded-full' : undefined}
           size={size}
+          transitionStyle={undefined}
           value={value}
         />
       )}

@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useState } from 'react';
+import { forwardRef, useMemo, useState, type ReactNode } from 'react';
 import {
   TextInput,
   TextInputProps,
@@ -9,11 +9,12 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { AppView, AppText } from '@/ui/primitives';
+import { AppPressable, AppView, AppText } from '@/ui/primitives';
 import { useThemeColors } from '@/theme';
 import { type CommonLayoutProps, type LayoutSurface } from '../utils/layout-shortcuts';
 import { useOptionalTheme } from '@/theme';
 import { resolveNamedColor, resolveSurfaceColor } from '../utils/theme-color';
+import { Icon } from '../display/Icon';
 
 /**
  * AppInput 组件属性接口
@@ -46,9 +47,20 @@ export interface AppInputProps
   /** 是否禁用 */
   disabled?: boolean;
   /** 左侧图标 */
-  leftIcon?: React.ReactNode;
+  leftIcon?: ReactNode;
   /** 右侧图标 */
-  rightIcon?: React.ReactNode;
+  rightIcon?: ReactNode;
+  /** 是否启用密码明文/密文切换（默认 false） */
+  passwordToggle?: boolean;
+  /** 启用密码切换时，初始是否明文展示（默认 false） */
+  passwordVisibleDefault?: boolean;
+  /** 密码切换图标配置（hidden=密文闭眼，visible=明文睁眼） */
+  passwordToggleIcons?: {
+    hidden?: ReactNode;
+    visible?: ReactNode;
+  };
+  /** 密码可见状态切换回调 */
+  onPasswordVisibleChange?: (visible: boolean) => void;
   /** 自定义样式 */
   className?: string;
   /** 背景颜色 */
@@ -154,12 +166,19 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
       disabled = false,
       leftIcon,
       rightIcon,
+      passwordToggle = false,
+      passwordVisibleDefault = false,
+      passwordToggleIcons,
+      onPasswordVisibleChange,
       className,
       bg,
       surface,
       style,
       containerStyle,
       inputStyle,
+      secureTextEntry,
+      onFocus,
+      onBlur,
       ...props
     },
     ref
@@ -167,6 +186,7 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
     const colors = useThemeColors();
     const { theme, isDark } = useOptionalTheme();
     const [isFocused, setIsFocused] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(passwordVisibleDefault);
     const resolvedStyles = useMemo(() => splitInputStyles(style), [style]);
     const resolvedBgColor =
       resolveSurfaceColor(surface, theme, isDark) ?? resolveNamedColor(bg, theme, isDark);
@@ -179,6 +199,22 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
       if (isFocused) return colors.primary;
       return colors.border;
     };
+
+    const shouldRenderPasswordToggle = passwordToggle;
+    const computedSecureTextEntry = shouldRenderPasswordToggle
+      ? !isPasswordVisible
+      : secureTextEntry;
+    const defaultPasswordIcon = shouldRenderPasswordToggle ? (
+      <Icon
+        name={isPasswordVisible ? 'visibility' : 'visibility-off'}
+        size={20}
+        color="gray-500"
+        testID={props.testID ? `${props.testID}-password-toggle-icon` : undefined}
+      />
+    ) : null;
+    const passwordToggleIcon = isPasswordVisible
+      ? (passwordToggleIcons?.visible ?? defaultPasswordIcon)
+      : (passwordToggleIcons?.hidden ?? defaultPasswordIcon);
 
     return (
       <AppView
@@ -235,17 +271,36 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
             ]}
             placeholderTextColor={colors.textMuted}
             editable={!disabled}
+            secureTextEntry={computedSecureTextEntry}
             onFocus={e => {
               setIsFocused(true);
-              props.onFocus?.(e);
+              onFocus?.(e);
             }}
             onBlur={e => {
               setIsFocused(false);
-              props.onBlur?.(e);
+              onBlur?.(e);
             }}
             {...props}
           />
-          {rightIcon && <View style={styles.icon}>{rightIcon}</View>}
+          {shouldRenderPasswordToggle ? (
+            <AppPressable
+              testID={props.testID ? `${props.testID}-password-toggle` : undefined}
+              accessibilityRole="button"
+              accessibilityLabel={isPasswordVisible ? '显示明文密码' : '显示密文密码'}
+              onPress={() => {
+                const nextVisible = !isPasswordVisible;
+                setIsPasswordVisible(nextVisible);
+                onPasswordVisibleChange?.(nextVisible);
+              }}
+              disabled={disabled}
+              style={styles.passwordToggle}
+              hitSlop={8}
+            >
+              {passwordToggleIcon}
+            </AppPressable>
+          ) : (
+            rightIcon && <View style={styles.icon}>{rightIcon}</View>
+          )}
         </AppView>
         {error && (
           <AppText size="xs" style={{ color: errorColor }}>
@@ -277,5 +332,11 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginHorizontal: 4,
+  },
+  passwordToggle: {
+    marginLeft: 8,
+    marginRight: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

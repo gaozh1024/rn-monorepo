@@ -20,7 +20,10 @@ This matrix is the maintained contract for Expo Web / React Native Web support.
   - `AppInput` built-in container padding, radius, text padding and font size are resolved through shortcut props / explicit styles instead of relying on NativeWind `className` injection.
 - `Skeleton`, `SkeletonText`, `SkeletonCircle`
 - `AppPressable`: default `motionPreset="none"` uses the native `Pressable` path and avoids Reanimated hook setup on Web.
-- `Progress`, `SegmentedTabs`, `Switch`, `Checkbox`, `Radio`: `animated={false}` and reduced-motion paths render with plain static styles instead of animated shared values.
+- `Progress`, `SegmentedTabs`, `Switch`, `Checkbox`, `Radio`:
+  - Native keeps Reanimated-based motion by default.
+  - Web uses CSS transition-backed indicator/thumb/progress animation for default animated usage.
+  - `animated={false}` and reduced-motion paths render with plain static styles instead of animated shared values.
 - `useToggle`, `useDebounce`, `useThrottle`, `useDimensions`, `useOrientation`
 
 ## Web variant
@@ -37,7 +40,7 @@ This matrix is the maintained contract for Expo Web / React Native Web support.
 
 ## Conditional
 
-- Reanimated-based components require the Expo/Web app to include `react-native-worklets/plugin` or equivalent Reanimated Web setup. `Presence` / `MotionView` / `StaggerItem` visibility on Web is the exception: it uses CSS-backed presence transitions and works without Reanimated Web shared-value progression.
+- Reanimated-based components generally require the Expo/Web app to include `react-native-worklets/plugin` or equivalent Reanimated Web setup. `Presence` / `MotionView` / `StaggerItem` visibility and `Progress` / `SegmentedTabs` / `Switch` / `Checkbox` / `Radio` default visual animations on Web are exceptions: they use CSS-backed transitions and do not depend on Reanimated shared-value progression for those specific visual updates.
 - Components that explicitly choose `animated={false}` or `motionReduceMotion` for the supported no-animation paths do not require Reanimated shared-value progression for that visual state update.
 - Reanimated layout animation props (`motionEntering`, `motionExiting`, `motionLayout` and layout presets) are native/Reanimated-only on Web presence surfaces; rn-kit drops those objects before they reach the React Native Web host component.
 - Gesture-based components require `GestureHandlerRootView`; `AppProvider` now supplies it by default.

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { Checkbox } from '../../form/Checkbox';
 import { ThemeProvider, createTheme } from '@/theme';
@@ -11,6 +11,16 @@ const theme = createTheme({
 });
 
 describe('Checkbox', () => {
+  const originalPlatformOS = Platform.OS;
+
+  function flattenStyle(style: any): Record<string, any> {
+    if (!style) return {};
+    if (Array.isArray(style)) {
+      return style.filter(Boolean).reduce((acc, item) => ({ ...acc, ...flattenStyle(item) }), {});
+    }
+    return StyleSheet.flatten(style) ?? {};
+  }
+
   it('应该渲染未选中状态', () => {
     const { getByTestId } = render(
       <ThemeProvider light={theme}>
@@ -73,5 +83,25 @@ describe('Checkbox', () => {
       borderRadius: 12,
       backgroundColor: '#f38b32',
     });
+  });
+
+  it('Web + animated=true 时应渲染带 transition 的图标容器', () => {
+    (Platform as any).OS = 'web';
+
+    const { getByTestId } = render(
+      <ThemeProvider light={theme}>
+        <Checkbox testID="checkbox" checked />
+      </ThemeProvider>
+    );
+
+    const icon = getByTestId('checkbox-icon');
+
+    expect(flattenStyle(icon.props.style)).toMatchObject({
+      opacity: 1,
+      transitionProperty: 'opacity, transform',
+      transitionDuration: '180ms',
+    });
+
+    (Platform as any).OS = originalPlatformOS;
   });
 });

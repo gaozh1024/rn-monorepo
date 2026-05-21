@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { AppPressable, AppView } from '@/ui/primitives';
 import { useThemeColors } from '@/theme';
@@ -32,6 +32,7 @@ interface SwitchThumbProps extends Pick<
   checked: boolean;
   config: { width: number; height: number; thumb: number; padding: number };
   thumbBackgroundColor: string;
+  transitionStyle?: StyleProp<ViewStyle>;
 }
 
 function getSwitchThumbStyle(
@@ -50,7 +51,12 @@ function getSwitchThumbStyle(
   };
 }
 
-function PlainSwitchThumb({ checked, config, thumbBackgroundColor }: SwitchThumbProps) {
+function PlainSwitchThumb({
+  checked,
+  config,
+  thumbBackgroundColor,
+  transitionStyle,
+}: SwitchThumbProps) {
   const maxTranslateX = Math.max(0, config.width - config.thumb - config.padding * 2);
 
   return (
@@ -59,6 +65,7 @@ function PlainSwitchThumb({ checked, config, thumbBackgroundColor }: SwitchThumb
         styles.thumb,
         getSwitchThumbStyle(config, thumbBackgroundColor),
         { transform: [{ translateX: checked ? maxTranslateX : 0 }] },
+        transitionStyle,
       ]}
     />
   );
@@ -122,12 +129,22 @@ export function Switch({
   const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion = motionReduceMotion ?? systemReduceMotion;
   const shouldAnimateToggle = animated && motionReduceMotion !== true;
+  const shouldUseWebAnimatedThumb = Platform.OS === 'web' && shouldAnimateToggle;
   const interactionLockDuration = resolveDuration(
     motionDuration,
     motionSpringPreset ? motionDurations.medium : motionDurations.normal,
     !shouldAnimateToggle || reduceMotion,
     durationScale
   );
+  const webThumbTransitionStyle: StyleProp<ViewStyle> =
+    shouldUseWebAnimatedThumb && interactionLockDuration > 0
+      ? ({
+          transitionProperty: 'transform',
+          transitionDuration: `${interactionLockDuration}ms`,
+          transitionTimingFunction: motionSpringPreset ? 'cubic-bezier(0.22, 1, 0.36, 1)' : 'ease',
+          willChange: 'transform',
+        } as unknown as ViewStyle)
+      : undefined;
 
   const isChecked = checked !== undefined ? checked : internalChecked;
 
@@ -227,18 +244,27 @@ export function Switch({
           style,
         ]}
       >
-        {shouldAnimateToggle ? (
+        {shouldUseWebAnimatedThumb ? (
+          <PlainSwitchThumb
+            checked={isChecked}
+            config={config}
+            transitionStyle={webThumbTransitionStyle}
+            thumbBackgroundColor={thumbBackgroundColor}
+          />
+        ) : shouldAnimateToggle ? (
           <MotionSwitchThumb
             checked={isChecked}
             config={config}
             motionDuration={motionDuration}
             motionSpringPreset={motionSpringPreset}
+            transitionStyle={undefined}
             thumbBackgroundColor={thumbBackgroundColor}
           />
         ) : (
           <PlainSwitchThumb
             checked={isChecked}
             config={config}
+            transitionStyle={undefined}
             thumbBackgroundColor={thumbBackgroundColor}
           />
         )}

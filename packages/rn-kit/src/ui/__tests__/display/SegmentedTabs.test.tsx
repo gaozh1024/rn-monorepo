@@ -1,5 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Platform } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { act } from 'react-test-renderer';
 import { withSpring, withTiming } from 'react-native-reanimated';
@@ -29,7 +30,10 @@ function flattenStyleEntries(style: unknown): Array<Record<string, unknown>> {
 }
 
 describe('SegmentedTabs', () => {
+  const originalPlatformOS = Platform.OS;
+
   beforeEach(() => {
+    (Platform as any).OS = originalPlatformOS;
     vi.mocked(withTiming).mockClear();
     vi.mocked(withSpring).mockClear();
   });
@@ -125,6 +129,47 @@ describe('SegmentedTabs', () => {
         expect.objectContaining({
           width: 94,
           transform: [{ translateX: 203 }],
+        }),
+      ])
+    );
+    expect(withTiming).not.toHaveBeenCalled();
+    expect(withSpring).not.toHaveBeenCalled();
+  });
+
+  it('Web + animated=true 时应该使用 CSS 过渡滑块并保持可见', () => {
+    (Platform as any).OS = 'web';
+
+    const { getByTestId, rerender } = render(
+      <ThemeProvider light={theme}>
+        <SegmentedTabs testID="tabs" options={options} value="all" />
+      </ThemeProvider>
+    );
+
+    act(() => {
+      getByTestId('tabs').props.onLayout({
+        nativeEvent: { layout: { width: 300, height: 40, x: 0, y: 0 } },
+      });
+    });
+
+    rerender(
+      <ThemeProvider light={theme}>
+        <SegmentedTabs testID="tabs" options={options} value="done" />
+      </ThemeProvider>
+    );
+
+    const indicator = getByTestId('tabs-indicator');
+    const indicatorStyles = flattenStyleEntries(indicator.props.style);
+
+    expect(indicator.type).not.toBe('Animated.View');
+    expect(indicatorStyles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          width: 94,
+          transform: [{ translateX: 203 }],
+        }),
+        expect.objectContaining({
+          transitionProperty: 'transform, width, opacity',
+          transitionDuration: '180ms',
         }),
       ])
     );

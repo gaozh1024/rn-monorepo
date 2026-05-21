@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { AppView, AppText, AppPressable } from '@/ui/primitives';
 import { Icon } from '@/ui/display';
@@ -7,6 +7,9 @@ import { useThemeColors } from '@/theme';
 import { cn } from '@/utils';
 import type { ToggleMotionProps } from '../motion';
 import { useToggleMotion } from '../motion/hooks/useToggleMotion';
+import { useReducedMotion } from '../motion/hooks/useReducedMotion';
+import { motionDurations } from '../motion/tokens';
+import { resolveDuration } from '../motion/utils';
 import { type CommonLayoutProps, type LayoutSurface } from '../utils/layout-shortcuts';
 
 export interface CheckboxProps
@@ -55,6 +58,7 @@ interface CheckboxIndicatorProps extends Pick<
 > {
   checked: boolean;
   testID?: string;
+  transitionStyle?: StyleProp<ViewStyle>;
 }
 
 function PlainCheckboxIndicator({ checked, testID }: CheckboxIndicatorProps) {
@@ -62,6 +66,22 @@ function PlainCheckboxIndicator({ checked, testID }: CheckboxIndicatorProps) {
 
   return (
     <AppView pointerEvents="none" style={styles.iconContainer} testID={`${testID}-icon`}>
+      <Icon name="check" size={14} color="white" style={styles.icon} />
+    </AppView>
+  );
+}
+
+function WebCheckboxIndicator({ checked, testID, transitionStyle }: CheckboxIndicatorProps) {
+  return (
+    <AppView
+      pointerEvents="none"
+      style={[
+        styles.iconContainer,
+        { opacity: checked ? 1 : 0, transform: [{ scale: checked ? 1 : 0.6 }] },
+        transitionStyle,
+      ]}
+      testID={`${testID}-icon`}
+    >
       <Icon name="check" size={14} color="white" style={styles.icon} />
     </AppView>
   );
@@ -132,9 +152,26 @@ export function Checkbox({
   motionReduceMotion,
 }: CheckboxProps) {
   const colors = useThemeColors();
+  const { reduceMotion: systemReduceMotion, durationScale } = useReducedMotion();
   const [internalChecked, setInternalChecked] = useState(defaultChecked || false);
   const isChecked = checked !== undefined ? checked : internalChecked;
   const shouldAnimateToggle = animated && motionReduceMotion !== true;
+  const shouldUseWebAnimatedIndicator = Platform.OS === 'web' && shouldAnimateToggle;
+  const webDuration = resolveDuration(
+    motionDuration,
+    motionDurations.normal,
+    motionReduceMotion ?? systemReduceMotion,
+    durationScale
+  );
+  const webTransitionStyle: StyleProp<ViewStyle> =
+    shouldUseWebAnimatedIndicator && webDuration > 0
+      ? ({
+          transitionProperty: 'opacity, transform',
+          transitionDuration: `${Math.max(0, webDuration)}ms`,
+          transitionTimingFunction: motionSpringPreset ? 'cubic-bezier(0.22, 1, 0.36, 1)' : 'ease',
+          willChange: 'opacity, transform',
+        } as unknown as ViewStyle)
+      : undefined;
 
   const toggle = () => {
     if (disabled) return;
@@ -195,15 +232,24 @@ export function Checkbox({
           },
         ]}
       >
-        {shouldAnimateToggle ? (
+        {shouldUseWebAnimatedIndicator ? (
+          <WebCheckboxIndicator
+            checked={isChecked}
+            motionDuration={motionDuration}
+            motionSpringPreset={motionSpringPreset}
+            transitionStyle={webTransitionStyle}
+            testID={testID}
+          />
+        ) : shouldAnimateToggle ? (
           <MotionCheckboxIndicator
             checked={isChecked}
             motionDuration={motionDuration}
             motionSpringPreset={motionSpringPreset}
+            transitionStyle={undefined}
             testID={testID}
           />
         ) : (
-          <PlainCheckboxIndicator checked={isChecked} testID={testID} />
+          <PlainCheckboxIndicator checked={isChecked} transitionStyle={undefined} testID={testID} />
         )}
       </AppView>
       {children && (

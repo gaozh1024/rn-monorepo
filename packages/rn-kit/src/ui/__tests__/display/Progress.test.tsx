@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
+import { Platform } from 'react-native';
 import { act, create } from 'react-test-renderer';
 import { ThemeProvider, createTheme } from '@/theme';
 import { Progress } from '../../display/Progress';
@@ -10,6 +11,16 @@ const theme = createTheme({
 });
 
 describe('Progress', () => {
+  const originalPlatformOS = Platform.OS;
+
+  function flattenStyle(style: any): Record<string, any> {
+    if (!style) return {};
+    if (Array.isArray(style)) {
+      return style.filter(Boolean).reduce((acc, item) => ({ ...acc, ...flattenStyle(item) }), {});
+    }
+    return style ?? {};
+  }
+
   it('应该根据 value 计算进度宽度', () => {
     let renderer: ReturnType<typeof create>;
 
@@ -66,5 +77,37 @@ describe('Progress', () => {
     );
     const widthStyle = bar.props.style.find((style: Record<string, unknown>) => 'width' in style);
     expect(widthStyle.width).toBe('60%');
+  });
+
+  it('Web + animated=true 时应使用过渡样式而不是 Animated.View', () => {
+    (Platform as any).OS = 'web';
+
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <Progress value={35} max={100} />
+        </ThemeProvider>
+      );
+    });
+
+    const animatedBars = renderer!.root.findAll(node => node.type === 'Animated.View');
+    const bars = renderer!.root.findAll(
+      node =>
+        node.type === AppView &&
+        Array.isArray(node.props.style) &&
+        node.props.style.some((part: Record<string, unknown> | undefined) => part?.width === '35%')
+    );
+
+    expect(animatedBars).toHaveLength(0);
+    expect(bars).toHaveLength(1);
+    expect(flattenStyle(bars[0].props.style)).toMatchObject({
+      width: '35%',
+      transitionProperty: 'width',
+      transitionDuration: '220ms',
+    });
+
+    (Platform as any).OS = originalPlatformOS;
   });
 });

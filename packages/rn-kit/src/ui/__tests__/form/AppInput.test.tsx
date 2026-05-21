@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
 import { AppInput, AppTextInput } from '../../form/AppInput';
 import { renderWithTheme } from './test-utils';
@@ -102,5 +102,61 @@ describe('AppInput', () => {
       paddingBottom: 12,
       fontSize: 16,
     });
+  });
+
+  it('默认不显示密码切换图标', () => {
+    const { queryByTestId } = renderWithTheme(
+      <AppInput testID="password-input" value="" secureTextEntry />
+    );
+
+    expect(queryByTestId('password-input-password-toggle')).toBeNull();
+  });
+
+  it('启用 passwordToggle 后应显示右侧切换图标，并可切换密文/明文', () => {
+    const onPasswordVisibleChange = vi.fn();
+    const { getByTestId } = renderWithTheme(
+      <AppInput
+        testID="password-input"
+        value=""
+        secureTextEntry
+        passwordToggle
+        onPasswordVisibleChange={onPasswordVisibleChange}
+      />
+    );
+
+    const input = getByTestId('password-input');
+    const toggle = getByTestId('password-input-password-toggle');
+
+    expect(input.props.secureTextEntry).toBe(true);
+    expect(getByTestId('password-input-password-toggle-icon')).toBeTruthy();
+
+    fireEvent.press(toggle);
+    expect(getByTestId('password-input').props.secureTextEntry).toBe(false);
+    expect(onPasswordVisibleChange).toHaveBeenCalledWith(true);
+
+    fireEvent.press(toggle);
+    expect(getByTestId('password-input').props.secureTextEntry).toBe(true);
+    expect(onPasswordVisibleChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it('应支持自定义密码切换图标', () => {
+    const { getByTestId } = renderWithTheme(
+      <AppInput
+        testID="password-input"
+        value=""
+        secureTextEntry
+        passwordToggle
+        passwordToggleIcons={{
+          hidden: <Text testID="icon-hidden">🙈</Text>,
+          visible: <Text testID="icon-visible">👁️</Text>,
+        }}
+      />
+    );
+
+    const toggle = getByTestId('password-input-password-toggle');
+
+    expect(getByTestId('icon-hidden')).toBeTruthy();
+    fireEvent.press(toggle);
+    expect(getByTestId('icon-visible')).toBeTruthy();
   });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
+import { Platform } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
 import { act, create } from 'react-test-renderer';
 import { Switch } from '../../form/Switch';
@@ -12,6 +13,16 @@ const theme = createTheme({
 });
 
 describe('Switch', () => {
+  const originalPlatformOS = Platform.OS;
+
+  function flattenStyle(style: any): Record<string, any> {
+    if (!style) return {};
+    if (Array.isArray(style)) {
+      return style.filter(Boolean).reduce((acc, item) => ({ ...acc, ...flattenStyle(item) }), {});
+    }
+    return style ?? {};
+  }
+
   it('应该在非受控模式下切换状态', async () => {
     vi.useFakeTimers();
 
@@ -178,5 +189,47 @@ describe('Switch', () => {
     expect(track?.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining({ borderRadius: 16 })])
     );
+  });
+
+  it('Web + animated=true 时应使用过渡样式的 PlainSwitchThumb', () => {
+    (Platform as any).OS = 'web';
+
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <Switch testID="switch" checked />
+        </ThemeProvider>
+      );
+    });
+
+    const track = renderer!.root
+      .findAllByType(AppView)
+      .find(
+        node =>
+          Array.isArray(node.props.style) &&
+          node.props.style.some((part: Record<string, unknown> | undefined) => part?.width === 48)
+      );
+
+    const thumb = renderer!.root
+      .findAllByType(AppView)
+      .find(
+        node =>
+          Array.isArray(node.props.style) &&
+          node.props.style.some(
+            (part: Record<string, unknown> | undefined) =>
+              Array.isArray(part?.transform) && part?.transform?.[0]?.translateX !== undefined
+          )
+      );
+
+    expect(track).toBeTruthy();
+    expect(thumb).toBeTruthy();
+    expect(flattenStyle(thumb!.props.style)).toMatchObject({
+      transitionProperty: 'transform',
+      transitionDuration: '180ms',
+    });
+
+    (Platform as any).OS = originalPlatformOS;
   });
 });

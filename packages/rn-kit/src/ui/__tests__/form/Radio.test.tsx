@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
+import { Platform, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { Radio } from '../../form/Radio';
 import { ThemeProvider, createTheme } from '@/theme';
@@ -10,6 +11,16 @@ const theme = createTheme({
 });
 
 describe('Radio', () => {
+  const originalPlatformOS = Platform.OS;
+
+  function flattenStyle(style: any): Record<string, any> {
+    if (!style) return {};
+    if (Array.isArray(style)) {
+      return style.filter(Boolean).reduce((acc, item) => ({ ...acc, ...flattenStyle(item) }), {});
+    }
+    return StyleSheet.flatten(style) ?? {};
+  }
+
   it('应该渲染未选中状态', () => {
     const { getByTestId } = render(
       <ThemeProvider light={theme}>
@@ -55,5 +66,29 @@ describe('Radio', () => {
       borderRadius: 9999,
       backgroundColor: '#f38b32',
     });
+  });
+
+  it('Web + animated=true 时应渲染带 transition 的内圆', () => {
+    (Platform as any).OS = 'web';
+
+    const { getByTestId } = render(
+      <ThemeProvider light={theme}>
+        <Radio testID="radio" checked />
+      </ThemeProvider>
+    );
+
+    const root = getByTestId('radio');
+    const candidates = root.findAll((node: any) => {
+      const style = flattenStyle(node.props?.style);
+      return style.transitionProperty === 'opacity, transform';
+    });
+
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(flattenStyle(candidates[0].props.style)).toMatchObject({
+      opacity: 1,
+      transitionDuration: '180ms',
+    });
+
+    (Platform as any).OS = originalPlatformOS;
   });
 });
