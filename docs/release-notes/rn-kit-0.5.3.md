@@ -4,7 +4,7 @@
 
 ## 修复 / 增强
 
-- 新增 `healthReporter` 桥接协议，允许业务把 `@gaozh1024/rn-health` 或其他监控 SDK 接入 rn-kit。
+- 新增 `healthReporter` 桥接协议，允许业务把 `@gaozh1024/rn-observatory` 或其他监控 SDK 接入 rn-kit。
 - `AppProvider` 新增 `healthReporter` 参数，并向内部 `LoggerProvider` 和 `AppErrorBoundary` 传递。
 - `AppErrorBoundary` 捕获 React 渲染异常时会调用 `healthReporter.captureException`。
 - `LoggerProvider` 写日志时会调用 `healthReporter.addBreadcrumb`。
@@ -13,13 +13,13 @@
 ## 推荐用法
 
 ```tsx
-<AppHealthProvider endpoint="https://api.example.com/api/app-health/events">
+<AppObservatoryProvider endpoint="https://api.example.com/api/app-observatory/events">
   {health => (
     <AppProvider enableErrorBoundary enableLogger healthReporter={health}>
       <RootNavigator />
     </AppProvider>
   )}
-</AppHealthProvider>
+</AppObservatoryProvider>
 ```
 
 ## 验证

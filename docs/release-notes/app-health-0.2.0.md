@@ -2,7 +2,7 @@
 
 发布日期：2026-05-19
 
-`App Health 0.2.0` turns the self-hosted `@gaozh1024/rn-health` backend into a usable admin/operations console. The release focuses on application-scoped ingest tokens, password-session admin login, alert rule management, settings visibility, retention safety, and full-stack smoke coverage.
+`App Health 0.2.0` turns the self-hosted backend for `@gaozh1024/rn-observatory` into a usable admin/operations console. The release focuses on application-scoped ingest tokens, password-session admin login, alert rule management, settings visibility, retention safety, and full-stack smoke coverage.
 
 ## Highlights
 
@@ -21,14 +21,14 @@
   - `004_create_app_health_alerts.sql`
   - `005_create_app_health_retention_runs.sql`
 - New admin APIs:
-  - `/api/app-health/applications*`
-  - `/api/app-health/tokens*`
-  - `/api/app-health/alert-rules*`
-  - `/api/app-health/alert-deliveries`
-  - `/api/app-health/settings/summary`
-  - `/api/app-health/retention/dry-run`
-  - `/api/app-health/retention/run`
-  - `/api/app-health/retention/runs`
+  - `/api/app-observatory/applications*`
+  - `/api/app-observatory/tokens*`
+  - `/api/app-observatory/alert-rules*`
+  - `/api/app-observatory/alert-deliveries`
+  - `/api/app-observatory/settings/summary`
+  - `/api/app-observatory/retention/dry-run`
+  - `/api/app-observatory/retention/run`
+  - `/api/app-observatory/retention/runs`
 
 ## Admin UI
 
@@ -41,10 +41,7 @@
 
 Recommended pre-deploy sequence:
 
-```bash
-pnpm verify:app-health
-pnpm smoke:app-health
-```
+Run the matching verification and smoke commands from the standalone `app-observatory` repository.
 
 Production rollout notes:
 
@@ -59,8 +56,7 @@ Production rollout notes:
 - `git diff --check`
 - OpenAPI YAML parse: `paths=29 schemas=56`
 - `pnpm ai:check`
-- `pnpm verify:app-health`
-- `pnpm smoke:app-health`
+- Run the equivalent `verify` and `smoke` commands inside `app-observatory`.
 - `pnpm verify:release`
 
 ## Known limitations

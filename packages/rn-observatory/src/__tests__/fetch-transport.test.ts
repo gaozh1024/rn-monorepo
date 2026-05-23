@@ -1,0 +1,136 @@
+import { describe, expect, it, vi } from 'vitest';
+import { createFetchObservatoryTransport } from '..';
+import type { AppObservatoryEvent } from '..';
+
+const event: AppObservatoryEvent = {
+  id: 'evt',
+  type: 'custom',
+  level: 'info',
+  timestamp: 1,
+  app: {},
+  device: { platform: 'ios' },
+  session: { id: 'sess', startedAt: 1 },
+};
+
+describe('createFetchObservatoryTransport', () => {
+  it('posts events to endpoint', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchObservatoryTransport({
+      endpoint: 'https://example.com/events',
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ events: [event] }),
+      })
+    );
+  });
+
+  it('throws on non-ok response', async () => {
+    const fetcher = vi.fn(async () => ({ ok: false, status: 500 })) as unknown as typeof fetch;
+    const transport = createFetchObservatoryTransport({
+      endpoint: 'https://example.com/events',
+      fetcher,
+    });
+
+    await expect(transport([event])).rejects.toThrow(
+      'Observatory transport failed with status 500'
+    );
+  });
+
+  it('uses ingestToken as bearer authorization', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchObservatoryTransport({
+      endpoint: 'https://example.com/events',
+      ingestToken: 'ingest_123',
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({
+        headers: expect.objectContaining({ authorization: 'Bearer ingest_123' }),
+      })
+    );
+  });
+
+  it('lets explicit authorization headers override ingestToken', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchObservatoryTransport({
+      endpoint: 'https://example.com/events',
+      ingestToken: 'ingest_123',
+      headers: { authorization: 'Bearer custom' },
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({
+        headers: expect.objectContaining({ authorization: 'Bearer custom' }),
+      })
+    );
+  });
+
+  it('supports async headers with ingestToken fallback', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchObservatoryTransport({
+      endpoint: 'https://example.com/events',
+      ingestToken: 'ingest_123',
+      headers: async () => ({ 'x-app': 'mobile-app' }),
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          authorization: 'Bearer ingest_123',
+          'x-app': 'mobile-app',
+        }),
+      })
+    );
+  });
+
+  it('aborts requests after timeoutMs', async () => {
+    const fetcher = vi.fn(
+      async (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        })
+    ) as unknown as typeof fetch;
+    const transport = createFetchObservatoryTransport({
+      endpoint: 'https://example.com/events',
+      timeoutMs: 1,
+      fetcher,
+    });
+
+    await expect(transport([event])).rejects.toThrow('aborted');
+  });
+
+  it('can disable timeout with timeoutMs zero', async () => {
+    const fetcher = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+    const transport = createFetchObservatoryTransport({
+      endpoint: 'https://example.com/events',
+      timeoutMs: 0,
+      fetcher,
+    });
+
+    await transport([event]);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://example.com/events',
+      expect.objectContaining({ signal: undefined })
+    );
+  });
+});

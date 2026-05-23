@@ -830,21 +830,21 @@ Web 与 Native 的日志浮动按钮都支持拖动、释放后自动吸附左�
 
 ##### 3. 接入生产错误监控 healthReporter
 
-`rn-kit` 不直接依赖任何监控厂商，也不强依赖 `@gaozh1024/rn-health`。如果 App 需要线上错误监控，可以把实现了 `AppHealthReporter` 协议的对象传给 `AppProvider`：
+`rn-kit` 不直接依赖任何监控厂商，也不强依赖 `@gaozh1024/rn-observatory`。如果 App 需要线上错误监控，可以把实现了 `AppHealthReporter` 协议的对象传给 `AppProvider`：
 
 ```tsx
 import { AppProvider } from '@gaozh1024/rn-kit';
-import { AppHealthProvider } from '@gaozh1024/rn-health';
+import { AppObservatoryProvider } from '@gaozh1024/rn-observatory';
 
 export default function App() {
   return (
-    <AppHealthProvider endpoint="https://collector.example.com/app-health/events">
+    <AppObservatoryProvider endpoint="https://collector.example.com/api/app-observatory/events">
       {health => (
         <AppProvider enableErrorBoundary enableLogger healthReporter={health}>
           <RootNavigator />
         </AppProvider>
       )}
-    </AppHealthProvider>
+    </AppObservatoryProvider>
   );
 }
 ```

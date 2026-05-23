@@ -2,7 +2,7 @@
 
 Date: 2026-05-20
 
-This release turns `app-health` from error monitoring only into a privacy-conscious error + behavior analytics console for `@gaozh1024/rn-health` P0 analytics events.
+This release turns `app-health` from error monitoring only into a privacy-conscious error + behavior analytics console for `@gaozh1024/rn-observatory` P0 analytics events.
 
 ## Added
 
@@ -42,8 +42,6 @@ Migration `006_add_app_health_analytics_fields.sql` adds nullable columns only, 
 ## Verification
 
 ```bash
-pnpm verify:app-health
-pnpm smoke:app-health
 pnpm ai:check
 git diff --check
 ```

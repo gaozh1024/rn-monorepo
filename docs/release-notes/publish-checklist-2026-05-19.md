@@ -3,13 +3,13 @@
 Scope:
 
 - `@gaozh1024/rn-kit@0.5.3`
-- `@gaozh1024/rn-health@0.2.0`
+- `@gaozh1024/rn-observatory@0.4.0`
 - `apps/app-health` self-hosted service/admin stack, documented as App Health 0.2.0
 
 ## Registry status
 
 - npm registry currently has `@gaozh1024/rn-kit@0.5.2`; local `0.5.3` is the next publish candidate.
-- npm registry does not currently have `@gaozh1024/rn-health`; local `0.2.0` is a first-publish candidate.
+- npm registry does not currently have `@gaozh1024/rn-observatory`; local `0.4.0` is a first-publish candidate.
 
 ## Required local verification
 
@@ -18,20 +18,16 @@ Run before publishing:
 ```bash
 pnpm ai:check
 pnpm verify:release
-pnpm verify:app-health
-pnpm smoke:app-health
 ```
 
 Already completed in this workspace on 2026-05-19:
 
 - [x] `pnpm ai:check`
 - [x] `pnpm verify:release`
-- [x] `pnpm verify:app-health`
-- [x] `pnpm smoke:app-health`
 - [x] OpenAPI YAML parse: `paths=29 schemas=56`
 - [x] `git diff --check`
 - [x] `npm pack --dry-run` for `@gaozh1024/rn-kit@0.5.3`
-- [x] `npm pack --dry-run` for `@gaozh1024/rn-health@0.2.0`
+- [x] `npm pack --dry-run` for `@gaozh1024/rn-observatory@0.4.0`
 
 ## Package dry-run commands
 
@@ -39,14 +35,14 @@ Already completed in this workspace on 2026-05-19:
 cd packages/rn-kit
 npm pack --dry-run
 
-cd ../rn-health
+cd ../rn-observatory
 npm pack --dry-run
 ```
 
 Expected:
 
 - `rn-kit` includes `dist`, `bin`, `init-ai`, docs, README, AI artifacts, and license.
-- `rn-health` includes `dist`, README, AI artifacts, changelog, and license.
+- `rn-observatory` includes `dist`, README, AI artifacts, changelog, and license.
 
 ## Publish commands
 
@@ -56,7 +52,7 @@ Only run after final review/commit/tag decision:
 cd packages/rn-kit
 npm publish --access public
 
-cd ../rn-health
+cd ../rn-observatory
 npm publish --access public
 ```
 

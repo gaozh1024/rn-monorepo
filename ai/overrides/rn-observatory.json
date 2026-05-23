@@ -1,0 +1,83 @@
+{
+  "role": "feature-package",
+  "summary": "Observability and product analytics SDK for Expo or React Native apps with error capture, breadcrumbs, local queueing, consent-aware analytics, and rn-kit integration.",
+  "whenToUse": [
+    "Use this package when a mobile app needs production error monitoring without coupling UI framework code to a vendor SDK.",
+    "Use AppObservatoryProvider to create an observability reporter that can be passed into rn-kit AppProvider.healthReporter.",
+    "Use captureGlobalErrors and captureUnhandledRejections defaults for lightweight JavaScript error monitoring.",
+    "Use createMonitoredFetch or installAxiosObservatoryInterceptor when API failures should be reported as observability events.",
+    "Use createAsyncStorageObservatoryStorage with app-provided AsyncStorage for production queue persistence.",
+    "Use captureException and captureMessage for manual business error reporting.",
+    "Use addBreadcrumb to attach navigation, logger, API, and user-action context to later error events.",
+    "Use createFetchObservatoryTransport or endpoint configuration to send batches to an app-owned collector."
+  ],
+  "whenNotToUse": [
+    "Do not expect pure JavaScript monitoring to capture native process crashes directly; use a NativeCrashAdapter or vendor-native SDK for that layer.",
+    "Do not upload sensitive request bodies, headers, or personally identifiable data without a sanitizer and product privacy review.",
+    "Do not block user flows on observability transport success; failed uploads should remain queued and retried later."
+  ],
+  "recommendedEntry": [
+    "Prefer importing AppObservatoryProvider and useAppObservatory from @gaozh1024/rn-observatory.",
+    "Pass the provider client into rn-kit AppProvider.healthReporter when the app uses rn-kit.",
+    "Inject createAsyncStorageObservatoryStorage(AsyncStorage) in production so queued events and previous-session detection survive app restarts.",
+    "Use createMonitoredFetch or installAxiosObservatoryInterceptor at API-client boundaries rather than in scattered catch blocks."
+  ],
+  "requiredProjectSetup": [
+    "Install react and react-native peer dependencies through the app's existing Expo or React Native setup.",
+    "Provide endpoint or transports for production uploads; without a transport, events are captured but not sent.",
+    "Provide a persistent storage adapter in real apps if event retry and previous-session crash detection must survive process restarts.",
+    "Configure transportTimeoutMs when the default 10s upload timeout is too short or too long for the app's network profile."
+  ],
+  "stableApis": [
+    "AppObservatoryProvider",
+    "useAppObservatory",
+    "createAppObservatoryClient",
+    "createAppObservatoryQueue",
+    "createFetchObservatoryTransport",
+    "createAsyncStorageObservatoryStorage",
+    "createMonitoredFetch",
+    "installAxiosObservatoryInterceptor",
+    "defaultAppObservatorySanitizer",
+    "MemoryObservatoryStorage",
+    "installGlobalErrorHandlers"
+  ],
+  "antiPatterns": [
+    "Calling fetch directly from scattered catch blocks instead of routing API-client boundaries through createMonitoredFetch or installAxiosObservatoryInterceptor.",
+    "Treating previous_session_crash as a precise native crash signal; it is an inferred abnormal-exit health signal.",
+    "Disabling sanitization in production or uploading authorization headers, bodies, and tokens inside breadcrumbs or API metadata."
+  ],
+  "commonFailureCases": [
+    "No events arrive because endpoint/transports are omitted or enabled is false.",
+    "Queued events disappear after restart because the default MemoryObservatoryStorage was used instead of persistent app storage.",
+    "API 4xx responses are not reported because capture4xx is intentionally opt-in.",
+    "Native crashes are not visible because no NativeCrashAdapter or vendor-native crash reporter has been installed.",
+    "Observability reports are too noisy because breadcrumbs are added for high-frequency UI events without throttling."
+  ],
+  "compatibilityNotes": [
+    "Current compatibility guidance targets React Native >=0.79 <0.82.",
+    "Expo apps can use this package without a config plugin for the JavaScript monitoring layer.",
+    "Native crash capture is intentionally adapter-based and not bundled into the core package."
+  ],
+  "canonicalExamples": [
+    {
+      "name": "observatory-provider-rn-kit-bridge",
+      "path": "packages/rn-observatory/README.md"
+    },
+    {
+      "name": "observatory-client-core",
+      "path": "packages/rn-observatory/src/core/client.ts"
+    },
+    {
+      "name": "observatory-fetch-transport",
+      "path": "packages/rn-observatory/src/transport/fetch-transport.ts"
+    },
+    {
+      "name": "observatory-api-fetch-capture",
+      "path": "packages/rn-observatory/src/capture/fetch.ts"
+    },
+    {
+      "name": "observatory-api-axios-capture",
+      "path": "packages/rn-observatory/src/capture/axios.ts"
+    }
+  ]
+}

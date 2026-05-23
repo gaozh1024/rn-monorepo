@@ -10,7 +10,7 @@
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
-    "verify:release": "pnpm --dir packages/rn-kit typecheck && pnpm --dir packages/rn-kit test && pnpm --dir packages/rn-kit build && pnpm --dir packages/rn-health typecheck && pnpm --dir packages/rn-health test && pnpm --dir packages/rn-health build && pnpm --dir packages/aliyun-speech typecheck && pnpm --dir packages/aliyun-speech build && pnpm --dir packages/photo-album-picker test && pnpm --dir packages/photo-album-picker typecheck && pnpm --dir packages/photo-album-picker build && pnpm --dir packages/aliyun-push typecheck && pnpm --dir packages/aliyun-push build && pnpm --dir packages/hot-updater test && pnpm --dir packages/hot-updater typecheck && pnpm --dir packages/hot-updater build && pnpm --dir templates/expo-starter lint",
+    "verify:release": "pnpm --dir packages/rn-kit typecheck && pnpm --dir packages/rn-kit test && pnpm --dir packages/rn-kit build && pnpm --dir packages/rn-observatory typecheck && pnpm --dir packages/rn-observatory test && pnpm --dir packages/rn-observatory build && pnpm --dir packages/aliyun-speech typecheck && pnpm --dir packages/aliyun-speech build && pnpm --dir packages/photo-album-picker test && pnpm --dir packages/photo-album-picker typecheck && pnpm --dir packages/photo-album-picker build && pnpm --dir packages/aliyun-push typecheck && pnpm --dir packages/aliyun-push build && pnpm --dir packages/hot-updater test && pnpm --dir packages/hot-updater typecheck && pnpm --dir packages/hot-updater build && pnpm --dir templates/expo-starter lint",
     "clean": "pnpm -r clean",
     "changeset": "changeset",
     "version-packages": "changeset version",
