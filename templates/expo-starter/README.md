@@ -177,13 +177,20 @@ npx expo start
 
 ## 依赖兼容性说明
 
-当前模板以 **Expo SDK 54.0.x + React Native 0.81.x** 为基线维护，配套 `@gaozh1024/rn-kit ^0.5.0`。
+当前模板以 **Expo SDK 54.0.x + React Native 0.81.x** 为基线维护，配套 `@gaozh1024/rn-kit ^0.5.4`。
 
 如果你准备把 `@gaozh1024/rn-kit` 接入到其他 Expo 项目，建议：
 
 1. 先确认你的 Expo SDK 版本
 2. 使用 `npx expo install ...` 安装原生依赖
 3. 再安装 `@gaozh1024/rn-kit`
+
+模板当前默认用法与 `rn-kit 0.5.4` 对齐，推荐保持下面这套根接入方式：
+
+- 统一由 `src/root/providers.tsx` 包裹 `AppProvider`
+- 通过 `lightTheme` / `darkTheme` + `isDark` 做受控主题切换
+- 开发环境默认开启 `enableLogger` 和 `enableErrorBoundary`
+- 业务级 Provider 继续放在 `src/providers/AppProviders.tsx`，不要把业务能力直接塞回根装配层
 
 尤其是：
 
@@ -422,6 +429,8 @@ export function LoginAction() {
   <RootApp />
 </AppProvider>
 ```
+
+模板当前默认就是这套接法，因此升级到 `rn-kit ^0.5.4` 时不需要额外改业务页面的根初始化方式；优先保持 `AppProvider -> AppProviders -> RootApp` 这一层级即可。
 
 框架会在开发环境下提供：
 

@@ -16,6 +16,15 @@ Peer dependencies are provided by your app:
 pnpm add react react-native
 ```
 
+## Web support
+
+`rn-observatory` is a React Native ecosystem SDK, not a generic browser-only SDK.
+
+- Supported: React Native iOS / Android, Expo, Expo Web, and React Native Web.
+- Not recommended: plain React + Vite / Next.js browser apps that do not run through `react-native-web`.
+
+The practical rule is simple: if your app runs on top of the React Native runtime model, `rn-observatory` can usually run there too. Web is supported through Expo Web / React Native Web because the package depends on `react-native` APIs such as `Platform` and `AppState`.
+
 ## Quick start with rn-kit
 
 ```tsx

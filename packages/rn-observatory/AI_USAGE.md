@@ -14,12 +14,14 @@ Observability and product analytics SDK for Expo or React Native apps with error
 - Use captureException and captureMessage for manual business error reporting.
 - Use addBreadcrumb to attach navigation, logger, API, and user-action context to later error events.
 - Use createFetchObservatoryTransport or endpoint configuration to send batches to an app-owned collector.
+- Use it in Expo Web / React Native Web when the app still runs through react-native / react-native-web.
 
 ## When Not To Use
 
 - Do not expect pure JavaScript monitoring to capture native process crashes directly; use a NativeCrashAdapter or vendor-native SDK for that layer.
 - Do not upload sensitive request bodies, headers, or personally identifiable data without a sanitizer and product privacy review.
 - Do not block user flows on observability transport success; failed uploads should remain queued and retried later.
+- Do not treat this package as a generic browser SDK for plain React / Vite / Next.js projects that do not use react-native-web.
 
 ## Recommended Entry
 
@@ -76,6 +78,7 @@ Observability and product analytics SDK for Expo or React Native apps with error
 ## Compatibility Baseline
 
 - Current compatibility guidance targets React Native >=0.79 <0.82.
+- Expo Web / React Native Web are supported when the app still runs through the React Native runtime model.
 - Expo apps can use this package without a config plugin for the JavaScript monitoring layer.
 - Native crash capture is intentionally adapter-based and not bundled into the core package.
 
