@@ -17,6 +17,7 @@ export type {
   AppObservatoryLevel,
   AppObservatoryIdentityOptions,
   AppObservatoryProviderProps,
+  AppObservatoryReleaseInfo,
   AppObservatoryReporter,
   AppObservatorySanitizer,
   AppObservatorySessionInfo,
@@ -50,3 +51,9 @@ export {
   type AxiosObservatoryInterceptorOptions,
   type AxiosLike,
 } from './capture/axios';
+export {
+  createNavigationObservatoryTracker,
+  type NavigationObservatoryTracker,
+  type NavigationObservatoryTrackerOptions,
+  type NavigationRouteLike,
+} from './integrations/navigation';

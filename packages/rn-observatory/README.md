@@ -115,6 +115,57 @@ await health.trackEvent('order.success', {
 
 Analytics events are uploaded through the same queue and transport as error events, with `type: "analytics_event"` or `type: "screen_view"` and an `analytics` payload.
 
+## Release metadata
+
+If the app already has a release pipeline, attach release metadata so the backend can correlate events with a concrete release record instead of relying only on `version + buildNumber`.
+
+```tsx
+<AppObservatoryProvider
+  appId="mobile-app"
+  appVersion="1.2.3"
+  buildNumber="45"
+  release={{
+    id: 'release_20260525_001',
+    channel: 'production',
+    commitSha: 'abc123def456',
+  }}
+  endpoint="https://api.example.com/api/app-observatory/events"
+  ingestToken="your-ingest-token"
+>
+  {children}
+</AppObservatoryProvider>
+```
+
+For release and source map registration flow, see:
+
+- `docs/release-integration.md`
+- `docs/app-usage-guide.md`
+
+## React Navigation screen tracking
+
+If the app uses React Navigation, prefer automatic screen tracking instead of repeating `trackScreen()` in every page.
+
+```ts
+import { createNavigationObservatoryTracker } from '@gaozh1024/rn-observatory';
+
+const tracker = createNavigationObservatoryTracker(observatory, {
+  mapRouteName: route => route.name,
+});
+```
+
+Recommended behavior:
+
+- call `tracker.onReady(() => getCurrentRoute())` after navigation is ready
+- call `tracker.onStateChange(() => getCurrentRoute())` on navigation state changes
+
+The helper:
+
+- sends the initial `screen_view`
+- sends the next `screen_view` only when the route name changes
+- automatically includes `screen`, `routeName`, and `fromScreen`
+
+This is the preferred path for apps that already use React Navigation and want stable page analytics with less manual work.
+
 ## Extended device information
 
 The core SDK does not depend on `expo-device` or `react-native-device-info`. Provide device model/brand yourself when the user has granted analytics/device consent:
@@ -183,7 +234,7 @@ Payload:
 }
 ```
 
-A 2xx response is treated as success. Failed uploads remain queued and are retried on later `flush()` calls. If `ingestToken` is provided, the built-in fetch transport sends `authorization: Bearer <ingestToken>` automatically; explicit `headers.authorization` takes precedence.
+A 2xx response is treated as success. Failed uploads remain queued and are retried on later `flush()` calls. If `ingestToken` is provided, the built-in fetch transport sends `authorization: Bearer <ingestToken>` automatically; explicit `headers.authorization` takes precedence. If you configure multiple transports, `rn-observatory` treats the first transport as the authoritative delivery path and sends any additional transports as best-effort mirrors so mirror failures do not cause duplicate retries on the primary path.
 
 ## Production setup checklist
 

@@ -24,6 +24,16 @@ export function createAppObservatoryQueue(
   const storage = options.storage ?? defaultObservatoryStorage;
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
   const maxQueueSize = options.maxQueueSize ?? DEFAULT_MAX_QUEUE_SIZE;
+  let pendingOperation = Promise.resolve();
+
+  function runExclusive<T>(task: () => Promise<T>) {
+    const nextOperation = pendingOperation.then(task, task);
+    pendingOperation = nextOperation.then(
+      () => undefined,
+      () => undefined
+    );
+    return nextOperation;
+  }
 
   async function readQueue() {
     const raw = await storage.getItem(storageKey);
@@ -43,25 +53,35 @@ export function createAppObservatoryQueue(
 
   return {
     async enqueue(event) {
-      const events = await readQueue();
-      events.push(event);
-      await writeQueue(events);
+      await runExclusive(async () => {
+        const events = await readQueue();
+        events.push(event);
+        await writeQueue(events);
+      });
     },
     async peek(batchSize = 20) {
-      const events = await readQueue();
-      return events.slice(0, batchSize);
+      return runExclusive(async () => {
+        const events = await readQueue();
+        return events.slice(0, batchSize);
+      });
     },
     async remove(ids) {
-      const idSet = new Set(ids);
-      const events = await readQueue();
-      await writeQueue(events.filter(event => !idSet.has(event.id)));
+      await runExclusive(async () => {
+        const idSet = new Set(ids);
+        const events = await readQueue();
+        await writeQueue(events.filter(event => !idSet.has(event.id)));
+      });
     },
     async clear() {
-      await storage.removeItem(storageKey);
+      await runExclusive(async () => {
+        await storage.removeItem(storageKey);
+      });
     },
     async size() {
-      const events = await readQueue();
-      return events.length;
+      return runExclusive(async () => {
+        const events = await readQueue();
+        return events.length;
+      });
     },
   };
 }

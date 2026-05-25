@@ -7,8 +7,10 @@
 ## Changes
 
 - Upgrade template dependency from `@gaozh1024/rn-kit ^0.5.0` to `@gaozh1024/rn-kit ^0.5.4`.
+- Add `@gaozh1024/rn-observatory ^0.4.0` to the template dependency baseline for observability integration examples.
 - Refresh the template README to document the current Expo SDK 54 / React Native 0.81 baseline together with the latest `AppProvider` usage guidance.
 - Clarify that the template already follows the current root composition pattern: `AppProvider -> AppProviders -> RootApp`.
+- Add an `observatory-navigation.tsx` recipe that demonstrates `rn-observatory + rn-kit + React Navigation` automatic screen tracking integration.
 
 ## Verification
 

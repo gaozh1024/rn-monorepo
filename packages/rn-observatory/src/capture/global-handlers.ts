@@ -43,6 +43,15 @@ export function installGlobalErrorHandlers(
   };
 }
 
+function hasEventListenerApi(value: unknown): value is Required<EventTargetLike> {
+  if (typeof value !== 'object' || value === null) return false;
+  const target = value as EventTargetLike;
+  return (
+    typeof target.addEventListener === 'function' &&
+    typeof target.removeEventListener === 'function'
+  );
+}
+
 function installReactNativeErrorHandler(
   reporter: AppObservatoryReporter,
   disposers: Array<() => void>
@@ -67,7 +76,7 @@ function installReactNativeErrorHandler(
 }
 
 function installWebErrorHandler(reporter: AppObservatoryReporter, disposers: Array<() => void>) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || !hasEventListenerApi(window)) return;
 
   const handleError = (event: ErrorEvent) => {
     void reporter.captureException(event.error ?? event.message, {
@@ -91,7 +100,7 @@ function installUnhandledRejectionHandler(
   disposers: Array<() => void>
 ) {
   const target = getUnhandledRejectionEventTarget();
-  if (target?.addEventListener && target.removeEventListener) {
+  if (target) {
     const handleRejection = (event: unknown) => {
       void reporter.captureException(getRejectionReason(event), {
         type: 'unhandled_rejection',
@@ -112,10 +121,10 @@ function installUnhandledRejectionHandler(
 }
 
 function getUnhandledRejectionEventTarget() {
-  if (typeof window !== 'undefined') return window;
+  if (typeof window !== 'undefined' && hasEventListenerApi(window)) return window;
 
   const globalTarget = globalThis as GlobalWithErrorUtils;
-  if (globalTarget.addEventListener && globalTarget.removeEventListener) return globalTarget;
+  if (hasEventListenerApi(globalTarget)) return globalTarget;
 
   return undefined;
 }

@@ -85,4 +85,15 @@ describe('installGlobalErrorHandlers', () => {
     (globalThis as { removeEventListener?: unknown }).removeEventListener =
       previousRemoveEventListener;
   });
+
+  it('does not call window.addEventListener when a native runtime exposes a non-DOM window object', () => {
+    const health = reporter();
+    const previousWindow = (globalThis as { window?: unknown }).window;
+
+    (globalThis as { window?: unknown }).window = {};
+
+    expect(() => installGlobalErrorHandlers(health)).not.toThrow();
+
+    (globalThis as { window?: unknown }).window = previousWindow;
+  });
 });

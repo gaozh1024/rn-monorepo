@@ -125,6 +125,7 @@ npx expo start
 - `theme-toggle.tsx`：受控主题切换模式
 - `api-auth.ts`：带 token 头、脱敏 observability 的 API 工厂模式
 - `segmented-tabs.tsx`：页面内筛选 / 分类切换的滑块式 `SegmentedTabs` 示例
+- `observatory-navigation.tsx`：`rn-observatory + rn-kit + React Navigation` 自动页面埋点接入示例
 
 这些文件不会自动参与模板运行时，只作为可复制、可被 AI 直接引用的参考实现存在。
 
@@ -431,6 +432,12 @@ export function LoginAction() {
 ```
 
 模板当前默认就是这套接法，因此升级到 `rn-kit ^0.5.4` 时不需要额外改业务页面的根初始化方式；优先保持 `AppProvider -> AppProviders -> RootApp` 这一层级即可。
+
+如果业务准备接入 `@gaozh1024/rn-observatory`，并且希望自动上报 `screen_view`，可以参考：
+
+- `src/recipes/observatory-navigation.tsx`
+
+推荐方式是把 `AppObservatoryProvider` 和 `createNavigationObservatoryTracker(...)` 放在根装配层，而不是每个页面手工调用 `trackScreen()`。
 
 框架会在开发环境下提供：
 

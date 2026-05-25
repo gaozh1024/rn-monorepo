@@ -62,6 +62,12 @@ export interface AppObservatoryAnalyticsPayload {
   properties?: Record<string, unknown>;
 }
 
+export interface AppObservatoryReleaseInfo {
+  id?: string;
+  channel?: string;
+  commitSha?: string;
+}
+
 export interface AppObservatoryEvent {
   id: string;
   type: AppObservatoryEventType;
@@ -76,6 +82,7 @@ export interface AppObservatoryEvent {
   tags?: Record<string, string>;
   extra?: Record<string, unknown>;
   analytics?: AppObservatoryAnalyticsPayload;
+  release?: AppObservatoryReleaseInfo;
 }
 
 export interface AppObservatoryCaptureContext {
@@ -141,7 +148,6 @@ export interface AppObservatoryConsentOptions {
   crash?: boolean;
   analytics?: boolean;
   device?: boolean;
-  performance?: boolean;
 }
 
 export interface AppObservatoryIdentityOptions {
@@ -165,6 +171,7 @@ export interface AppObservatoryClientConfig {
   appVersion?: string;
   buildNumber?: string;
   environment?: string;
+  release?: AppObservatoryReleaseInfo;
   userId?: string;
   consent?: AppObservatoryConsentOptions;
   identity?: AppObservatoryIdentityOptions;

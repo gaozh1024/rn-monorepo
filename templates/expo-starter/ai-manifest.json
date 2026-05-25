@@ -48,6 +48,10 @@
       "path": "templates/expo-starter/src/recipes/api-auth.ts"
     },
     {
+      "name": "observatory-navigation",
+      "path": "templates/expo-starter/src/recipes/observatory-navigation.tsx"
+    },
+    {
       "name": "segmented-tabs-switcher",
       "path": "templates/expo-starter/src/recipes/segmented-tabs.tsx"
     }

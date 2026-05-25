@@ -40,7 +40,6 @@ function resolveConsent(consent: AppObservatoryConsentOptions | undefined) {
     crash: consent?.crash ?? true,
     analytics: consent?.analytics ?? false,
     device: consent?.device ?? false,
-    performance: consent?.performance ?? false,
   };
 }
 
@@ -57,6 +56,7 @@ export async function createAppObservatoryClient(
     buildNumber: config.buildNumber,
     environment: config.environment,
   };
+  const release = config.release;
   const sessionManager = await createAppObservatorySessionManager({
     storage: config.storage,
     sessionStorageKey: config.sessionStorageKey,
@@ -99,6 +99,7 @@ export async function createAppObservatoryClient(
         id: runtime.session.sessionId,
         startedAt: runtime.session.startedAt,
       },
+      release,
       user: runtime.user,
       tags: Object.keys(runtime.tags).length > 0 ? { ...runtime.tags } : undefined,
     } satisfies Omit<AppObservatoryEvent, 'error' | 'breadcrumbs' | 'extra'>;
@@ -116,14 +117,39 @@ export async function createAppObservatoryClient(
     }
   }
 
+  let activeFlush: Promise<void> | null = null;
+
   async function flush() {
-    if (!enabled || transports.length === 0) return;
+    if (activeFlush) return activeFlush;
 
-    const events = await queue.peek(flushBatchSize);
-    if (events.length === 0) return;
+    activeFlush = (async () => {
+      if (!enabled || transports.length === 0) return;
 
-    await Promise.all(transports.map(transport => transport(events)));
-    await queue.remove(events.map(event => event.id));
+      const events = await queue.peek(flushBatchSize);
+      if (events.length === 0) return;
+
+      const [primaryTransport, ...mirrorTransports] = transports;
+      if (!primaryTransport) return;
+
+      await primaryTransport(events);
+
+      const mirrorResults = await Promise.allSettled(
+        mirrorTransports.map(transport => Promise.resolve().then(() => transport(events)))
+      );
+      for (const result of mirrorResults) {
+        if (result.status === 'rejected') {
+          config.onError?.(result.reason);
+        }
+      }
+
+      await queue.remove(events.map(event => event.id));
+    })();
+
+    try {
+      await activeFlush;
+    } finally {
+      activeFlush = null;
+    }
   }
 
   const client: AppObservatoryReporter = {

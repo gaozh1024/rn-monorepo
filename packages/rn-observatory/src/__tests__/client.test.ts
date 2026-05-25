@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { createAppObservatoryClient, MemoryObservatoryStorage } from '..';
 import type { AppObservatoryEvent } from '..';
 
+function createDeferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>(nextResolve => {
+    resolve = nextResolve;
+  });
+  return { promise, resolve };
+}
+
 describe('createAppObservatoryClient', () => {
   it('captures exceptions with breadcrumbs and flushes them', async () => {
     const delivered: AppObservatoryEvent[] = [];
@@ -31,6 +39,39 @@ describe('createAppObservatoryClient', () => {
       tags: { scene: 'submit', source: 'checkout' },
     });
     expect(errorEvent?.error?.fingerprint).toMatch(/^fp_/);
+  });
+
+  it('attaches release metadata to emitted events', async () => {
+    const delivered: AppObservatoryEvent[] = [];
+    const client = await createAppObservatoryClient({
+      appId: 'mobile-app',
+      appVersion: '1.2.3',
+      buildNumber: '45',
+      release: {
+        id: 'release_20260524_001',
+        channel: 'production',
+        commitSha: 'abc123def456',
+      },
+      storage: new MemoryObservatoryStorage(),
+      flushIntervalMs: 0,
+      transports: [events => delivered.push(...events)],
+      consent: { analytics: true },
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.trackEvent('checkout.success');
+    await client.flush();
+
+    expect(delivered).toContainEqual(
+      expect.objectContaining({
+        release: {
+          id: 'release_20260524_001',
+          channel: 'production',
+          commitSha: 'abc123def456',
+        },
+      })
+    );
   });
 
   it('keeps queued events when transport fails and removes them after a later flush', async () => {
@@ -163,5 +204,76 @@ describe('createAppObservatoryClient', () => {
     await client.flush();
 
     expect(delivered.some(event => event.error?.message === 'fatal delayed')).toBe(true);
+  });
+
+  it('prevents concurrent flushes from sending the same batch twice', async () => {
+    const firstTransport = createDeferred();
+    const delivered: AppObservatoryEvent[][] = [];
+    const client = await createAppObservatoryClient({
+      storage: new MemoryObservatoryStorage(),
+      flushIntervalMs: 0,
+      consent: { analytics: false },
+      transports: [
+        async events => {
+          delivered.push([...events]);
+          await firstTransport.promise;
+        },
+      ],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.captureMessage('manual event');
+    const flushOne = client.flush();
+    const flushTwo = client.flush();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(delivered).toHaveLength(1);
+
+    firstTransport.resolve();
+    await Promise.all([flushOne, flushTwo]);
+
+    expect(delivered).toHaveLength(1);
+  });
+
+  it('treats the first transport as authoritative and mirrors as best effort', async () => {
+    const primaryDelivered: AppObservatoryEvent[] = [];
+    const mirrorDelivered: AppObservatoryEvent[] = [];
+    const errors: unknown[] = [];
+    const storage = new MemoryObservatoryStorage();
+    let mirrorShouldFail = true;
+    const client = await createAppObservatoryClient({
+      storage,
+      flushIntervalMs: 0,
+      consent: { analytics: false },
+      onError: error => errors.push(error),
+      transports: [
+        events => primaryDelivered.push(...events),
+        events => {
+          mirrorDelivered.push(...events);
+          if (mirrorShouldFail) throw new Error('mirror failed');
+        },
+      ],
+    });
+    await client.flush();
+    primaryDelivered.length = 0;
+    mirrorDelivered.length = 0;
+
+    await client.captureMessage('manual event');
+    await client.flush();
+
+    expect(primaryDelivered).toHaveLength(1);
+    expect(mirrorDelivered).toHaveLength(1);
+    expect(errors.some(error => error instanceof Error && error.message === 'mirror failed')).toBe(
+      true
+    );
+    expect(storage.getItem('rn-observatory.queue')).toBe('[]');
+
+    mirrorShouldFail = false;
+
+    await client.flush();
+
+    expect(primaryDelivered).toHaveLength(1);
+    expect(mirrorDelivered).toHaveLength(1);
   });
 });
