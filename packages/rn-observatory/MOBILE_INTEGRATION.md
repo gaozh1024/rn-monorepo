@@ -116,6 +116,12 @@ Recommended event names:
 - `checkout.pay_tap`
 - `checkout.success`
 
+For the maintained event taxonomy and recommended analytics properties, see:
+
+- `docs/event-taxonomy.md`
+- `docs/analytics-schema.md`
+- `docs/analytics-tracking-template.md`
+
 ## 5. Manual error reporting
 
 Use `captureException()` for caught business failures:
@@ -191,4 +197,36 @@ This helps the backend:
 
 - correlate issues to releases
 - build release health views
-- support future source map / symbolication matching
+- support the current source map / symbolication workflow
+
+For the full release / source map flow, see:
+
+- `docs/release-integration.md`
+- `docs/github-actions-release-example.md`
+- `docs/expo-eas-release-template.md`
+- `docs/react-native-cli-release-template.md`
+
+## 9. Device information
+
+The analytics pages in `app-observatory` become much more useful when events also include:
+
+- `platform`
+- `appVersion`
+- `buildNumber`
+- `device.model`
+- `device.brand`
+
+The core SDK only fills `platform` and `osVersion` by default. For official device recipes, see:
+
+- `docs/device-info-recipes.md`
+
+## 10. Native crash adapters
+
+If the app needs native-process crash visibility, bridge a native crash SDK through `nativeCrashAdapter`.
+
+Recommended adapter docs:
+
+- `docs/native-crash-adapters.md`
+- `docs/sentry-native-crash-recipe.md`
+- `docs/crashlytics-native-crash-recipe.md`
+- `docs/native-crash-bridge-template.md`

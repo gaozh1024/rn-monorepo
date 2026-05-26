@@ -35,7 +35,7 @@ Release metadata improves:
 
 - release health dashboards
 - issue-to-release attribution
-- future source map / symbolication matching
+- current source map / symbolication matching in `app-observatory`
 
 ## Fallback behavior
 
@@ -67,7 +67,7 @@ Recommended flow:
 
 1. CI creates or looks up the release record
 2. CI uploads the matching source map artifact
-3. Future symbolication uses `release.id` first, then falls back to `version + buildNumber`
+3. Backend symbolication uses `release.id` first, then falls back to `version + buildNumber`
 
 ## CLI example
 

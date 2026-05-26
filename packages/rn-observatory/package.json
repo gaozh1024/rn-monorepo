@@ -32,8 +32,10 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "tsc --noEmit",
+    "sync:taxonomy": "node ./scripts/sync-event-taxonomy.mjs",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:taxonomy": "node ./scripts/verify-event-taxonomy.mjs"
   },
   "peerDependencies": {
     "react": ">=18.2.0",

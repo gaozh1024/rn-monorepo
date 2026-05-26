@@ -171,6 +171,11 @@ Recommended names:
 - `checkout.pay_tap`
 - `checkout.success`
 
+For the maintained event taxonomy and recommended analytics properties, see:
+
+- `docs/event-taxonomy.md`
+- `docs/analytics-schema.md`
+
 ## 8. Report caught business errors
 
 Use `captureException()` for errors you catch manually:
@@ -219,6 +224,20 @@ Why this matters:
 - issue-to-release attribution becomes stable
 - source map / symbolication matching becomes reliable
 
+## 9.5 Device information
+
+The backend’s `Users & Devices` and analytics distribution pages are most useful when the app also provides:
+
+- `device.model`
+- `device.brand`
+- stable `appVersion`
+- stable `buildNumber`
+
+The core SDK only fills `platform` and `osVersion` by default. For the official recipes, see:
+
+- `docs/device-info-recipes.md`
+- `docs/analytics-tracking-template.md`
+
 ## 10. Release-time workflow
 
 At release time, do two things:
@@ -253,6 +272,11 @@ Environment fallbacks:
 - `APP_OBSERVATORY_BASE_URL`
 - `APP_OBSERVATORY_ADMIN_TOKEN`
 
+Official release templates:
+
+- `docs/expo-eas-release-template.md`
+- `docs/react-native-cli-release-template.md`
+
 ## 11. What the backend can do after upload
 
 Once the release and source map are registered:
@@ -274,7 +298,18 @@ into:
 src/features/order/CheckoutScreen.tsx:86:9
 ```
 
-## 12. Web support
+## 12. Native crash adapters
+
+If the app needs native-process crash visibility, bridge a native crash SDK through `nativeCrashAdapter`.
+
+Start with:
+
+- `docs/native-crash-adapters.md`
+- `docs/sentry-native-crash-recipe.md`
+- `docs/crashlytics-native-crash-recipe.md`
+- `docs/native-crash-bridge-template.md`
+
+## 13. Web support
 
 Supported:
 
@@ -290,7 +325,7 @@ Reason:
 
 The SDK depends on `react-native` runtime APIs such as `Platform` and `AppState`.
 
-## 13. Common troubleshooting
+## 14. Common troubleshooting
 
 If analytics pages are empty:
 
@@ -310,7 +345,7 @@ If release detail does not show symbolicated stack:
 5. wrong `bundleFileName`
 6. stack format is not yet supported by the parser
 
-## 14. Recommended rollout checklist
+## 15. Recommended rollout checklist
 
 - create application in backend
 - get `appId`

@@ -140,6 +140,15 @@ For release and source map registration flow, see:
 
 - `docs/release-integration.md`
 - `docs/app-usage-guide.md`
+- `docs/expo-eas-release-template.md`
+- `docs/react-native-cli-release-template.md`
+
+The current platform flow is:
+
+1. attach `release` metadata on app events
+2. create the matching release record in `app-observatory`
+3. upload the source map artifact for that release
+4. inspect symbolicated stack traces in Issue / Event detail views
 
 ## React Navigation screen tracking
 
@@ -181,6 +190,14 @@ import * as Device from 'expo-device';
   })}
 />;
 ```
+
+For official device-info recipes, see:
+
+- `docs/device-info-recipes.md`
+- `docs/analytics-schema.md`
+- `docs/event-taxonomy.md`
+- `docs/analytics-tracking-template.md`
+- `docs/maintainer-governance.md`
 
 ## Manual capture
 
@@ -277,7 +294,7 @@ Production notes:
 - When using `@gaozh1024/rn-kit`, explicitly set `enableErrorBoundary` in production if you want React render errors reported.
 - Unhandled rejection capture is best-effort across React Native runtimes; it supports DOM `unhandledrejection`, global event targets, and `globalThis.onunhandledrejection` fallback when available.
 - Native process crashes require `nativeCrashAdapter`; the core package stays vendor-neutral and does not include a native crash SDK.
-- Source map symbolication is not included in `0.2.x`; production stack traces are uploaded raw.
+- Release metadata, source map artifact upload, and backend-side symbolication are part of the current recommended production workflow when the app uses `app-observatory`.
 - Do not upload raw authorization headers, cookies, request/response bodies, phone numbers, or tokens. Keep or customize the sanitizer.
 
 ## Persistent storage
@@ -378,11 +395,22 @@ Pure JavaScript cannot reliably capture native process crashes after the process
 />
 ```
 
+Official adapter guidance:
+
+- `docs/native-crash-adapters.md`
+- `docs/sentry-native-crash-recipe.md`
+- `docs/crashlytics-native-crash-recipe.md`
+- `docs/native-crash-bridge-template.md`
+
 ## Public APIs
 
 - `AppObservatoryProvider`
 - `useAppObservatory`
 - `createAppObservatoryClient`
+- `appObservatoryEventTypes`
+- `appObservatoryLifecycleEventTypes`
+- `appObservatoryErrorEventTypes`
+- `appObservatoryAnalyticsEventTypes`
 - `createAppObservatoryQueue`
 - `createFetchObservatoryTransport`
 - `createAsyncStorageObservatoryStorage`
@@ -397,3 +425,6 @@ Pure JavaScript cannot reliably capture native process crashes after the process
 - `previous_session_crash` is an abnormal-exit inference, not a guaranteed native crash report.
 - Do not upload raw authorization headers, request bodies, phone numbers, or tokens without a sanitizer.
 - Do not block user operations on monitoring upload success.
+- Keep the SDK aligned with the platform’s three long-term lanes: `Analytics`, `Release / Symbolication`, and `Crash / Alerts`.
+- Maintainers can synchronize the current canonical event taxonomy into `app-observatory` with `pnpm --dir packages/rn-observatory sync:taxonomy`.
+- Maintainers can verify cross-repo event taxonomy alignment with `pnpm --dir packages/rn-observatory verify:taxonomy`.

@@ -2,6 +2,17 @@ export { createAppObservatoryClient } from './core/client';
 export { AppObservatoryProvider } from './core/provider';
 export { useAppObservatory } from './core/hooks';
 export { AppObservatoryContext, noopAppObservatoryReporter } from './core/context';
+export {
+  appObservatoryAnalyticsEventTypes,
+  appObservatoryCustomEventTypes,
+  appObservatoryErrorEventTypes,
+  appObservatoryEventTypes,
+  appObservatoryLifecycleEventTypes,
+  type AppObservatoryAnalyticsEventType,
+  type AppObservatoryCustomEventType,
+  type AppObservatoryErrorEventType,
+  type AppObservatoryLifecycleEventType,
+} from './core/event-taxonomy';
 export type {
   AppObservatoryAppInfo,
   AppObservatoryAnalyticsPayload,

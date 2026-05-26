@@ -85,4 +85,15 @@ Observability and product analytics SDK for Expo or React Native apps with error
 ## See Also
 
 - README.md
-- AI_USAGE.md
+- MOBILE_INTEGRATION.md
+- docs/app-usage-guide.md
+- docs/event-taxonomy.md
+- docs/analytics-schema.md
+- docs/analytics-tracking-template.md
+- docs/device-info-recipes.md
+- docs/native-crash-adapters.md
+- docs/native-crash-bridge-template.md
+- docs/release-integration.md
+- docs/expo-eas-release-template.md
+- docs/react-native-cli-release-template.md
+- docs/maintainer-governance.md
