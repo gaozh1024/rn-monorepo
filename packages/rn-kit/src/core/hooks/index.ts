@@ -20,3 +20,4 @@ export {
   type InfiniteFetchResult,
 } from './useInfinite';
 export { useAsyncState, type UseAsyncState } from './useAsyncState';
+export { useStreamRequest, type UseStreamRequestResult } from './useStreamRequest';

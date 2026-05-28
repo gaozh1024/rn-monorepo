@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-kit",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "role": "core-framework",
   "summary": "Panther Expo Framework core package for app bootstrap, theme, UI, navigation helpers, overlays, and API factory usage in Expo or React Native apps.",
   "entrypoints": [
@@ -50,6 +50,9 @@
     "AppScreen",
     "AppButton",
     "createAPI",
+    "createApiStreamRequest",
+    "readApiSSEStream",
+    "useStreamRequest",
     "useToggle",
     "SegmentedTabs",
     "AppPressable",

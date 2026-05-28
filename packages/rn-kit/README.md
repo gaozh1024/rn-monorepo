@@ -197,6 +197,24 @@ import { AppProvider, AppStatusBar } from '@gaozh1024/rn-kit';
 </AppProvider>
 ```
 
+### 🌊 流式请求
+
+`rn-kit` 提供一套轻量的流式请求基础能力，适合：
+
+- `text/event-stream`
+- AI / Chat 增量输出
+- 长连接生成式响应
+
+公开 API：
+
+```tsx
+import { createApiStreamRequest, readApiSSEStream, useStreamRequest } from '@gaozh1024/rn-kit';
+```
+
+详细说明见：
+
+- [docs/streaming-api.md](./docs/streaming-api.md)
+
 ### 🧩 UI 组件
 
 ```tsx

@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/rn-kit",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Panther Expo Framework - All-in-one React Native framework",
   "bin": {
     "rn-kit": "./bin/rn-kit.js"

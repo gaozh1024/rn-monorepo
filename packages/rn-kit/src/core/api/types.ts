@@ -64,6 +64,37 @@ export interface ApiLogEvent {
 
 export type ApiLogTransport = (event: ApiLogEvent) => void | Promise<void>;
 
+export type ApiStreamProtocol = 'raw' | 'sse';
+
+export interface ApiStreamRequestOptions {
+  method?: ApiMethod;
+  headers?: HeadersInit;
+  body?: BodyInit | Record<string, unknown>;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  protocol?: ApiStreamProtocol;
+  fetcher?: typeof fetch;
+}
+
+export interface ApiStreamResponse {
+  stream: ReadableStream<Uint8Array>;
+  abort: () => void;
+  response: Response;
+}
+
+export interface ApiSSEMessage<T = unknown> {
+  event?: string;
+  data: T | string;
+  rawData: string;
+}
+
+export interface ApiSSEReaderOptions<T = unknown> {
+  onEvent?: (message: ApiSSEMessage<T>) => void;
+  onError?: (error: unknown) => void;
+  onDone?: () => void;
+  parseJson?: boolean;
+}
+
 export interface ApiObservabilityConfig {
   enabled?: boolean;
   transports?: ApiLogTransport[];

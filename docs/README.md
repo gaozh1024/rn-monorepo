@@ -57,6 +57,7 @@
 - [rn-observatory 0.1.1 Release Notes](./release-notes/rn-observatory-0.1.1.md)
 - [rn-observatory 0.1.0 Release Notes](./release-notes/rn-observatory-0.1.0.md)
 - [expo-starter 0.2.17 Release Notes](./release-notes/expo-starter-0.2.17.md)
+- [rn-kit 0.5.5 Release Notes](./release-notes/rn-kit-0.5.5.md)
 - [rn-kit 0.5.3 Release Notes](./release-notes/rn-kit-0.5.3.md)
 - [rn-kit 0.5.2 Release Notes](./release-notes/rn-kit-0.5.2.md)
 - [aliyun-push 0.1.3 Release Notes](./release-notes/aliyun-push-0.1.3.md)

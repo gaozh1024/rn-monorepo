@@ -1,5 +1,18 @@
 # @gaozh1024/rn-kit
 
+## 0.5.5
+
+### Patch Changes
+
+- Add official streaming request foundations for React Native / Expo / Web usage:
+  - `createApiStreamRequest`
+  - `readApiSSEStream`
+  - `useStreamRequest`
+- Add typed stream request / SSE message contracts so apps can model raw stream and SSE workflows without inventing their own shapes.
+- Add fallback stream behavior when a runtime cannot expose `response.body`, keeping the API surface stable across environments.
+- Add streaming documentation and RN / Expo polyfill guidance in `docs/streaming-api.md` and the main README.
+- Add streaming tests covering stream request creation, SSE parsing, and hook lifecycle behavior.
+
 ## 0.5.4
 
 ### Patch Changes
