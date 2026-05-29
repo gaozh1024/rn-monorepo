@@ -52,6 +52,11 @@ Observability and product analytics SDK for Expo or React Native apps with error
 - Prefer the stable public API `AppObservatoryProvider` when it matches the use case.
 - Prefer the stable public API `useAppObservatory` when it matches the use case.
 - Prefer the stable public API `createAppObservatoryClient` when it matches the use case.
+- Prefer the stable public API `appObservatoryEventTypes` when it matches the use case.
+- Prefer the stable public API `appObservatoryLifecycleEventTypes` when it matches the use case.
+- Prefer the stable public API `appObservatoryErrorEventTypes` when it matches the use case.
+- Prefer the stable public API `appObservatoryAnalyticsEventTypes` when it matches the use case.
+- Prefer the stable public API `appObservatoryCustomEventTypes` when it matches the use case.
 - Prefer the stable public API `createAppObservatoryQueue` when it matches the use case.
 - Prefer the stable public API `createFetchObservatoryTransport` when it matches the use case.
 - Prefer the stable public API `createAsyncStorageObservatoryStorage` when it matches the use case.
@@ -85,6 +90,7 @@ Observability and product analytics SDK for Expo or React Native apps with error
 ## See Also
 
 - README.md
+- AI_USAGE.md
 - MOBILE_INTEGRATION.md
 - docs/app-usage-guide.md
 - docs/event-taxonomy.md

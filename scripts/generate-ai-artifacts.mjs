@@ -76,6 +76,23 @@ function docsForTarget(target) {
     docs.push('TAILWIND_SETUP.md');
   }
 
+  if (target.id === 'rn-observatory') {
+    docs.push(
+      'MOBILE_INTEGRATION.md',
+      'docs/app-usage-guide.md',
+      'docs/event-taxonomy.md',
+      'docs/analytics-schema.md',
+      'docs/analytics-tracking-template.md',
+      'docs/device-info-recipes.md',
+      'docs/native-crash-adapters.md',
+      'docs/native-crash-bridge-template.md',
+      'docs/release-integration.md',
+      'docs/expo-eas-release-template.md',
+      'docs/react-native-cli-release-template.md',
+      'docs/maintainer-governance.md',
+    );
+  }
+
   if (target.id === 'hot-updater') {
     docs.push('docs/integration.md', 'docs/manifest-spec.md');
   }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-observatory",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "role": "feature-package",
   "summary": "Observability and product analytics SDK for Expo or React Native apps with error capture, breadcrumbs, local queueing, consent-aware analytics, and rn-kit integration.",
   "entrypoints": [
@@ -37,6 +37,11 @@
     "AppObservatoryProvider",
     "useAppObservatory",
     "createAppObservatoryClient",
+    "appObservatoryEventTypes",
+    "appObservatoryLifecycleEventTypes",
+    "appObservatoryErrorEventTypes",
+    "appObservatoryAnalyticsEventTypes",
+    "appObservatoryCustomEventTypes",
     "createAppObservatoryQueue",
     "createFetchObservatoryTransport",
     "createAsyncStorageObservatoryStorage",
@@ -79,5 +84,20 @@
       "path": "packages/rn-observatory/src/capture/axios.ts"
     }
   ],
-  "docs": ["README.md", "AI_USAGE.md"]
+  "docs": [
+    "README.md",
+    "AI_USAGE.md",
+    "MOBILE_INTEGRATION.md",
+    "docs/app-usage-guide.md",
+    "docs/event-taxonomy.md",
+    "docs/analytics-schema.md",
+    "docs/analytics-tracking-template.md",
+    "docs/device-info-recipes.md",
+    "docs/native-crash-adapters.md",
+    "docs/native-crash-bridge-template.md",
+    "docs/release-integration.md",
+    "docs/expo-eas-release-template.md",
+    "docs/react-native-cli-release-template.md",
+    "docs/maintainer-governance.md"
+  ]
 }

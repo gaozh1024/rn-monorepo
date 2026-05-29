@@ -255,7 +255,7 @@ importers:
         specifier: ^0.5.4
         version: link:../../packages/rn-kit
       '@gaozh1024/rn-observatory':
-        specifier: ^0.4.0
+        specifier: ^0.5.0
         version: link:../../packages/rn-observatory
       '@react-native-masked-view/masked-view':
         specifier: ~0.3.2

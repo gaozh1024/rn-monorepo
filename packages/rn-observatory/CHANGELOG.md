@@ -1,5 +1,15 @@
 # @gaozh1024/rn-observatory
 
+## 0.5.0
+
+### Minor Changes
+
+- Promote the event taxonomy to a public, typed SDK contract with exported lifecycle, error, analytics, custom, and combined event type constants.
+- Add maintainer taxonomy sync and verification scripts so SDK event types can stay aligned with the `app-observatory` admin and OpenAPI surfaces.
+- Formalize release metadata, source map artifact upload, and release helper CLI documentation for the Release / Symbolication lane.
+- Expand production integration docs to read app id, version, and build number from app metadata instead of hand-maintained constants.
+- Add maintainer governance docs that define the official Analytics, Release / Symbolication, and Crash / Alerts product lanes.
+
 ## 0.4.0
 
 ### Minor Changes

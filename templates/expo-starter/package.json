@@ -44,7 +44,7 @@
   "dependencies": {
     "@expo/vector-icons": "~15.1.1",
     "@gaozh1024/rn-kit": "^0.5.4",
-    "@gaozh1024/rn-observatory": "^0.4.0",
+    "@gaozh1024/rn-observatory": "^0.5.0",
     "@react-native-masked-view/masked-view": "~0.3.2",
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/native": "^7.1.33",

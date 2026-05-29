@@ -31,18 +31,20 @@ The practical rule is simple: if your app runs on top of the React Native runtim
 import { AppProvider } from '@gaozh1024/rn-kit';
 import { AppObservatoryProvider } from '@gaozh1024/rn-observatory';
 
+const appMetadata = getAppMetadataFromExpoOrNativeConfig();
+
 export default function App() {
   return (
     <AppObservatoryProvider
       enabled={!__DEV__}
-      appId="mobile-app"
-      appVersion="1.2.3"
-      buildNumber="45"
+      appId={appMetadata.appId}
+      appVersion={appMetadata.version}
+      buildNumber={appMetadata.buildNumber}
       endpoint="https://api.example.com/api/app-observatory/events"
       ingestToken="your-ingest-token"
     >
-      {health => (
-        <AppProvider enableErrorBoundary enableLogger={__DEV__} healthReporter={health}>
+      {observatory => (
+        <AppProvider enableErrorBoundary enableLogger={__DEV__} healthReporter={observatory}>
           <RootNavigator />
         </AppProvider>
       )}
@@ -71,8 +73,8 @@ For behavior analytics, use a stable anonymous install ID instead of phone numbe
     device: privacyConsent.analytics,
   }}
 >
-  {health => (
-    <AppProvider enableErrorBoundary healthReporter={health}>
+  {observatory => (
+    <AppProvider enableErrorBoundary healthReporter={observatory}>
       {children}
     </AppProvider>
   )}
@@ -82,7 +84,7 @@ For behavior analytics, use a stable anonymous install ID instead of phone numbe
 When `identity.autoInstallId` is enabled, events are tagged with `installId`. If no `userId` is provided, the install ID is also used as the anonymous `user.id`. After login, prefer a hashed business user ID:
 
 ```ts
-health.setUser({ id: `user_${hashUserId(user.id)}` });
+observatory.setUser({ id: `user_${hashUserId(user.id)}` });
 ```
 
 After logout, switch back to the anonymous install ID if you still want anonymous diagnostics.
@@ -98,16 +100,16 @@ After logout, switch back to the anonymous install ID if you still want anonymou
 Use `trackScreen` for page visits and `trackEvent` for user actions. Both are no-ops unless `consent.analytics` is `true`.
 
 ```ts
-const health = useAppObservatory();
+const observatory = useAppObservatory();
 
-await health.trackScreen('Home');
+await observatory.trackScreen('Home');
 
-await health.trackEvent('button.click', {
+await observatory.trackEvent('button.click', {
   screen: 'Home',
   target: 'submit-order',
 });
 
-await health.trackEvent('order.success', {
+await observatory.trackEvent('order.success', {
   screen: 'Checkout',
   paymentMethod: 'wechat',
 });
@@ -121,9 +123,9 @@ If the app already has a release pipeline, attach release metadata so the backen
 
 ```tsx
 <AppObservatoryProvider
-  appId="mobile-app"
-  appVersion="1.2.3"
-  buildNumber="45"
+  appId={appMetadata.appId}
+  appVersion={appMetadata.version}
+  buildNumber={appMetadata.buildNumber}
   release={{
     id: 'release_20260525_001',
     channel: 'production',
@@ -205,15 +207,15 @@ For official device-info recipes, see:
 import { useAppObservatory } from '@gaozh1024/rn-observatory';
 
 function SubmitButton() {
-  const health = useAppObservatory();
+  const observatory = useAppObservatory();
 
   async function submit() {
-    health.addBreadcrumb({ category: 'ui', message: '点击提交订单' });
+    observatory.addBreadcrumb({ category: 'ui', message: '点击提交订单' });
 
     try {
       await submitOrder();
     } catch (error) {
-      await health.captureException(error, {
+      await observatory.captureException(error, {
         source: 'order.submit',
         tags: { scene: 'checkout' },
       });
@@ -265,21 +267,23 @@ import {
   createAsyncStorageObservatoryStorage,
 } from '@gaozh1024/rn-observatory';
 
+const appMetadata = getAppMetadataFromExpoOrNativeConfig();
+
 export default function App() {
   return (
     <AppObservatoryProvider
       enabled={!__DEV__}
-      appId="mobile-app"
-      appVersion="1.2.3"
-      buildNumber="45"
+      appId={appMetadata.appId}
+      appVersion={appMetadata.version}
+      buildNumber={appMetadata.buildNumber}
       environment="production"
       endpoint="https://api.example.com/api/app-observatory/events"
       ingestToken="your-ingest-token"
       transportTimeoutMs={10_000}
       storage={createAsyncStorageObservatoryStorage(AsyncStorage)}
     >
-      {health => (
-        <AppProvider enableErrorBoundary healthReporter={health}>
+      {observatory => (
+        <AppProvider enableErrorBoundary healthReporter={observatory}>
           <RootNavigator />
         </AppProvider>
       )}
@@ -329,8 +333,8 @@ The built-in fetch transport aborts uploads after `10_000ms` by default so monit
 import { createMonitoredFetch, useAppObservatory } from '@gaozh1024/rn-observatory';
 
 function useApiFetch() {
-  const health = useAppObservatory();
-  return createMonitoredFetch(fetch, health, {
+  const observatory = useAppObservatory();
+  return createMonitoredFetch(fetch, observatory, {
     tags: { client: 'fetch' },
     capture4xx: false,
   });
@@ -346,8 +350,8 @@ import {
   type AppObservatoryReporter,
 } from '@gaozh1024/rn-observatory';
 
-function installApiMonitoring(health: AppObservatoryReporter) {
-  return installAxiosObservatoryInterceptor(axios, health, {
+function installApiMonitoring(observatory: AppObservatoryReporter) {
+  return installAxiosObservatoryInterceptor(axios, observatory, {
     tags: { client: 'axios' },
     capture4xx: false,
   });
@@ -411,6 +415,7 @@ Official adapter guidance:
 - `appObservatoryLifecycleEventTypes`
 - `appObservatoryErrorEventTypes`
 - `appObservatoryAnalyticsEventTypes`
+- `appObservatoryCustomEventTypes`
 - `createAppObservatoryQueue`
 - `createFetchObservatoryTransport`
 - `createAsyncStorageObservatoryStorage`

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,6 +14,16 @@ const adminConstantsFile = path.join(appObservatoryRoot, 'admin/src/api/constant
 const openApiFile = path.join(appObservatoryRoot, 'contracts/openapi.yaml');
 
 const taxonomySource = await readFile(taxonomyFile, 'utf8');
+const hasAppObservatory = await fileExists(adminConstantsFile) && await fileExists(openApiFile);
+
+if (!hasAppObservatory) {
+  console.error(
+    `Cannot synchronize event taxonomy because ${appObservatoryRoot} is not available.`
+  );
+  console.error('Clone or mount the app-observatory repository next to rn-monorepo, then rerun this command.');
+  process.exit(1);
+}
+
 const adminConstantsSource = await readFile(adminConstantsFile, 'utf8');
 const openApiSource = await readFile(openApiFile, 'utf8');
 
@@ -43,6 +53,15 @@ function extractStringArray(source, constName) {
   }
 
   return [...match.groups.body.matchAll(/'([^']+)'/g)].map(item => item[1]);
+}
+
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function replaceAdminConstants(source, values) {

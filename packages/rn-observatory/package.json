@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/rn-observatory",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Observability and product analytics SDK for Expo / React Native.",
   "bin": {
     "rn-observatory-release": "./bin/rn-observatory-release.js"

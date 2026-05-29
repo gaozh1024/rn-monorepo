@@ -58,19 +58,33 @@ Minimum production-ready integration:
 
 ```tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { AppProvider } from '@gaozh1024/rn-kit';
 import {
   AppObservatoryProvider,
   createAsyncStorageObservatoryStorage,
 } from '@gaozh1024/rn-observatory';
 
+const appMetadata = {
+  appId: Platform.select({
+    ios: Constants.expoConfig?.ios?.bundleIdentifier,
+    android: Constants.expoConfig?.android?.package,
+    default: Constants.expoConfig?.slug,
+  }),
+  version: Constants.expoConfig?.version,
+  buildNumber:
+    Constants.expoConfig?.ios?.buildNumber ??
+    Constants.expoConfig?.android?.versionCode?.toString(),
+};
+
 export default function App() {
   return (
     <AppObservatoryProvider
       enabled={!__DEV__}
-      appId="your-app-id"
-      appVersion="1.0.0"
-      buildNumber="1"
+      appId={appMetadata.appId}
+      appVersion={appMetadata.version}
+      buildNumber={appMetadata.buildNumber}
       environment="production"
       endpoint="https://your-domain.com/api/app-observatory/events"
       ingestToken="your-ingest-token"
@@ -91,6 +105,8 @@ export default function App() {
   );
 }
 ```
+
+The SDK core does not directly read bundle id, version, or build number because React Native apps may use Expo, React Native CLI, `react-native-config`, native `BuildConfig`, or another release pipeline. Read these values from your app metadata layer and pass them into the provider.
 
 This gives you:
 
