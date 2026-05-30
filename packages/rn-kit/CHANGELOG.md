@@ -1,5 +1,14 @@
 # @gaozh1024/rn-kit
 
+## 0.5.6
+
+### Patch Changes
+
+- Switch `createApiStreamRequest` to use Expo's `expo/fetch` implementation by default so React Native / Expo streaming can read `response.body.getReader()` without app-level fetch polyfills.
+- Keep the `fetcher` option for tests, Web, and app-owned transport customization.
+- Update SSE parsing to default missing event names to `message`, support CRLF frame boundaries, and expose an `onMessage(event, data, message)` convenience callback alongside `onEvent`.
+- Update streaming documentation and the Expo starter recipe to show the current `expo/fetch` SSE workflow.
+
 ## 0.5.5
 
 ### Patch Changes

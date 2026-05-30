@@ -31,15 +31,10 @@ The practical rule is simple: if your app runs on top of the React Native runtim
 import { AppProvider } from '@gaozh1024/rn-kit';
 import { AppObservatoryProvider } from '@gaozh1024/rn-observatory';
 
-const appMetadata = getAppMetadataFromExpoOrNativeConfig();
-
 export default function App() {
   return (
     <AppObservatoryProvider
       enabled={!__DEV__}
-      appId={appMetadata.appId}
-      appVersion={appMetadata.version}
-      buildNumber={appMetadata.buildNumber}
       endpoint="https://api.example.com/api/app-observatory/events"
       ingestToken="your-ingest-token"
     >
@@ -62,7 +57,6 @@ For behavior analytics, use a stable anonymous install ID instead of phone numbe
 ```tsx
 <AppObservatoryProvider
   enabled={!__DEV__}
-  appId="mobile-app"
   endpoint="https://api.example.com/api/app-observatory/events"
   ingestToken="your-ingest-token"
   storage={createAsyncStorageObservatoryStorage(AsyncStorage)}
@@ -119,13 +113,10 @@ Analytics events are uploaded through the same queue and transport as error even
 
 ## Release metadata
 
-If the app already has a release pipeline, attach release metadata so the backend can correlate events with a concrete release record instead of relying only on `version + buildNumber`.
+The SDK automatically reads app id, version, and build number from Expo metadata or the bundled React Native native metadata module. If the app already has a release pipeline, attach release metadata so the backend can correlate events with a concrete release record instead of relying only on `version + buildNumber`.
 
 ```tsx
 <AppObservatoryProvider
-  appId={appMetadata.appId}
-  appVersion={appMetadata.version}
-  buildNumber={appMetadata.buildNumber}
   release={{
     id: 'release_20260525_001',
     channel: 'production',
@@ -255,6 +246,8 @@ Payload:
 
 A 2xx response is treated as success. Failed uploads remain queued and are retried on later `flush()` calls. If `ingestToken` is provided, the built-in fetch transport sends `authorization: Bearer <ingestToken>` automatically; explicit `headers.authorization` takes precedence. If you configure multiple transports, `rn-observatory` treats the first transport as the authoritative delivery path and sends any additional transports as best-effort mirrors so mirror failures do not cause duplicate retries on the primary path.
 
+`app.id`, `app.version`, and `app.buildNumber` are auto-resolved by default. Explicit `appId`, `appVersion`, and `buildNumber` props remain available as compatibility overrides for custom runtimes or unusual build pipelines.
+
 ## Production setup checklist
 
 For production apps, prefer the full setup below:
@@ -267,15 +260,10 @@ import {
   createAsyncStorageObservatoryStorage,
 } from '@gaozh1024/rn-observatory';
 
-const appMetadata = getAppMetadataFromExpoOrNativeConfig();
-
 export default function App() {
   return (
     <AppObservatoryProvider
       enabled={!__DEV__}
-      appId={appMetadata.appId}
-      appVersion={appMetadata.version}
-      buildNumber={appMetadata.buildNumber}
       environment="production"
       endpoint="https://api.example.com/api/app-observatory/events"
       ingestToken="your-ingest-token"

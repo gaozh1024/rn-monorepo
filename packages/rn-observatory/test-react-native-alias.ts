@@ -4,6 +4,21 @@ export const Platform = {
   select: (mapping: Record<string, unknown>) => mapping.ios ?? mapping.default,
 };
 
+export const NativeModules = {
+  RNObservatoryMetadata: undefined as
+    | undefined
+    | {
+        appId?: string;
+        bundleIdentifier?: string;
+        packageName?: string;
+        version?: string;
+        appVersion?: string;
+        buildNumber?: string | number;
+        versionCode?: string | number;
+        getConstantsSync?: () => Record<string, unknown>;
+      },
+};
+
 const listeners = new Set<(state: string) => void>();
 
 export const AppState = {

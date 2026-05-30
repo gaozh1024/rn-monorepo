@@ -51,6 +51,7 @@
 
 版本发布记录：
 
+- [rn-observatory 0.5.1 Release Notes](./release-notes/rn-observatory-0.5.1.md)
 - [rn-observatory 0.5.0 Release Notes](./release-notes/rn-observatory-0.5.0.md)
 - [rn-observatory 0.5.0 Publish Checklist](./release-notes/publish-checklist-rn-observatory-0.5.0-2026-05-29.md)
 - [rn-observatory 0.4.0 Release Notes](./release-notes/rn-observatory-0.4.0.md)
@@ -59,6 +60,8 @@
 - [rn-observatory 0.1.1 Release Notes](./release-notes/rn-observatory-0.1.1.md)
 - [rn-observatory 0.1.0 Release Notes](./release-notes/rn-observatory-0.1.0.md)
 - [expo-starter 0.2.17 Release Notes](./release-notes/expo-starter-0.2.17.md)
+- [rn-kit 0.5.6 Release Notes](./release-notes/rn-kit-0.5.6.md)
+- [rn-kit 0.5.6 Publish Checklist](./release-notes/publish-checklist-rn-kit-0.5.6-2026-05-30.md)
 - [rn-kit 0.5.5 Release Notes](./release-notes/rn-kit-0.5.5.md)
 - [rn-kit 0.5.3 Release Notes](./release-notes/rn-kit-0.5.3.md)
 - [rn-kit 0.5.2 Release Notes](./release-notes/rn-kit-0.5.2.md)

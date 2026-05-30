@@ -48,9 +48,6 @@ export function ObservatoryNavigationRecipe({
   return (
     <AppObservatoryProvider
       enabled={!__DEV__}
-      appId="your-app-id"
-      appVersion="1.0.0"
-      buildNumber="1"
       endpoint="https://your-domain.com/api/app-observatory/events"
       ingestToken="your-ingest-token"
       consent={{

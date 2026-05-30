@@ -6,9 +6,6 @@ Use this template when the app builds bundles through React Native CLI or a cust
 
 ```tsx
 <AppObservatoryProvider
-  appId="your-app-id"
-  appVersion={BuildConfig.APP_VERSION}
-  buildNumber={BuildConfig.BUILD_NUMBER}
   release={{
     id: BuildConfig.OBSERVATORY_RELEASE_ID,
     channel: BuildConfig.OBSERVATORY_CHANNEL,
@@ -61,5 +58,6 @@ rn-observatory-release upload-sourcemap \
 
 ## Notes
 
+- React Native CLI app id, version, and build number are read automatically from the bundled native metadata module.
 - The exact bundle/map paths depend on your build pipeline; keep the `bundle-file-name` aligned with the stack traces your release actually produces.
 - If the app ships only one platform in a given release train, upload only that platform’s source map artifact.

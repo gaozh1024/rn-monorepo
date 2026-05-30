@@ -58,33 +58,16 @@ Minimum production-ready integration:
 
 ```tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 import { AppProvider } from '@gaozh1024/rn-kit';
 import {
   AppObservatoryProvider,
   createAsyncStorageObservatoryStorage,
 } from '@gaozh1024/rn-observatory';
 
-const appMetadata = {
-  appId: Platform.select({
-    ios: Constants.expoConfig?.ios?.bundleIdentifier,
-    android: Constants.expoConfig?.android?.package,
-    default: Constants.expoConfig?.slug,
-  }),
-  version: Constants.expoConfig?.version,
-  buildNumber:
-    Constants.expoConfig?.ios?.buildNumber ??
-    Constants.expoConfig?.android?.versionCode?.toString(),
-};
-
 export default function App() {
   return (
     <AppObservatoryProvider
       enabled={!__DEV__}
-      appId={appMetadata.appId}
-      appVersion={appMetadata.version}
-      buildNumber={appMetadata.buildNumber}
       environment="production"
       endpoint="https://your-domain.com/api/app-observatory/events"
       ingestToken="your-ingest-token"
@@ -106,7 +89,7 @@ export default function App() {
 }
 ```
 
-The SDK core does not directly read bundle id, version, or build number because React Native apps may use Expo, React Native CLI, `react-native-config`, native `BuildConfig`, or another release pipeline. Read these values from your app metadata layer and pass them into the provider.
+The SDK reads bundle id, version, and build number automatically from Expo metadata or the bundled React Native native metadata module. Only pass `appId`, `appVersion`, or `buildNumber` as compatibility overrides for custom runtimes.
 
 This gives you:
 
@@ -213,9 +196,6 @@ If the app has a real release pipeline, pass release metadata so the backend can
 
 ```tsx
 <AppObservatoryProvider
-  appId="mobile-app"
-  appVersion="1.2.3"
-  buildNumber="45"
   release={{
     id: 'release_20260525_001',
     channel: 'production',
@@ -350,7 +330,7 @@ If analytics pages are empty:
 3. no `trackEvent()`
 4. wrong `endpoint`
 5. wrong `ingestToken`
-6. wrong `appId`
+6. automatic app metadata is unavailable or does not match the registered application slug
 
 If release detail does not show symbolicated stack:
 

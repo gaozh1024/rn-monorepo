@@ -53,6 +53,18 @@ export { createAppObservatorySessionManager } from './session/session';
 export { serializeError } from './utils/serialize-error';
 export { createFingerprint } from './utils/fingerprint';
 export {
+  createMissingAppIdError,
+  resolveAppMetadata,
+  type AppObservatoryMetadataSources,
+  type AppObservatoryResolvedAppMetadata,
+} from './metadata/app-metadata';
+export { resolveExpoAppMetadata, type ExpoConstantsLike } from './metadata/expo';
+export {
+  resolveReactNativeAppMetadata,
+  type NativeAppMetadataLike,
+  type NativeModulesLike,
+} from './metadata/react-native';
+export {
   installGlobalErrorHandlers,
   type GlobalErrorHandlerOptions,
 } from './capture/global-handlers';

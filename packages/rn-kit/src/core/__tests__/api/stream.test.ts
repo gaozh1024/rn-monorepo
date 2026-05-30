@@ -16,7 +16,7 @@ describe('createApiStreamRequest', () => {
       method: 'POST',
       protocol: 'sse',
       body: { hello: 'world' },
-      fetcher: fetcher as typeof fetch,
+      fetcher,
     });
 
     expect(result.stream).toBeDefined();
@@ -43,7 +43,7 @@ describe('createApiStreamRequest', () => {
 
     const result = await createApiStreamRequest('https://api.example.com/stream', {
       protocol: 'sse',
-      fetcher: fetcher as typeof fetch,
+      fetcher,
     });
 
     const reader = result.stream.getReader();
@@ -58,7 +58,7 @@ describe('createApiStreamRequest', () => {
 
     await expect(
       createApiStreamRequest('https://api.example.com/stream', {
-        fetcher: fetcher as typeof fetch,
+        fetcher,
       })
     ).rejects.toThrow('Stream request failed with status 500');
   });

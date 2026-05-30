@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/rn-observatory",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Observability and product analytics SDK for Expo / React Native.",
   "bin": {
     "rn-observatory-release": "./bin/rn-observatory-release.js"
@@ -9,14 +9,18 @@
   "types": "dist/index.d.ts",
   "sideEffects": false,
   "files": [
+    "android",
     "bin",
     "dist",
+    "ios",
     "README.md",
     "AI_USAGE.md",
     "ai-manifest.json",
     "CHANGELOG.md",
     "LICENSE",
     "MOBILE_INTEGRATION.md",
+    "RNObservatory.podspec",
+    "react-native.config.js",
     "docs"
   ],
   "exports": {

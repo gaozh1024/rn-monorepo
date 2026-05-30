@@ -23,6 +23,7 @@ import { createId } from '../utils/id';
 import { getDeviceInfo } from '../utils/platform';
 import { getOrCreateInstallId } from '../identity/install-id';
 import { serializeError } from '../utils/serialize-error';
+import { createMissingAppIdError, resolveAppMetadata } from '../metadata/app-metadata';
 
 interface ClientRuntime {
   breadcrumbs: AppObservatoryBreadcrumb[];
@@ -50,12 +51,14 @@ export async function createAppObservatoryClient(
   const consent = resolveConsent(config.consent);
   const maxBreadcrumbs = config.maxBreadcrumbs ?? DEFAULT_MAX_BREADCRUMBS;
   const flushBatchSize = config.flushBatchSize ?? DEFAULT_FLUSH_BATCH_SIZE;
+  const metadata = resolveAppMetadata(config);
   const app: AppObservatoryAppInfo = {
-    id: config.appId,
-    version: config.appVersion,
-    buildNumber: config.buildNumber,
+    id: metadata.appId,
+    version: metadata.version,
+    buildNumber: metadata.buildNumber,
     environment: config.environment,
   };
+  reportMissingAppId(config, app);
   const release = config.release;
   const sessionManager = await createAppObservatorySessionManager({
     storage: config.storage,
@@ -256,6 +259,21 @@ export async function createAppObservatoryClient(
   if (interval !== undefined) disposers.push(() => clearInterval(interval));
 
   return client;
+}
+
+function reportMissingAppId(config: AppObservatoryClientConfig, app: AppObservatoryAppInfo) {
+  if (app.id) return;
+
+  const error = createMissingAppIdError();
+  config.onError?.(error);
+
+  if (isDevelopmentRuntime()) {
+    console.warn(error.message);
+  }
+}
+
+function isDevelopmentRuntime() {
+  return (globalThis as { __DEV__?: boolean }).__DEV__ === true;
 }
 
 async function resolveDeviceInfo(config: AppObservatoryClientConfig, allowExtendedDevice: boolean) {

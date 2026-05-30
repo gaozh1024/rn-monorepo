@@ -15,6 +15,7 @@
     "Prefer RootApp, root/providers.tsx, and AppProviders.tsx as the primary reference for app bootstrap and provider layering.",
     "Use the template's data/api.ts as the canonical createAPI integration example.",
     "Use PageScreen and existing feature screens as the canonical AppScreen page structure reference.",
+    "Use src/recipes/stream-sse.ts as the canonical reference for Expo fetch based SSE streaming.",
     "Use src/recipes/segmented-tabs.tsx as the canonical reference for page-local animated status/category switching.",
     "Use src/recipes/observatory-navigation.tsx as the canonical reference for rn-observatory screen tracking integration."
   ],
@@ -51,6 +52,10 @@
     {
       "name": "api-integration",
       "path": "templates/expo-starter/src/recipes/api-auth.ts"
+    },
+    {
+      "name": "stream-sse",
+      "path": "templates/expo-starter/src/recipes/stream-sse.ts"
     },
     {
       "name": "observatory-navigation",

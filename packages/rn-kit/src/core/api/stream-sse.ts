@@ -10,6 +10,10 @@ function coerceData<T>(rawData: string, parseJson: boolean): T | string {
   }
 }
 
+function normalizeLineEndings(value: string) {
+  return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
 export async function readApiSSEStream<T = unknown>(
   stream: ReadableStream<Uint8Array>,
   options: ApiSSEReaderOptions<T> = {}
@@ -25,7 +29,7 @@ export async function readApiSSEStream<T = unknown>(
       if (done) break;
       if (!value) continue;
 
-      buffer += decoder.decode(value, { stream: true });
+      buffer = normalizeLineEndings(buffer + decoder.decode(value, { stream: true }));
       const frames = buffer.split('\n\n');
       buffer = frames.pop() ?? '';
 
@@ -33,6 +37,7 @@ export async function readApiSSEStream<T = unknown>(
         const message = parseSSEFrame<T>(frame, parseJson);
         if (message) {
           options.onEvent?.(message);
+          options.onMessage?.(message.event, message.rawData, message);
         }
       }
     }
@@ -46,6 +51,7 @@ export async function readApiSSEStream<T = unknown>(
       const message = parseSSEFrame<T>(buffer, parseJson);
       if (message) {
         options.onEvent?.(message);
+        options.onMessage?.(message.event, message.rawData, message);
       }
     }
 
@@ -66,7 +72,7 @@ function parseSSEFrame<T>(frame: string, parseJson: boolean): ApiSSEMessage<T> |
 
   if (!lines.length) return null;
 
-  let event: string | undefined;
+  let event = 'message';
   const dataLines: string[] = [];
 
   for (const line of lines) {

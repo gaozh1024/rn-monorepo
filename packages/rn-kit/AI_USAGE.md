@@ -9,6 +9,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Use this package as the default foundation for a new Panther-based app.
 - Use AppProvider when you need a ready-made app bootstrap that includes theme, navigation, overlays, status bar, and development-time observability.
 - Use createAPI when you want the framework's typed API factory and its observability integration.
+- Use createApiStreamRequest and readApiSSEStream when an Expo app needs expo/fetch based SSE or AI/chat streaming.
 - Use createTelemetryClient when you need to forward sanitized production telemetry to an app-owned collector.
 - Use SegmentedTabs for page-local menu/status/category switching when the selected background should slide horizontally between options.
 - Use Card variant="flat" and AppPressable motionPreset="none" for high-density list/grid interactions where press feedback should stay lightweight.
@@ -25,6 +26,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Prefer importing from the root package entry @gaozh1024/rn-kit.
 - For app bootstrap, prefer AppProvider over manually assembling providers.
 - For page containers, prefer AppScreen for ordinary business pages and SafeScreen only when you need direct safe-area control.
+- For SSE streaming, prefer createApiStreamRequest plus readApiSSEStream instead of hand-rolling response.body parsing in every feature.
 
 ## Install Prerequisites
 
@@ -78,6 +80,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - AppImage usage fails in older projects upgraded to newer rn-kit because expo-image was not added.
 - SegmentedTabs appears not to move its selected indicator if the container has not measured yet; ensure it is rendered with a non-zero width via layout, w, or style.width.
 - Reanimated-related warnings in dense lists can often be avoided by choosing AppPressable/Card no-motion paths and no-animation form/display controls where animated feedback is not needed.
+- SSE streams fail in non-Expo or custom runtimes when expo/fetch is unavailable; pass a compatible fetcher if the app owns a different streaming transport.
 
 ## Compatibility Baseline
 

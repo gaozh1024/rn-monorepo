@@ -10,11 +10,6 @@ Use this template when the app is built through Expo / EAS and wants to register
 
 ```tsx
 <AppObservatoryProvider
-  appId="your-app-id"
-  appVersion={Constants.expoConfig?.version}
-  buildNumber={
-    Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.android?.versionCode?.toString()
-  }
   release={{
     id: process.env.EXPO_PUBLIC_OBSERVATORY_RELEASE_ID,
     channel: process.env.EXPO_PUBLIC_OBSERVATORY_CHANNEL,
@@ -71,6 +66,7 @@ rn-observatory-release upload-sourcemap \
 
 ## Notes
 
+- Expo app id, version, and build number are read automatically from Expo Constants.
 - Keep `release.id` identical between runtime config and CI registration.
 - Upload both iOS and Android artifacts when both platforms are released from the same train.
 - Treat this template as the maintained baseline for Expo / EAS release health integration.

@@ -205,6 +205,8 @@ import { AppProvider, AppStatusBar } from '@gaozh1024/rn-kit';
 - AI / Chat 增量输出
 - 长连接生成式响应
 
+默认流式传输使用 Expo 官方 `expo/fetch`，可直接读取 `response.body.getReader()`。如果业务需要替换传输层，`createApiStreamRequest` 仍支持传入自定义 `fetcher`。
+
 公开 API：
 
 ```tsx

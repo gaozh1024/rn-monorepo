@@ -5,6 +5,7 @@
 - `minimal-bootstrap.tsx`: 最小 `AppProvider` 接入
 - `theme-toggle.tsx`: 受控主题切换模式
 - `api-auth.ts`: 带 token 头和脱敏 observability 的 API 工厂模式
+- `stream-sse.ts`: 基于 `expo/fetch` 与 `rn-kit` 流式 API 的 SSE 请求示例
 - `segmented-tabs.tsx`: 页面内筛选 / 分类切换的滑块式 `SegmentedTabs` 示例
 - `observatory-navigation.tsx`: `rn-observatory + rn-kit + React Navigation` 自动页面埋点接入示例
 

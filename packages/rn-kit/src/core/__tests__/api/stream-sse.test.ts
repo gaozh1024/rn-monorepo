@@ -41,4 +41,29 @@ describe('readApiSSEStream', () => {
       data: 'ok',
     });
   });
+
+  it('supports CRLF frame boundaries and onMessage callback', async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: first\r\ndata: second\r\n\r\n'));
+        controller.close();
+      },
+    });
+
+    const onEvent = vi.fn();
+    const onMessage = vi.fn();
+
+    await readApiSSEStream(stream, { onEvent, onMessage, parseJson: false });
+
+    expect(onEvent).toHaveBeenCalledWith({
+      event: 'message',
+      rawData: 'first\nsecond',
+      data: 'first\nsecond',
+    });
+    expect(onMessage).toHaveBeenCalledWith(
+      'message',
+      'first\nsecond',
+      expect.objectContaining({ event: 'message', rawData: 'first\nsecond' })
+    );
+  });
 });

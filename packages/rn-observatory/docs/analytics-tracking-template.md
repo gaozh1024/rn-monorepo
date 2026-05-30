@@ -7,9 +7,6 @@ Use this template when the app wants a stable baseline for the backend’s `Anal
 ```tsx
 <AppObservatoryProvider
   enabled={!__DEV__}
-  appId={appMetadata.appId}
-  appVersion={appMetadata.version}
-  buildNumber={appMetadata.buildNumber}
   endpoint="https://your-domain.com/api/app-observatory/events"
   ingestToken="your-ingest-token"
   storage={createAsyncStorageObservatoryStorage(AsyncStorage)}
@@ -28,7 +25,7 @@ Use this template when the app wants a stable baseline for the backend’s `Anal
 </AppObservatoryProvider>
 ```
 
-`appMetadata` should come from the app’s own metadata source, such as Expo Constants, React Native CLI `BuildConfig`, `react-native-config`, or CI-generated release constants. Do not hand-maintain these values in the observability setup.
+App id, version, and build number are resolved automatically from Expo metadata or the bundled React Native native metadata module. Only pass `appId`, `appVersion`, or `buildNumber` as compatibility overrides for custom runtimes.
 
 ## Navigation template
 
@@ -63,8 +60,7 @@ await observatory.trackEvent('checkout.success', {
 ## Minimal analytics checklist
 
 - enable `consent.analytics`
-- provide stable `appVersion` from app metadata
-- provide stable `buildNumber` from app metadata
+- confirm automatic app metadata is available in the target runtime
 - provide `device.model` / `device.brand` when consent allows
 - wire automatic `screen_view`
 - instrument a small, stable business event set first

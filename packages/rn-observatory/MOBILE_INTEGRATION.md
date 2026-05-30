@@ -30,9 +30,6 @@ export default function App() {
   return (
     <AppObservatoryProvider
       enabled={!__DEV__}
-      appId="your-app-id"
-      appVersion="1.0.0"
-      buildNumber="1"
       endpoint="https://your-domain.com/api/app-observatory/events"
       ingestToken="your-ingest-token"
       storage={createAsyncStorageObservatoryStorage(AsyncStorage)}
@@ -146,7 +143,7 @@ Check these first:
 3. the app never calls `trackEvent()`
 4. wrong `endpoint`
 5. wrong `ingestToken`
-6. wrong `appId`
+6. automatic app metadata is unavailable or does not match the registered application slug
 
 Important:
 
@@ -168,13 +165,10 @@ The SDK depends on `react-native` runtime APIs, so it should be treated as a Rea
 
 ## 8. Release metadata
 
-If the app has a release pipeline, provide release metadata together with `appVersion` and `buildNumber`.
+The SDK reads app id, version, and build number automatically. If the app has a release pipeline, provide release metadata alongside the automatically resolved app metadata.
 
 ```tsx
 <AppObservatoryProvider
-  appId="your-app-id"
-  appVersion="1.2.3"
-  buildNumber="45"
   release={{
     id: 'release_20260524_001',
     channel: 'production',

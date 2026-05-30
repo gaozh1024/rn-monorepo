@@ -1,4 +1,9 @@
-import type { ApiMethod, ApiStreamRequestOptions, ApiStreamResponse } from './types';
+import type {
+  ApiMethod,
+  ApiStreamFetcher,
+  ApiStreamRequestOptions,
+  ApiStreamResponse,
+} from './types';
 
 function isBodyInitLike(value: unknown): value is BodyInit {
   if (typeof value === 'string' || value instanceof ArrayBuffer || ArrayBuffer.isView(value)) {
@@ -62,12 +67,32 @@ function normalizeMethod(method?: ApiMethod) {
   return (method ?? 'POST') as ApiMethod;
 }
 
+function toExpoFetchInit(init: RequestInit) {
+  return {
+    method: init.method,
+    headers: init.headers,
+    body: init.body ?? undefined,
+    signal: init.signal ?? undefined,
+    credentials: init.credentials,
+    redirect: init.redirect,
+    integrity: init.integrity,
+    keepalive: init.keepalive,
+    mode: init.mode,
+    referrer: init.referrer,
+  };
+}
+
+async function getDefaultStreamFetcher(): Promise<ApiStreamFetcher> {
+  const { fetch: expoFetch } = await import('expo/fetch');
+  return async (url, init) => expoFetch(url, init ? toExpoFetchInit(init) : undefined);
+}
+
 export async function createApiStreamRequest(
   url: string,
   options: ApiStreamRequestOptions = {}
 ): Promise<ApiStreamResponse> {
   const method = normalizeMethod(options.method);
-  const fetcher = options.fetcher ?? fetch;
+  const fetcher = options.fetcher ?? (await getDefaultStreamFetcher());
   const headers = new Headers(options.headers);
   const body = normalizeRequestBody(options.body);
   const isJsonRecord =
@@ -86,16 +111,12 @@ export async function createApiStreamRequest(
 
   const abortBridge = createAbortBridge(options.timeoutMs, options.signal);
 
-  const requestInit: RequestInit & { reactNative?: { textStreaming?: boolean } } = {
+  const requestInit: RequestInit = {
     method,
     headers,
     body,
     signal: abortBridge.signal,
   };
-
-  if (options.protocol === 'sse') {
-    requestInit.reactNative = { textStreaming: true };
-  }
 
   const response = await fetcher(url, requestInit);
 

@@ -1,6 +1,12 @@
 # Streaming API
 
-`rn-kit` now provides a lightweight streaming API foundation for React Native / Expo / Web apps.
+`rn-kit` provides a lightweight streaming API foundation for React Native / Expo / Web apps.
+
+The default transport uses Expo's streaming fetch implementation:
+
+```ts
+import { fetch } from 'expo/fetch';
+```
 
 It is designed for:
 
@@ -23,6 +29,9 @@ import { createApiStreamRequest } from '@gaozh1024/rn-kit';
 const request = await createApiStreamRequest('https://api.example.com/chat', {
   method: 'POST',
   protocol: 'sse',
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
   body: {
     message: 'hello',
   },
@@ -45,6 +54,9 @@ Return shape:
 import { readApiSSEStream } from '@gaozh1024/rn-kit';
 
 await readApiSSEStream(request.stream, {
+  onMessage(event, data) {
+    console.log(event, data);
+  },
   onEvent(message) {
     console.log(message.event, message.data);
   },
@@ -73,29 +85,40 @@ const streamRequest = useStreamRequest(async () => {
 });
 ```
 
-## 4. React Native / Expo polyfill note
+## 4. Direct Expo fetch equivalent
 
-For React Native / Expo apps, streaming usually requires the runtime to support:
-
-- `fetch`
-- `ReadableStream`
-- `TextDecoder`
-
-In many apps this means adding a polyfill similar to:
+For app code that wants the fully expanded version, this is the equivalent pattern:
 
 ```ts
-import { polyfill as polyfillFetch } from 'react-native-polyfill-globals/src/fetch';
-import { polyfill as polyfillReadable } from 'react-native-polyfill-globals/src/readable-stream';
-import { polyfill as polyfillEncoding } from 'react-native-polyfill-globals/src/encoding';
+import { fetch } from 'expo/fetch';
+import { readApiSSEStream } from '@gaozh1024/rn-kit';
 
-polyfillFetch();
-polyfillReadable();
-polyfillEncoding();
+const response = await fetch('https://api.example.com/chat', {
+  method: 'POST',
+  headers: {
+    Accept: 'text/event-stream',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({ message: 'hello' }),
+});
+
+if (!response.ok || !response.body) {
+  throw new Error(`Stream request failed: ${response.status}`);
+}
+
+await readApiSSEStream(response.body, {
+  parseJson: false,
+  onMessage(event, data) {
+    console.log(event, data);
+  },
+});
 ```
 
 ## 5. Notes
 
 - `createApiStreamRequest` supports SSE and raw stream modes
-- when native streaming is unavailable, it falls back to a synthetic one-shot `ReadableStream`
-- `readApiSSEStream` parses `event:` / `data:` frames and optionally JSON-decodes `data`
+- the default transport is `expo/fetch`; pass `fetcher` only when the app needs a custom transport
+- when a custom transport cannot expose `response.body`, it falls back to a synthetic one-shot `ReadableStream`
+- `readApiSSEStream` parses `event:` / `data:` frames, defaults missing events to `message`, and optionally JSON-decodes `data`
 - use `abort()` or `useStreamRequest().stop()` to cancel long-running requests

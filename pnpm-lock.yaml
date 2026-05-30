@@ -252,10 +252,10 @@ importers:
         specifier: ~15.1.1
         version: 15.1.1(expo-font@14.0.11(expo@54.0.33(@babel/core@7.29.0)(graphql@16.13.1)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@gaozh1024/rn-kit':
-        specifier: ^0.5.4
+        specifier: ^0.5.6
         version: link:../../packages/rn-kit
       '@gaozh1024/rn-observatory':
-        specifier: ^0.5.0
+        specifier: ^0.5.1
         version: link:../../packages/rn-observatory
       '@react-native-masked-view/masked-view':
         specifier: ~0.3.2

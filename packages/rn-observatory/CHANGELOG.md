@@ -1,5 +1,13 @@
 # @gaozh1024/rn-observatory
 
+## 0.5.1
+
+### Patch Changes
+
+- Ship automatic app metadata resolution through Expo metadata and the bundled React Native native metadata module, while keeping `appId`, `appVersion`, and `buildNumber` as compatibility overrides.
+- Include the native metadata bridge, podspec, and React Native config in the published package files.
+- Refresh integration docs so production setup examples no longer require hand-maintained provider metadata props.
+
 ## 0.5.0
 
 ### Minor Changes
