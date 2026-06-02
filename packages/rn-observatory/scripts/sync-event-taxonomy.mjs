@@ -10,11 +10,11 @@ const repoRoot = path.resolve(packageDir, '..', '..');
 const appObservatoryRoot = path.resolve(repoRoot, '..', 'app-observatory');
 
 const taxonomyFile = path.join(packageDir, 'src/core/event-taxonomy.ts');
-const adminConstantsFile = path.join(appObservatoryRoot, 'admin/src/api/constants.ts');
+const consoleConstantsFile = path.join(appObservatoryRoot, 'site/src/console/api/constants.ts');
 const openApiFile = path.join(appObservatoryRoot, 'contracts/openapi.yaml');
 
 const taxonomySource = await readFile(taxonomyFile, 'utf8');
-const hasAppObservatory = await fileExists(adminConstantsFile) && await fileExists(openApiFile);
+const hasAppObservatory = await fileExists(consoleConstantsFile) && await fileExists(openApiFile);
 
 if (!hasAppObservatory) {
   console.error(
@@ -24,7 +24,7 @@ if (!hasAppObservatory) {
   process.exit(1);
 }
 
-const adminConstantsSource = await readFile(adminConstantsFile, 'utf8');
+const consoleConstantsSource = await readFile(consoleConstantsFile, 'utf8');
 const openApiSource = await readFile(openApiFile, 'utf8');
 
 const lifecycle = extractStringArray(taxonomySource, 'appObservatoryLifecycleEventTypes');
@@ -33,10 +33,10 @@ const analytics = extractStringArray(taxonomySource, 'appObservatoryAnalyticsEve
 const custom = extractStringArray(taxonomySource, 'appObservatoryCustomEventTypes');
 const canonical = [...lifecycle, ...errors, ...analytics, ...custom];
 
-const nextAdminConstants = replaceAdminConstants(adminConstantsSource, canonical);
+const nextConsoleConstants = replaceConsoleConstants(consoleConstantsSource, canonical);
 const nextOpenApi = replaceOpenApiEnum(openApiSource, canonical);
 
-await writeFile(adminConstantsFile, nextAdminConstants);
+await writeFile(consoleConstantsFile, nextConsoleConstants);
 await writeFile(openApiFile, nextOpenApi);
 
 console.log('event taxonomy synchronized');
@@ -64,12 +64,12 @@ async function fileExists(filePath) {
   }
 }
 
-function replaceAdminConstants(source, values) {
+function replaceConsoleConstants(source, values) {
   const blockPattern =
     /export const appHealthEventTypes = \[(?<body>[\s\S]*?)\] as const;/m;
   const match = source.match(blockPattern);
   if (!match?.groups?.body) {
-    throw new Error('Unable to find appHealthEventTypes in admin constants');
+    throw new Error('Unable to find appHealthEventTypes in console constants');
   }
 
   const nextBlock = `export const appHealthEventTypes = [\n${values

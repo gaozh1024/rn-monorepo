@@ -33,7 +33,7 @@ export function resolveAppMetadata(
 
 export function createMissingAppIdError() {
   return new Error(
-    'rn-observatory could not resolve appId automatically. Register the app in App Observatory and ensure Expo metadata or RNObservatoryMetadata native module is available, or pass appId explicitly as an override.'
+    'rn-observatory could not resolve appId automatically. Register the app in App Observatory and ensure RNObservatoryMetadata native module is available, or pass appId explicitly from the app metadata layer.'
   );
 }
 

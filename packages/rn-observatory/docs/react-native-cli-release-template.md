@@ -32,7 +32,8 @@ Typical artifacts:
 ```bash
 rn-observatory-release create-release \
   --api-base "$APP_OBSERVATORY_BASE_URL" \
-  --admin-token "$APP_OBSERVATORY_ADMIN_TOKEN" \
+  --admin-email "$APP_OBSERVATORY_ADMIN_EMAIL" \
+  --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
   --application-id "$APPLICATION_ID" \
   --version "$APP_VERSION" \
   --build-number "$BUILD_NUMBER" \
@@ -41,7 +42,8 @@ rn-observatory-release create-release \
 
 rn-observatory-release upload-sourcemap \
   --api-base "$APP_OBSERVATORY_BASE_URL" \
-  --admin-token "$APP_OBSERVATORY_ADMIN_TOKEN" \
+  --admin-email "$APP_OBSERVATORY_ADMIN_EMAIL" \
+  --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
   --release-id "$RELEASE_ID" \
   --platform android \
   --file ./android/app/build/generated/sourcemaps/react/release/index.android.bundle.map \
@@ -49,7 +51,8 @@ rn-observatory-release upload-sourcemap \
 
 rn-observatory-release upload-sourcemap \
   --api-base "$APP_OBSERVATORY_BASE_URL" \
-  --admin-token "$APP_OBSERVATORY_ADMIN_TOKEN" \
+  --admin-email "$APP_OBSERVATORY_ADMIN_EMAIL" \
+  --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
   --release-id "$RELEASE_ID" \
   --platform ios \
   --file ./ios/main.jsbundle.map \

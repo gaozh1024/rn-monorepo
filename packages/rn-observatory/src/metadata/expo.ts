@@ -28,12 +28,11 @@ export interface ExpoConstantsLike {
 }
 
 type ExpoConstantsModule = ExpoConstantsLike & { default?: ExpoConstantsLike };
-type RequireLike = (id: string) => unknown;
 
-declare const require: RequireLike | undefined;
-
-export function resolveExpoAppMetadata(constants = loadExpoConstants()) {
-  const config = constants?.expoConfig ?? constants?.manifest;
+export function resolveExpoAppMetadata(constants?: ExpoConstantsLike | ExpoConstantsModule) {
+  const maybeModule = constants as ExpoConstantsModule | undefined;
+  const resolvedConstants = maybeModule?.default ?? constants;
+  const config = resolvedConstants?.expoConfig ?? resolvedConstants?.manifest;
   if (!config) return {};
 
   return {
@@ -53,26 +52,6 @@ export function resolveExpoAppMetadata(constants = loadExpoConstants()) {
       })
     ),
   };
-}
-
-function loadExpoConstants(): ExpoConstantsLike | undefined {
-  const packageRequire = getPackageRequire();
-  if (!packageRequire) return undefined;
-
-  try {
-    const loaded = packageRequire('expo-constants') as ExpoConstantsModule;
-    return loaded.default ?? loaded;
-  } catch {
-    return undefined;
-  }
-}
-
-function getPackageRequire() {
-  try {
-    return typeof require === 'function' ? require : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function compactString(value: unknown) {

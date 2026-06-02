@@ -89,7 +89,26 @@ export default function App() {
 }
 ```
 
-The SDK reads bundle id, version, and build number automatically from Expo metadata or the bundled React Native native metadata module. Only pass `appId`, `appVersion`, or `buildNumber` as compatibility overrides for custom runtimes.
+The SDK reads bundle id, version, and build number automatically from the bundled React Native native metadata module. Expo apps should pass `appId`, `appVersion`, and `buildNumber` from app-owned Expo Constants setup; non-Expo apps do not need `expo-constants`.
+
+Expo example:
+
+```tsx
+import Constants from 'expo-constants';
+import { AppObservatoryProvider, resolveExpoAppMetadata } from '@gaozh1024/rn-observatory';
+
+const appMetadata = resolveExpoAppMetadata(Constants);
+
+<AppObservatoryProvider
+  appId={appMetadata.appId}
+  appVersion={appMetadata.version}
+  buildNumber={appMetadata.buildNumber}
+  endpoint="https://your-domain.com/api/app-observatory/events"
+  ingestToken="your-ingest-token"
+>
+  {children}
+</AppObservatoryProvider>;
+```
 
 This gives you:
 
@@ -243,7 +262,8 @@ At release time, do two things:
 ```bash
 rn-observatory-release create-release \
   --api-base https://api.example.com \
-  --admin-token your-admin-token \
+  --admin-email owner@example.com \
+  --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
   --application-id app_123 \
   --version 1.2.3 \
   --build-number 45 \
@@ -256,7 +276,8 @@ rn-observatory-release create-release \
 ```bash
 rn-observatory-release upload-sourcemap \
   --api-base https://api.example.com \
-  --admin-token your-admin-token \
+  --admin-email owner@example.com \
+  --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
   --release-id rel_123 \
   --platform android \
   --file ./index.android.bundle.map \
@@ -266,7 +287,9 @@ rn-observatory-release upload-sourcemap \
 Environment fallbacks:
 
 - `APP_OBSERVATORY_BASE_URL`
-- `APP_OBSERVATORY_ADMIN_TOKEN`
+- `APP_OBSERVATORY_ADMIN_EMAIL`
+- `APP_OBSERVATORY_ADMIN_PASSWORD`
+- `APP_OBSERVATORY_SESSION_COOKIE`
 
 Official release templates:
 
@@ -330,7 +353,7 @@ If analytics pages are empty:
 3. no `trackEvent()`
 4. wrong `endpoint`
 5. wrong `ingestToken`
-6. automatic app metadata is unavailable or does not match the registered application slug
+6. `appId`, `appVersion`, or `buildNumber` is missing or does not match the registered application slug
 
 If release detail does not show symbolicated stack:
 

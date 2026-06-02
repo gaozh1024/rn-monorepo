@@ -27,7 +27,8 @@ Use this template when the app is built through Expo / EAS and wants to register
 Recommended CI inputs:
 
 - `APP_OBSERVATORY_BASE_URL`
-- `APP_OBSERVATORY_ADMIN_TOKEN`
+- `APP_OBSERVATORY_ADMIN_EMAIL`
+- `APP_OBSERVATORY_ADMIN_PASSWORD`
 - `APPLICATION_ID`
 - `APP_VERSION`
 - `BUILD_NUMBER`
@@ -40,7 +41,8 @@ Recommended CI inputs:
 ```bash
 rn-observatory-release create-release \
   --api-base "$APP_OBSERVATORY_BASE_URL" \
-  --admin-token "$APP_OBSERVATORY_ADMIN_TOKEN" \
+  --admin-email "$APP_OBSERVATORY_ADMIN_EMAIL" \
+  --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
   --application-id "$APPLICATION_ID" \
   --version "$APP_VERSION" \
   --build-number "$BUILD_NUMBER" \
@@ -49,7 +51,8 @@ rn-observatory-release create-release \
 
 rn-observatory-release upload-sourcemap \
   --api-base "$APP_OBSERVATORY_BASE_URL" \
-  --admin-token "$APP_OBSERVATORY_ADMIN_TOKEN" \
+  --admin-email "$APP_OBSERVATORY_ADMIN_EMAIL" \
+  --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
   --release-id "$RELEASE_ID" \
   --platform ios \
   --file ./dist/main.jsbundle.map \
@@ -57,7 +60,8 @@ rn-observatory-release upload-sourcemap \
 
 rn-observatory-release upload-sourcemap \
   --api-base "$APP_OBSERVATORY_BASE_URL" \
-  --admin-token "$APP_OBSERVATORY_ADMIN_TOKEN" \
+  --admin-email "$APP_OBSERVATORY_ADMIN_EMAIL" \
+  --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
   --release-id "$RELEASE_ID" \
   --platform android \
   --file ./dist/index.android.bundle.map \
@@ -66,7 +70,7 @@ rn-observatory-release upload-sourcemap \
 
 ## Notes
 
-- Expo app id, version, and build number are read automatically from Expo Constants.
+- Expo app id, version, and build number should be read in app code from Expo Constants and passed to `AppObservatoryProvider`.
 - Keep `release.id` identical between runtime config and CI registration.
 - Upload both iOS and Android artifacts when both platforms are released from the same train.
 - Treat this template as the maintained baseline for Expo / EAS release health integration.

@@ -27,6 +27,7 @@ Observability and product analytics SDK for Expo or React Native apps with error
 
 - Prefer importing AppObservatoryProvider and useAppObservatory from @gaozh1024/rn-observatory.
 - Pass the provider client into rn-kit AppProvider.healthReporter when the app uses rn-kit.
+- In Expo apps, read Expo Constants in app code and pass appId, appVersion, and buildNumber explicitly; rn-observatory does not require expo-constants at runtime.
 - Inject createAsyncStorageObservatoryStorage(AsyncStorage) in production so queued events and previous-session detection survive app restarts.
 - Use createMonitoredFetch or installAxiosObservatoryInterceptor at API-client boundaries rather than in scattered catch blocks.
 
@@ -57,6 +58,7 @@ Observability and product analytics SDK for Expo or React Native apps with error
 - Prefer the stable public API `appObservatoryErrorEventTypes` when it matches the use case.
 - Prefer the stable public API `appObservatoryAnalyticsEventTypes` when it matches the use case.
 - Prefer the stable public API `appObservatoryCustomEventTypes` when it matches the use case.
+- Prefer the stable public API `resolveExpoAppMetadata` when it matches the use case.
 - Prefer the stable public API `createAppObservatoryQueue` when it matches the use case.
 - Prefer the stable public API `createFetchObservatoryTransport` when it matches the use case.
 - Prefer the stable public API `createAsyncStorageObservatoryStorage` when it matches the use case.
@@ -78,6 +80,7 @@ Observability and product analytics SDK for Expo or React Native apps with error
 - Queued events disappear after restart because the default MemoryObservatoryStorage was used instead of persistent app storage.
 - API 4xx responses are not reported because capture4xx is intentionally opt-in.
 - Native crashes are not visible because no NativeCrashAdapter or vendor-native crash reporter has been installed.
+- Expo app metadata is missing because the app did not pass appId, appVersion, and buildNumber from its own Expo Constants setup.
 - Observability reports are too noisy because breadcrumbs are added for high-frequency UI events without throttling.
 
 ## Compatibility Baseline

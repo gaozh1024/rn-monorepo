@@ -50,6 +50,31 @@ export default function App() {
 
 When connected to `rn-kit`, React render errors from `AppErrorBoundary` are reported through `captureException`, and logger writes become health breadcrumbs.
 
+## App metadata
+
+`rn-observatory` does not require `expo-constants`.
+
+React Native CLI apps can use the bundled native metadata module. Expo apps should read metadata in app code and pass it to the provider:
+
+```tsx
+import Constants from 'expo-constants';
+import { AppObservatoryProvider, resolveExpoAppMetadata } from '@gaozh1024/rn-observatory';
+
+const appMetadata = resolveExpoAppMetadata(Constants);
+
+<AppObservatoryProvider
+  appId={appMetadata.appId}
+  appVersion={appMetadata.version}
+  buildNumber={appMetadata.buildNumber}
+  endpoint="https://api.example.com/api/app-observatory/events"
+  ingestToken="your-ingest-token"
+>
+  {children}
+</AppObservatoryProvider>;
+```
+
+Non-Expo apps should not install `expo-constants` just for `rn-observatory`. If native metadata is not available, pass `appId`, `appVersion`, and `buildNumber` explicitly from the app's own config layer.
+
 ## Anonymous identity and consent
 
 For behavior analytics, use a stable anonymous install ID instead of phone numbers, emails, or real names. `rn-observatory` can generate and persist an install ID through the configured storage adapter:
@@ -113,7 +138,7 @@ Analytics events are uploaded through the same queue and transport as error even
 
 ## Release metadata
 
-The SDK automatically reads app id, version, and build number from Expo metadata or the bundled React Native native metadata module. If the app already has a release pipeline, attach release metadata so the backend can correlate events with a concrete release record instead of relying only on `version + buildNumber`.
+The SDK can read app id, version, and build number from the bundled React Native native metadata module. Expo apps should either pass `appId`, `appVersion`, and `buildNumber` explicitly, or import `expo-constants` in app code and pass those values through app-owned metadata setup. If the app already has a release pipeline, attach release metadata so the backend can correlate events with a concrete release record instead of relying only on `version + buildNumber`.
 
 ```tsx
 <AppObservatoryProvider

@@ -65,6 +65,12 @@ describe('app metadata resolution', () => {
     expect(metadata).toEqual({ appId: 'com.demo.ios', version: '1.2.3', buildNumber: '45' });
   });
 
+  it('does not require expo-constants unless Expo metadata is provided by the app', () => {
+    const metadata = resolveAppMetadata({}, {});
+
+    expect(metadata).toEqual({});
+  });
+
   it('resolves React Native native module metadata', async () => {
     nativeModules.RNObservatoryMetadata = {
       packageName: 'com.demo.native',

@@ -27,7 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_OBSERVATORY_BASE_URL: ${{ secrets.APP_OBSERVATORY_BASE_URL }}
-      APP_OBSERVATORY_ADMIN_TOKEN: ${{ secrets.APP_OBSERVATORY_ADMIN_TOKEN }}
+      APP_OBSERVATORY_ADMIN_EMAIL: ${{ secrets.APP_OBSERVATORY_ADMIN_EMAIL }}
+      APP_OBSERVATORY_ADMIN_PASSWORD: ${{ secrets.APP_OBSERVATORY_ADMIN_PASSWORD }}
       APPLICATION_ID: app_123
       APP_VERSION: 1.2.3
       BUILD_NUMBER: 45
@@ -54,7 +55,8 @@ jobs:
         run: |
           node packages/rn-observatory/bin/rn-observatory-release.js create-release \
             --api-base "$APP_OBSERVATORY_BASE_URL" \
-            --admin-token "$APP_OBSERVATORY_ADMIN_TOKEN" \
+            --admin-email "$APP_OBSERVATORY_ADMIN_EMAIL" \
+            --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
             --application-id "$APPLICATION_ID" \
             --version "$APP_VERSION" \
             --build-number "$BUILD_NUMBER" \
@@ -66,7 +68,8 @@ jobs:
         run: |
           node packages/rn-observatory/bin/rn-observatory-release.js upload-sourcemap \
             --api-base "$APP_OBSERVATORY_BASE_URL" \
-            --admin-token "$APP_OBSERVATORY_ADMIN_TOKEN" \
+            --admin-email "$APP_OBSERVATORY_ADMIN_EMAIL" \
+            --admin-password "$APP_OBSERVATORY_ADMIN_PASSWORD" \
             --release-id "${{ steps.create_release.outputs.release_id }}" \
             --platform android \
             --file ./dist/index.android.bundle.map \

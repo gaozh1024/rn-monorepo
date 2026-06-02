@@ -25,7 +25,7 @@ Use this template when the app wants a stable baseline for the backend’s `Anal
 </AppObservatoryProvider>
 ```
 
-App id, version, and build number are resolved automatically from Expo metadata or the bundled React Native native metadata module. Only pass `appId`, `appVersion`, or `buildNumber` as compatibility overrides for custom runtimes.
+App id, version, and build number are resolved from explicit provider config, app-owned Expo Constants setup, or the bundled React Native native metadata module. Non-Expo apps do not need to install `expo-constants`.
 
 ## Navigation template
 
@@ -60,7 +60,7 @@ await observatory.trackEvent('checkout.success', {
 ## Minimal analytics checklist
 
 - enable `consent.analytics`
-- confirm automatic app metadata is available in the target runtime
+- confirm `appId`, `appVersion`, and `buildNumber` come from an explicit app metadata source
 - provide `device.model` / `device.brand` when consent allows
 - wire automatic `screen_view`
 - instrument a small, stable business event set first

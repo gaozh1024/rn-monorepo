@@ -10,11 +10,11 @@ const repoRoot = path.resolve(packageDir, '..', '..');
 const appObservatoryRoot = path.resolve(repoRoot, '..', 'app-observatory');
 
 const taxonomyFile = path.join(packageDir, 'src/core/event-taxonomy.ts');
-const adminConstantsFile = path.join(appObservatoryRoot, 'admin/src/api/constants.ts');
+const consoleConstantsFile = path.join(appObservatoryRoot, 'site/src/console/api/constants.ts');
 const openApiFile = path.join(appObservatoryRoot, 'contracts/openapi.yaml');
 
 const taxonomySource = await readFile(taxonomyFile, 'utf8');
-const hasAppObservatory = await fileExists(adminConstantsFile) && await fileExists(openApiFile);
+const hasAppObservatory = await fileExists(consoleConstantsFile) && await fileExists(openApiFile);
 
 if (!hasAppObservatory) {
   console.warn('event taxonomy local SDK contract verified');
@@ -24,7 +24,7 @@ if (!hasAppObservatory) {
   process.exit(0);
 }
 
-const adminConstantsSource = await readFile(adminConstantsFile, 'utf8');
+const consoleConstantsSource = await readFile(consoleConstantsFile, 'utf8');
 const openApiSource = await readFile(openApiFile, 'utf8');
 
 const lifecycle = extractStringArray(taxonomySource, 'appObservatoryLifecycleEventTypes');
@@ -33,10 +33,10 @@ const analytics = extractStringArray(taxonomySource, 'appObservatoryAnalyticsEve
 const custom = extractStringArray(taxonomySource, 'appObservatoryCustomEventTypes');
 const canonical = [...lifecycle, ...errors, ...analytics, ...custom];
 
-const admin = extractStringArray(adminConstantsSource, 'appHealthEventTypes');
+const consoleConstants = extractStringArray(consoleConstantsSource, 'appHealthEventTypes');
 const openApi = extractYamlEnum(openApiSource);
 
-assertEqualList('admin constants', canonical, admin);
+assertEqualList('console constants', canonical, consoleConstants);
 assertEqualList('OpenAPI HealthEvent.type enum', canonical, openApi);
 
 console.log('event taxonomy verified');

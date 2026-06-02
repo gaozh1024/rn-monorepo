@@ -1,5 +1,13 @@
 # @gaozh1024/rn-observatory
 
+## 0.5.2
+
+### Patch Changes
+
+- Stop auto-requiring `expo-constants` from the SDK runtime so non-Expo React Native apps can install `rn-observatory` without Metro failing on an optional Expo-only module.
+- Keep `resolveExpoAppMetadata(constants)` available for Expo apps that want to pass Expo Constants explicitly.
+- Clarify docs: automatic metadata comes from the bundled React Native native metadata module; Expo metadata must be provided by the app or replaced with explicit `appId`, `appVersion`, and `buildNumber` props.
+
 ## 0.5.1
 
 ### Patch Changes

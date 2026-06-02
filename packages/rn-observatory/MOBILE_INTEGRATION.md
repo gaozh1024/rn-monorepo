@@ -143,7 +143,7 @@ Check these first:
 3. the app never calls `trackEvent()`
 4. wrong `endpoint`
 5. wrong `ingestToken`
-6. automatic app metadata is unavailable or does not match the registered application slug
+6. `appId`, `appVersion`, or `buildNumber` is missing or does not match the registered application slug
 
 Important:
 
@@ -165,7 +165,7 @@ The SDK depends on `react-native` runtime APIs, so it should be treated as a Rea
 
 ## 8. Release metadata
 
-The SDK reads app id, version, and build number automatically. If the app has a release pipeline, provide release metadata alongside the automatically resolved app metadata.
+The SDK can read app id, version, and build number from the bundled React Native native metadata module. Expo apps should pass these values from app-owned Expo Constants setup. If the app has a release pipeline, provide release metadata alongside the resolved app metadata.
 
 ```tsx
 <AppObservatoryProvider

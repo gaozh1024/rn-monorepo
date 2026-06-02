@@ -8,13 +8,15 @@ function usage() {
     'rn-observatory-release',
     '',
     'Usage:',
-    '  rn-observatory-release create-release --api-base <url> --admin-token <token> --application-id <id> --version <v> --build-number <n> [--channel <c>] [--commit-sha <sha>]',
-    '  rn-observatory-release upload-artifact --api-base <url> --admin-token <token> --release-id <id> --kind <kind> --platform <platform> --file <path> [--bundle-file-name <name>]',
-    '  rn-observatory-release upload-sourcemap --api-base <url> --admin-token <token> --release-id <id> --platform <platform> --file <path> [--bundle-file-name <name>]',
+    '  rn-observatory-release create-release --api-base <url> --admin-email <email> --admin-password <password> --application-id <id> --version <v> --build-number <n> [--channel <c>] [--commit-sha <sha>]',
+    '  rn-observatory-release upload-artifact --api-base <url> --admin-email <email> --admin-password <password> --release-id <id> --kind <kind> --platform <platform> --file <path> [--bundle-file-name <name>]',
+    '  rn-observatory-release upload-sourcemap --api-base <url> --admin-email <email> --admin-password <password> --release-id <id> --platform <platform> --file <path> [--bundle-file-name <name>]',
     '',
     'Environment fallbacks:',
     '  APP_OBSERVATORY_BASE_URL',
-    '  APP_OBSERVATORY_ADMIN_TOKEN',
+    '  APP_OBSERVATORY_ADMIN_EMAIL',
+    '  APP_OBSERVATORY_ADMIN_PASSWORD',
+    '  APP_OBSERVATORY_SESSION_COOKIE',
   ].join('\n');
 }
 
@@ -38,12 +40,13 @@ function parseArgs(argv) {
   return args;
 }
 
-async function requestJson(url, { method = 'GET', token, body } = {}) {
+async function requestJson(url, { method = 'GET', auth, body } = {}) {
+  const authHeaders = authHeadersFor(auth);
   const response = await fetch(url, {
     method,
     headers: {
       ...(body ? { 'content-type': 'application/json' } : {}),
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...authHeaders,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -67,22 +70,73 @@ async function requestJson(url, { method = 'GET', token, body } = {}) {
   return parsed;
 }
 
+function authHeadersFor(auth) {
+  if (!auth) return {};
+  if (auth.sessionCookie) return { cookie: normalizeSessionCookie(auth.sessionCookie) };
+  if (auth.bearerToken) return { authorization: `Bearer ${auth.bearerToken}` };
+  return {};
+}
+
+function normalizeSessionCookie(value) {
+  return value.includes('=') ? value : `app_health_session=${value}`;
+}
+
+function extractSessionCookie(response) {
+  const getSetCookie = response.headers.getSetCookie?.bind(response.headers);
+  const setCookieHeaders = getSetCookie
+    ? getSetCookie()
+    : [response.headers.get('set-cookie')].filter(Boolean);
+  const sessionCookie = setCookieHeaders
+    .flatMap(header => String(header).split(/,(?=\s*app_health_session=)/))
+    .map(header => header.trim())
+    .find(header => header.startsWith('app_health_session='));
+  if (!sessionCookie) return '';
+  return sessionCookie.split(';')[0];
+}
+
+async function login(apiBase, email, password) {
+  const response = await fetch(`${apiBase.replace(/\/$/, '')}/api/app-observatory/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Login failed with status ${response.status}${text ? `: ${text}` : ''}`);
+  }
+  const sessionCookie = extractSessionCookie(response);
+  if (!sessionCookie) {
+    throw new Error('Login succeeded but no app_health_session cookie was returned.');
+  }
+  return sessionCookie;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const command = args._[0];
   const apiBase = args.apiBase || args.baseUrl || process.env.APP_OBSERVATORY_BASE_URL;
-  const token = args.adminToken || args.token || process.env.APP_OBSERVATORY_ADMIN_TOKEN;
+  const email = args.adminEmail || args.email || process.env.APP_OBSERVATORY_ADMIN_EMAIL;
+  const password =
+    args.adminPassword || args.password || process.env.APP_OBSERVATORY_ADMIN_PASSWORD;
+  const sessionCookie = args.sessionCookie || process.env.APP_OBSERVATORY_SESSION_COOKIE;
+  const bearerToken = args.adminToken || args.token || process.env.APP_OBSERVATORY_ADMIN_TOKEN;
 
   if (!command || args.help || args.h || command === '--help' || command === '-h') {
     process.stdout.write(`${usage()}\n`);
     return;
   }
 
-  if (!apiBase || !token) {
+  if (!apiBase || (!sessionCookie && !(email && password) && !bearerToken)) {
     throw new Error(
-      'Missing --api-base/--base-url/APP_OBSERVATORY_BASE_URL or --admin-token/--token/APP_OBSERVATORY_ADMIN_TOKEN.'
+      'Missing --api-base/--base-url/APP_OBSERVATORY_BASE_URL and admin auth. Provide --admin-email plus --admin-password, --session-cookie, or legacy --admin-token.'
     );
   }
+
+  const auth = sessionCookie
+    ? { sessionCookie }
+    : email && password
+      ? { sessionCookie: await login(apiBase, email, password) }
+      : { bearerToken };
 
   if (command === 'create-release') {
     const applicationId = args.applicationId;
@@ -100,7 +154,7 @@ async function main() {
     };
     const result = await requestJson(`${apiBase.replace(/\/$/, '')}/api/app-observatory/releases`, {
       method: 'POST',
-      token,
+      auth,
       body: payload,
     });
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
@@ -128,7 +182,7 @@ async function main() {
       `${apiBase.replace(/\/$/, '')}/api/app-observatory/releases/${encodeURIComponent(releaseId)}/artifacts`,
       {
         method: 'POST',
-        token,
+        auth,
         body: payload,
       }
     );
@@ -156,7 +210,7 @@ async function main() {
       `${apiBase.replace(/\/$/, '')}/api/app-observatory/releases/${encodeURIComponent(releaseId)}/artifacts`,
       {
         method: 'POST',
-        token,
+        auth,
         body: payload,
       }
     );
