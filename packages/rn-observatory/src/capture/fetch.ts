@@ -21,8 +21,7 @@ export function createMonitoredFetch(
       const response = await fetcher(input, init);
       const durationMs = Date.now() - startedAt;
       if (shouldCaptureFetchResponse(response, options)) {
-        await reporter.captureMessage(`HTTP ${response.status} ${method} ${url}`, {
-          type: 'api_error',
+        await reporter.captureApiError(`HTTP ${response.status} ${method} ${url}`, {
           level: response.status >= 500 ? 'error' : 'warning',
           source: 'fetch',
           tags: { ...options.tags, status: String(response.status) },
@@ -33,8 +32,7 @@ export function createMonitoredFetch(
     } catch (error) {
       const durationMs = Date.now() - startedAt;
       if (shouldCaptureFetchError(error, options)) {
-        await reporter.captureException(error, {
-          type: 'api_error',
+        await reporter.captureApiError(error, {
           level: 'error',
           source: 'fetch',
           tags: options.tags,

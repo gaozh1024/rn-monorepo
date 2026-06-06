@@ -108,7 +108,7 @@ Public runtime contract:
 
 Mirrored platform surfaces:
 
-- `app-observatory/admin/src/api/constants.ts`
+- `app-observatory/site/src/console/api/constants.ts`
 - `app-observatory/contracts/openapi.yaml`
 
 Required maintainer commands:

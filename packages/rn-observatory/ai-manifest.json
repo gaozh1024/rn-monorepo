@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-observatory",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "role": "feature-package",
   "summary": "Observability and product analytics SDK for Expo or React Native apps with error capture, breadcrumbs, local queueing, consent-aware analytics, and rn-kit integration.",
   "entrypoints": [

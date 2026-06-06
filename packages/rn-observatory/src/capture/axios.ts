@@ -37,8 +37,7 @@ export function installAxiosObservatoryInterceptor(
         const status = getAxiosStatus(error);
         const method = getAxiosMethod(error);
         const url = sanitizeAxiosUrl(error, options.sanitizeUrl);
-        await reporter.captureException(error, {
-          type: 'api_error',
+        await reporter.captureApiError(error, {
           level: status && status < 500 ? 'warning' : 'error',
           source: 'axios',
           tags: { ...options.tags, ...(status ? { status: String(status) } : {}) },

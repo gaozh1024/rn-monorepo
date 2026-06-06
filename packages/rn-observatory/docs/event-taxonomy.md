@@ -25,7 +25,7 @@ pnpm --dir packages/rn-observatory sync:taxonomy
 
 Current sync targets:
 
-- `app-observatory/admin/src/api/constants.ts`
+- `app-observatory/site/src/console/api/constants.ts`
 - `app-observatory/contracts/openapi.yaml`
 
 ## Core event types
@@ -68,9 +68,7 @@ Reserved for app-shell readiness when the app explicitly emits it.
 The core SDK currently defines this event type but does not emit it automatically. Apps can use:
 
 ```ts
-await observatory.captureMessage('App ready', {
-  type: 'app_ready',
-  level: 'info',
+await observatory.markAppReady({
   source: 'app_shell',
 });
 ```
@@ -122,7 +120,7 @@ Fallback event type for app-owned telemetry that does not fit the built-in taxon
 - Prefer `trackScreen()` for screen/page analytics
 - Prefer `trackEvent()` for business actions
 - Prefer `captureException()` for caught failures
-- Prefer `captureMessage(... type: 'custom')` only for app-owned observability signals that do not fit an existing category
+- Prefer `captureMessage()` for app-owned custom observability signals that do not fit an existing category
 - Use `app_ready` only when the app intentionally defines and documents its own readiness milestone
 
 ## Related docs

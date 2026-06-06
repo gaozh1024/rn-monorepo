@@ -1,10 +1,13 @@
 import type {
   AppObservatoryAppInfo,
+  AppObservatoryAnalyticsContext,
   AppObservatoryBreadcrumb,
   AppObservatoryClientConfig,
   AppObservatoryConsentOptions,
   AppObservatoryDeviceInfo,
+  AppObservatoryErrorContext,
   AppObservatoryEvent,
+  AppObservatoryMessageContext,
   AppObservatoryReporter,
   AppObservatoryTransport,
   AppObservatoryUser,
@@ -24,6 +27,7 @@ import { getDeviceInfo } from '../utils/platform';
 import { getOrCreateInstallId } from '../identity/install-id';
 import { serializeError } from '../utils/serialize-error';
 import { createMissingAppIdError, resolveAppMetadata } from '../metadata/app-metadata';
+import { appObservatorySdkInfo } from './sdk-info';
 
 interface ClientRuntime {
   breadcrumbs: AppObservatoryBreadcrumb[];
@@ -97,6 +101,7 @@ export async function createAppObservatoryClient(
       level,
       timestamp: Date.now(),
       app,
+      sdk: appObservatorySdkInfo,
       device,
       session: {
         id: runtime.session.sessionId,
@@ -118,6 +123,114 @@ export async function createAppObservatoryClient(
     if ((config.flushOnFatal ?? true) && event.level === 'fatal') {
       await flush();
     }
+  }
+
+  function createTags(
+    source: string | undefined,
+    contextTags: Record<string, string> | undefined,
+    extraTags: Record<string, string> = {}
+  ) {
+    const tags = {
+      ...runtime.tags,
+      ...contextTags,
+      ...extraTags,
+      ...(source ? { source } : {}),
+    };
+    return Object.keys(tags).length > 0 ? tags : undefined;
+  }
+
+  function createMessageErrorPayload(message: string, level: AppObservatoryEvent['level']) {
+    if (level !== 'error' && level !== 'fatal') return undefined;
+    return { message, fingerprint: createFingerprint({ message }) };
+  }
+
+  async function emitAnalyticsEvent(
+    type: 'analytics_event' | 'screen_view',
+    analytics: AppObservatoryEvent['analytics'],
+    context: AppObservatoryAnalyticsContext,
+    extraTags: Record<string, string> = {},
+    fallbackSource: string
+  ) {
+    if (!consent.analytics) return;
+    await enqueueAndMaybeFlush({
+      ...createBaseEvent(type, context.level ?? 'info'),
+      analytics,
+      breadcrumbs: runtime.breadcrumbs,
+      extra: context.extra,
+      tags: createTags(context.source ?? fallbackSource, context.tags, extraTags),
+    });
+  }
+
+  async function emitMessageEvent(
+    type: AppObservatoryEvent['type'],
+    message: string,
+    context: AppObservatoryMessageContext = {},
+    fallbackLevel: AppObservatoryEvent['level'] = 'info',
+    fallbackSource = 'message'
+  ) {
+    await enqueueAndMaybeFlush({
+      ...createBaseEvent(type, context.level ?? fallbackLevel),
+      error: createMessageErrorPayload(message, context.level ?? fallbackLevel),
+      breadcrumbs: runtime.breadcrumbs,
+      extra: context.extra,
+      analytics: context.analytics,
+      tags: createTags(context.source ?? fallbackSource, context.tags),
+    });
+  }
+
+  async function emitErrorEvent(
+    type: AppObservatoryEvent['type'],
+    error: unknown,
+    context: AppObservatoryErrorContext = {},
+    fallbackLevel: AppObservatoryEvent['level'] = 'error',
+    fallbackSource = 'exception'
+  ) {
+    const payload = serializeError(error);
+    const errorPayload = {
+      ...payload,
+      componentStack: context.componentStack,
+      fingerprint: createFingerprint(payload),
+    };
+    await enqueueAndMaybeFlush({
+      ...createBaseEvent(type, context.level ?? fallbackLevel),
+      error: errorPayload,
+      breadcrumbs: runtime.breadcrumbs,
+      extra: context.extra,
+      analytics: context.analytics,
+      tags: createTags(context.source ?? fallbackSource, context.tags),
+    });
+  }
+
+  async function emitLifecycleEvent(
+    type: 'app_start' | 'app_ready' | 'app_background' | 'app_foreground',
+    message: string,
+    context: AppObservatoryMessageContext = {},
+    fallbackSource = 'session'
+  ) {
+    if (!consent.analytics) return;
+    await emitMessageEvent(type, message, context, 'info', fallbackSource);
+  }
+
+  async function emitCrashMessageEvent(
+    type: 'previous_session_crash',
+    message: string,
+    context: AppObservatoryMessageContext = {},
+    fallbackLevel: AppObservatoryEvent['level'] = 'fatal',
+    fallbackSource = 'session'
+  ) {
+    if (!consent.crash) return;
+    await emitMessageEvent(type, message, context, fallbackLevel, fallbackSource);
+  }
+
+  async function emitCrashErrorEvent(
+    type: 'native_crash' | 'api_error' | 'react_error' | 'unhandled_rejection',
+    error: unknown,
+    context: AppObservatoryErrorContext = {},
+    fallbackLevel: AppObservatoryEvent['level'] = 'error',
+    fallbackSource = 'exception'
+  ) {
+    if (!consent.crash) return;
+    await emitErrorEvent(type, error, context, fallbackLevel, fallbackSource);
   }
 
   let activeFlush: Promise<void> | null = null;
@@ -158,66 +271,66 @@ export async function createAppObservatoryClient(
   const client: AppObservatoryReporter = {
     async trackEvent(name, properties, context = {}) {
       await safeRun(async () => {
-        if (!consent.analytics) return;
-        await enqueueAndMaybeFlush({
-          ...createBaseEvent(context.type ?? 'analytics_event', context.level ?? 'info'),
-          analytics: { name, properties },
-          breadcrumbs: runtime.breadcrumbs,
-          extra: context.extra,
-          tags: { ...runtime.tags, ...context.tags, source: context.source ?? 'analytics.event' },
-        });
+        await emitAnalyticsEvent(
+          'analytics_event',
+          { name, properties },
+          context,
+          {},
+          'analytics.event'
+        );
       });
     },
     async trackScreen(screen, properties, context = {}) {
       await safeRun(async () => {
-        if (!consent.analytics) return;
-        await enqueueAndMaybeFlush({
-          ...createBaseEvent(context.type ?? 'screen_view', context.level ?? 'info'),
-          analytics: { name: 'screen.view', properties: { screen, ...properties } },
-          breadcrumbs: runtime.breadcrumbs,
-          extra: context.extra,
-          tags: {
-            ...runtime.tags,
-            ...context.tags,
-            screen,
-            source: context.source ?? 'analytics.screen',
-          },
-        });
+        await emitAnalyticsEvent(
+          'screen_view',
+          { name: 'screen.view', properties: { screen, ...properties } },
+          context,
+          { screen },
+          'analytics.screen'
+        );
       });
     },
     async captureException(error, context = {}) {
       await safeRun(async () => {
         if (!consent.crash) return;
-        const payload = serializeError(error);
-        const errorPayload = {
-          ...payload,
-          componentStack: context.componentStack,
-          fingerprint: createFingerprint(payload),
-        };
-        await enqueueAndMaybeFlush({
-          ...createBaseEvent(context.type ?? 'js_error', context.level ?? 'error'),
-          error: errorPayload,
-          breadcrumbs: runtime.breadcrumbs,
-          extra: context.extra,
-          analytics: context.analytics,
-          tags: { ...runtime.tags, ...context.tags, source: context.source ?? 'exception' },
-        });
+        await emitErrorEvent('js_error', error, context, 'error', 'exception');
       });
     },
     async captureMessage(message, context = {}) {
       await safeRun(async () => {
-        if (!shouldCaptureMessage(context.type, consent)) return;
-        await enqueueAndMaybeFlush({
-          ...createBaseEvent(context.type ?? 'custom', context.level ?? 'info'),
-          error:
-            context.level === 'error' || context.level === 'fatal'
-              ? { message, fingerprint: createFingerprint({ message }) }
-              : undefined,
-          breadcrumbs: runtime.breadcrumbs,
-          extra: context.extra,
-          analytics: context.analytics,
-          tags: { ...runtime.tags, ...context.tags, source: context.source ?? 'message' },
-        });
+        await emitMessageEvent('custom', message, context, 'info', 'message');
+      });
+    },
+    async markAppReady(context = {}) {
+      await safeRun(async () => {
+        await emitLifecycleEvent('app_ready', 'App ready', context, 'app_shell');
+      });
+    },
+    async captureApiError(errorOrMessage, context = {}) {
+      await safeRun(async () => {
+        if (!consent.crash) return;
+        if (typeof errorOrMessage === 'string') {
+          await emitMessageEvent('api_error', errorOrMessage, context, 'error', 'api');
+          return;
+        }
+        await emitCrashErrorEvent('api_error', errorOrMessage, context, 'error', 'api');
+      });
+    },
+    async captureRenderException(error, context = {}) {
+      await safeRun(async () => {
+        await emitCrashErrorEvent('react_error', error, context, 'error', 'react_error');
+      });
+    },
+    async captureUnhandledRejection(reason, context = {}) {
+      await safeRun(async () => {
+        await emitCrashErrorEvent(
+          'unhandled_rejection',
+          reason,
+          context,
+          'error',
+          'global.onunhandledrejection'
+        );
       });
     },
     addBreadcrumb(breadcrumb) {
@@ -248,7 +361,17 @@ export async function createAppObservatoryClient(
     },
   };
 
-  await initializeClient({ client, config, consent, disposers, enabled, sessionManager });
+  await initializeClient({
+    client,
+    config,
+    consent,
+    disposers,
+    enabled,
+    sessionManager,
+    emitLifecycleEvent,
+    emitCrashMessageEvent,
+    emitCrashErrorEvent,
+  });
 
   const interval =
     enabled && transports.length > 0 && config.flushIntervalMs !== 0
@@ -304,30 +427,6 @@ function resolveInitialUser(config: AppObservatoryClientConfig, installId: strin
   return undefined;
 }
 
-function shouldCaptureMessage(
-  type: AppObservatoryEvent['type'] | undefined,
-  consent: ReturnType<typeof resolveConsent>
-) {
-  if (type === 'analytics_event' || type === 'screen_view') return consent.analytics;
-  if (
-    type === 'js_error' ||
-    type === 'react_error' ||
-    type === 'unhandled_rejection' ||
-    type === 'previous_session_crash' ||
-    type === 'native_crash' ||
-    type === 'api_error'
-  )
-    return consent.crash;
-  if (
-    type === 'app_start' ||
-    type === 'app_ready' ||
-    type === 'app_background' ||
-    type === 'app_foreground'
-  )
-    return consent.analytics;
-  return true;
-}
-
 function resolveTransports(config: AppObservatoryClientConfig) {
   const transports: AppObservatoryTransport[] = [];
 
@@ -353,6 +452,9 @@ async function initializeClient({
   disposers,
   enabled,
   sessionManager,
+  emitLifecycleEvent,
+  emitCrashMessageEvent,
+  emitCrashErrorEvent,
 }: {
   client: AppObservatoryReporter;
   config: AppObservatoryClientConfig;
@@ -360,6 +462,26 @@ async function initializeClient({
   disposers: Array<() => void>;
   enabled: boolean;
   sessionManager: Awaited<ReturnType<typeof createAppObservatorySessionManager>>;
+  emitLifecycleEvent: (
+    type: 'app_start' | 'app_ready' | 'app_background' | 'app_foreground',
+    message: string,
+    context?: AppObservatoryMessageContext,
+    fallbackSource?: string
+  ) => Promise<void>;
+  emitCrashMessageEvent: (
+    type: 'previous_session_crash',
+    message: string,
+    context?: AppObservatoryMessageContext,
+    fallbackLevel?: AppObservatoryEvent['level'],
+    fallbackSource?: string
+  ) => Promise<void>;
+  emitCrashErrorEvent: (
+    type: 'native_crash' | 'api_error' | 'react_error' | 'unhandled_rejection',
+    error: unknown,
+    context?: AppObservatoryErrorContext,
+    fallbackLevel?: AppObservatoryEvent['level'],
+    fallbackSource?: string
+  ) => Promise<void>;
 }) {
   if (!enabled) return;
 
@@ -380,8 +502,7 @@ async function initializeClient({
     (config.detectPreviousCrash ?? true) &&
     sessionManager.previousSession?.closedGracefully === false
   ) {
-    await client.captureMessage('Previous session may have crashed', {
-      type: 'previous_session_crash',
+    await emitCrashMessageEvent('previous_session_crash', 'Previous session may have crashed', {
       level: 'fatal',
       source: 'session',
       extra: {
@@ -392,11 +513,7 @@ async function initializeClient({
     });
   }
 
-  await client.captureMessage('App started', {
-    type: 'app_start',
-    level: 'info',
-    source: 'session',
-  });
+  await emitLifecycleEvent('app_start', 'App started', { source: 'session' }, 'session');
 
   const pendingNativeCrashes = consent.crash
     ? await config.nativeCrashAdapter?.getPendingCrashReports?.()
@@ -404,18 +521,20 @@ async function initializeClient({
   if (pendingNativeCrashes?.length) {
     await Promise.all(
       pendingNativeCrashes.map(report =>
-        client.captureException(
+        emitCrashErrorEvent(
+          'native_crash',
           {
             name: report.name ?? 'NativeCrash',
             message: report.message ?? 'Native crash report',
             stack: report.stack,
           },
           {
-            type: 'native_crash',
             level: 'fatal',
             source: 'native',
             extra: report.extra,
-          }
+          },
+          'fatal',
+          'native'
         )
       )
     );
@@ -428,19 +547,21 @@ async function initializeClient({
     installAppStateMonitor({
       onForeground: () => {
         void sessionManager.heartbeat();
-        void client.captureMessage('App foregrounded', {
-          type: 'app_foreground',
-          level: 'info',
-          source: 'app_state',
-        });
+        void emitLifecycleEvent(
+          'app_foreground',
+          'App foregrounded',
+          { source: 'app_state' },
+          'app_state'
+        );
       },
       onBackground: () => {
         void sessionManager.markGracefulClose();
-        void client.captureMessage('App backgrounded', {
-          type: 'app_background',
-          level: 'info',
-          source: 'app_state',
-        });
+        void emitLifecycleEvent(
+          'app_background',
+          'App backgrounded',
+          { source: 'app_state' },
+          'app_state'
+        );
         void client.flush();
       },
     })

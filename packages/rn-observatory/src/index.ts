@@ -2,6 +2,7 @@ export { createAppObservatoryClient } from './core/client';
 export { AppObservatoryProvider } from './core/provider';
 export { useAppObservatory } from './core/hooks';
 export { AppObservatoryContext, noopAppObservatoryReporter } from './core/context';
+export { appObservatorySdkInfo } from './core/sdk-info';
 export {
   appObservatoryAnalyticsEventTypes,
   appObservatoryCustomEventTypes,
@@ -15,23 +16,26 @@ export {
 } from './core/event-taxonomy';
 export type {
   AppObservatoryAppInfo,
+  AppObservatoryAnalyticsContext,
   AppObservatoryAnalyticsPayload,
   AppObservatoryBreadcrumb,
-  AppObservatoryCaptureContext,
   AppObservatoryClientConfig,
   AppObservatoryConsentOptions,
   AppObservatoryDeviceInfo,
   AppObservatoryDeviceInfoProvider,
+  AppObservatoryErrorContext,
   AppObservatoryErrorPayload,
   AppObservatoryEvent,
   AppObservatoryEventType,
   AppObservatoryLevel,
   AppObservatoryIdentityOptions,
+  AppObservatoryMessageContext,
   AppObservatoryProviderProps,
   AppObservatoryReleaseInfo,
   AppObservatoryReporter,
   AppObservatorySanitizer,
   AppObservatorySessionInfo,
+  AppObservatorySdkInfo,
   AppObservatoryStorageAdapter,
   AppObservatoryTransport,
   AppObservatoryUser,

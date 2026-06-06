@@ -1,5 +1,16 @@
 # @gaozh1024/rn-observatory
 
+## 0.6.0
+
+### Minor Changes
+
+- Harden the public reporter contract so business-side code can no longer override the top-level event `type` through public capture contexts.
+- Add explicit framework/system APIs: `markAppReady`, `captureApiError`, `captureRenderException`, and `captureUnhandledRejection`.
+- Route lifecycle, previous-session crash, native crash replay, fetch/axios API capture, and global unhandled rejection paths through canonical internal/system event emitters instead of public `type` override behavior.
+- Preserve `rn-kit` ErrorBoundary semantics by preferring `captureRenderException` with fallback to `captureException` for older health reporters.
+- Enforce the canonical event taxonomy at backend runtime and extend `verify:taxonomy` to validate the Go ingest allowlist in addition to Console constants and OpenAPI.
+- Refresh README, mobile integration, app usage, taxonomy, and maintainer governance docs to match the fixed event-class contract.
+
 ## 0.5.2
 
 ### Patch Changes

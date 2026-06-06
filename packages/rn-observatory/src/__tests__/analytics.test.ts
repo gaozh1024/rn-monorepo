@@ -66,4 +66,48 @@ describe('analytics capture', () => {
       })
     );
   });
+
+  it('ignores caller-supplied type overrides for trackEvent', async () => {
+    const delivered: AppObservatoryEvent[] = [];
+    const client = await createAppObservatoryClient({
+      consent: { analytics: true },
+      flushIntervalMs: 0,
+      storage: new MemoryObservatoryStorage(),
+      transports: [events => delivered.push(...events)],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.trackEvent('button.click', { screen: 'Home' }, { type: 'screen_view' } as never);
+    await client.flush();
+
+    expect(delivered).toContainEqual(
+      expect.objectContaining({
+        type: 'analytics_event',
+        analytics: { name: 'button.click', properties: { screen: 'Home' } },
+      })
+    );
+  });
+
+  it('ignores caller-supplied type overrides for trackScreen', async () => {
+    const delivered: AppObservatoryEvent[] = [];
+    const client = await createAppObservatoryClient({
+      consent: { analytics: true },
+      flushIntervalMs: 0,
+      storage: new MemoryObservatoryStorage(),
+      transports: [events => delivered.push(...events)],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.trackScreen('Checkout', { module: 'cart' }, { type: 'custom' } as never);
+    await client.flush();
+
+    expect(delivered).toContainEqual(
+      expect.objectContaining({
+        type: 'screen_view',
+        analytics: { name: 'screen.view', properties: { screen: 'Checkout', module: 'cart' } },
+      })
+    );
+  });
 });

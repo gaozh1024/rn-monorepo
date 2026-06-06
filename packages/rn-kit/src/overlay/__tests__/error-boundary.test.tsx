@@ -36,7 +36,7 @@ function flattenStyle(style: any): Record<string, any> {
 describe('AppErrorBoundary', () => {
   it('应该捕获渲染错误并写入 logger', () => {
     const entries: LogEntry[] = [];
-    const healthReporter = { captureException: vi.fn() };
+    const healthReporter = { captureRenderException: vi.fn(), captureException: vi.fn() };
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const { getByTestId, getByText } = render(
@@ -58,11 +58,33 @@ describe('AppErrorBoundary', () => {
     expect(entries[0]?.level).toBe('error');
     expect(entries[0]?.namespace).toBe('react');
     expect(entries[0]?.message).toBe('React ErrorBoundary 捕获渲染异常');
+    expect(healthReporter.captureRenderException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        source: 'react_error_boundary',
+      })
+    );
+    expect(healthReporter.captureException).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
+
+  it('在没有 captureRenderException 时回退到 captureException', () => {
+    const healthReporter = { captureException: vi.fn() };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <LoggerProvider enabled overlayEnabled={false} consoleEnabled={false}>
+        <AppErrorBoundary enabled showDetails healthReporter={healthReporter}>
+          <CrashComponent />
+        </AppErrorBoundary>
+      </LoggerProvider>
+    );
+
     expect(healthReporter.captureException).toHaveBeenCalledWith(
       expect.any(Error),
       expect.objectContaining({
         source: 'react_error_boundary',
-        type: 'react_error',
       })
     );
 

@@ -4,8 +4,14 @@ import type { AppObservatoryReporter } from '..';
 
 function reporter(): AppObservatoryReporter {
   return {
+    trackEvent: vi.fn(async () => undefined),
+    trackScreen: vi.fn(async () => undefined),
     captureException: vi.fn(async () => undefined),
     captureMessage: vi.fn(async () => undefined),
+    markAppReady: vi.fn(async () => undefined),
+    captureApiError: vi.fn(async () => undefined),
+    captureRenderException: vi.fn(async () => undefined),
+    captureUnhandledRejection: vi.fn(async () => undefined),
     addBreadcrumb: vi.fn(),
     setUser: vi.fn(),
     setTags: vi.fn(),
@@ -28,10 +34,9 @@ describe('createMonitoredFetch', () => {
     });
 
     expect(result.status).toBe(503);
-    expect(health.captureMessage).toHaveBeenCalledWith(
+    expect(health.captureApiError).toHaveBeenCalledWith(
       'HTTP 503 POST https://api.example.com/orders',
       expect.objectContaining({
-        type: 'api_error',
         level: 'error',
         source: 'fetch',
         tags: { api: 'orders', status: '503' },
@@ -53,7 +58,7 @@ describe('createMonitoredFetch', () => {
 
     await monitoredFetch('https://api.example.com/missing');
 
-    expect(health.captureMessage).not.toHaveBeenCalled();
+    expect(health.captureApiError).not.toHaveBeenCalled();
   });
 
   it('captures 4xx responses when capture4xx is enabled', async () => {
@@ -66,7 +71,7 @@ describe('createMonitoredFetch', () => {
 
     await monitoredFetch('https://api.example.com/missing');
 
-    expect(health.captureMessage).toHaveBeenCalledWith(
+    expect(health.captureApiError).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 404'),
       expect.objectContaining({ level: 'warning' })
     );
@@ -83,10 +88,9 @@ describe('createMonitoredFetch', () => {
     );
 
     await expect(monitoredFetch('https://api.example.com/orders')).rejects.toThrow('network down');
-    expect(health.captureException).toHaveBeenCalledWith(
+    expect(health.captureApiError).toHaveBeenCalledWith(
       error,
       expect.objectContaining({
-        type: 'api_error',
         level: 'error',
         source: 'fetch',
         extra: expect.objectContaining({ url: 'https://api.example.com/orders' }),

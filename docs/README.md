@@ -51,6 +51,7 @@
 
 版本发布记录：
 
+- [rn-observatory 0.6.0 Release Notes](./release-notes/rn-observatory-0.6.0.md)
 - [rn-observatory 0.5.2 Release Notes](./release-notes/rn-observatory-0.5.2.md)
 - [rn-observatory 0.5.1 Release Notes](./release-notes/rn-observatory-0.5.1.md)
 - [rn-observatory 0.5.0 Release Notes](./release-notes/rn-observatory-0.5.0.md)

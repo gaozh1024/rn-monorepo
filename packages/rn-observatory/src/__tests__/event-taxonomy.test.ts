@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   appObservatoryAnalyticsEventTypes,
+  appObservatoryCustomEventTypes,
   appObservatoryErrorEventTypes,
   appObservatoryEventTypes,
   appObservatoryLifecycleEventTypes,
@@ -28,5 +29,7 @@ describe('event taxonomy exports', () => {
         'api_error',
       ])
     );
+    expect(appObservatoryCustomEventTypes).toEqual(['custom']);
+    expect(appObservatoryEventTypes).toEqual(expect.arrayContaining(['custom']));
   });
 });

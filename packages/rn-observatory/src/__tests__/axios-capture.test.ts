@@ -4,8 +4,14 @@ import type { AppObservatoryReporter, AxiosLike } from '..';
 
 function reporter(): AppObservatoryReporter {
   return {
+    trackEvent: vi.fn(async () => undefined),
+    trackScreen: vi.fn(async () => undefined),
     captureException: vi.fn(async () => undefined),
     captureMessage: vi.fn(async () => undefined),
+    markAppReady: vi.fn(async () => undefined),
+    captureApiError: vi.fn(async () => undefined),
+    captureRenderException: vi.fn(async () => undefined),
+    captureUnhandledRejection: vi.fn(async () => undefined),
     addBreadcrumb: vi.fn(),
     setUser: vi.fn(),
     setTags: vi.fn(),
@@ -42,10 +48,9 @@ describe('installAxiosObservatoryInterceptor', () => {
 
     await expect(reject(error)).rejects.toBe(error);
 
-    expect(health.captureException).toHaveBeenCalledWith(
+    expect(health.captureApiError).toHaveBeenCalledWith(
       error,
       expect.objectContaining({
-        type: 'api_error',
         level: 'error',
         source: 'axios',
         tags: { api: 'orders', status: '500' },
@@ -62,7 +67,7 @@ describe('installAxiosObservatoryInterceptor', () => {
 
     await expect(reject(error)).rejects.toBe(error);
 
-    expect(health.captureException).not.toHaveBeenCalled();
+    expect(health.captureApiError).not.toHaveBeenCalled();
   });
 
   it('captures network errors and ejects interceptor on dispose', async () => {
@@ -74,7 +79,7 @@ describe('installAxiosObservatoryInterceptor', () => {
     await expect(reject(error)).rejects.toBe(error);
     dispose();
 
-    expect(health.captureException).toHaveBeenCalledWith(
+    expect(health.captureApiError).toHaveBeenCalledWith(
       error,
       expect.objectContaining({ source: 'axios' })
     );

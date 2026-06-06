@@ -14,6 +14,18 @@ export const noopAppObservatoryReporter: AppObservatoryReporter = {
   async captureMessage() {
     // noop by design
   },
+  async markAppReady() {
+    // noop by design
+  },
+  async captureApiError() {
+    // noop by design
+  },
+  async captureRenderException() {
+    // noop by design
+  },
+  async captureUnhandledRejection() {
+    // noop by design
+  },
   addBreadcrumb() {
     // noop by design
   },

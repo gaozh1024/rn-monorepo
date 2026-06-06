@@ -12,9 +12,13 @@ const appObservatoryRoot = path.resolve(repoRoot, '..', 'app-observatory');
 const taxonomyFile = path.join(packageDir, 'src/core/event-taxonomy.ts');
 const consoleConstantsFile = path.join(appObservatoryRoot, 'site/src/console/api/constants.ts');
 const openApiFile = path.join(appObservatoryRoot, 'contracts/openapi.yaml');
+const ingestServiceFile = path.join(appObservatoryRoot, 'service/internal/service/ingest_service.go');
 
 const taxonomySource = await readFile(taxonomyFile, 'utf8');
-const hasAppObservatory = await fileExists(consoleConstantsFile) && await fileExists(openApiFile);
+const hasAppObservatory =
+  (await fileExists(consoleConstantsFile)) &&
+  (await fileExists(openApiFile)) &&
+  (await fileExists(ingestServiceFile));
 
 if (!hasAppObservatory) {
   console.warn('event taxonomy local SDK contract verified');
@@ -26,6 +30,7 @@ if (!hasAppObservatory) {
 
 const consoleConstantsSource = await readFile(consoleConstantsFile, 'utf8');
 const openApiSource = await readFile(openApiFile, 'utf8');
+const ingestServiceSource = await readFile(ingestServiceFile, 'utf8');
 
 const lifecycle = extractStringArray(taxonomySource, 'appObservatoryLifecycleEventTypes');
 const errors = extractStringArray(taxonomySource, 'appObservatoryErrorEventTypes');
@@ -35,9 +40,11 @@ const canonical = [...lifecycle, ...errors, ...analytics, ...custom];
 
 const consoleConstants = extractStringArray(consoleConstantsSource, 'appHealthEventTypes');
 const openApi = extractYamlEnum(openApiSource);
+const runtimeAllowlist = extractGoSwitchCases(ingestServiceSource, 'isValidEventType');
 
 assertEqualList('console constants', canonical, consoleConstants);
 assertEqualList('OpenAPI HealthEvent.type enum', canonical, openApi);
+assertEqualList('ingest runtime allowlist', canonical, runtimeAllowlist);
 
 console.log('event taxonomy verified');
 console.log(`canonical: ${canonical.join(', ')}`);
@@ -77,6 +84,20 @@ function extractYamlEnum(source) {
     .map(line => line.trim())
     .filter(Boolean)
     .map(line => line.replace(/^- /, ''));
+}
+
+function extractGoSwitchCases(source, functionName) {
+  const blockMatch = source.match(
+    new RegExp(
+      `func ${functionName}\\([^)]*\\) bool \\{[\\s\\S]*?switch [\\s\\S]*?\\{(?<body>[\\s\\S]*?)default:\\n\\s*return false\\n\\s*\\}`,
+      'm'
+    )
+  );
+  if (!blockMatch?.groups?.body) {
+    throw new Error(`Unable to find ${functionName} switch in ingest service`);
+  }
+
+  return [...blockMatch.groups.body.matchAll(/"([^"]+)"/g)].map(matchItem => matchItem[1]);
 }
 
 function assertEqualList(label, expected, actual) {

@@ -27,6 +27,7 @@ function isObservatoryBreadcrumb(value: unknown): value is AppObservatoryBreadcr
 function createHealthReporterBridge(observatory: AppObservatoryReporter): AppHealthReporter {
   return {
     captureException: observatory.captureException,
+    captureRenderException: observatory.captureRenderException,
     captureMessage: observatory.captureMessage,
     addBreadcrumb: breadcrumb => {
       if (isObservatoryBreadcrumb(breadcrumb)) {

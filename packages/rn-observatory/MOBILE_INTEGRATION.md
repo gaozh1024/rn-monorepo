@@ -119,6 +119,15 @@ For the maintained event taxonomy and recommended analytics properties, see:
 - `docs/analytics-schema.md`
 - `docs/analytics-tracking-template.md`
 
+The SDK fixes the high-level event class automatically:
+
+- `trackScreen()` -> `screen_view`
+- `trackEvent()` -> `analytics_event`
+- `captureException()` -> `js_error`
+- `captureMessage()` -> `custom`
+
+App code should supply semantic context such as `source`, `tags`, `extra`, and analytics properties, but should not set `type` manually.
+
 ## 5. Manual error reporting
 
 Use `captureException()` for caught business failures:
@@ -132,6 +141,14 @@ try {
     tags: { scene: 'checkout' },
   });
 }
+```
+
+If the app has a meaningful shell-readiness milestone beyond startup, use:
+
+```ts
+await observatory.markAppReady({
+  source: 'app_shell',
+});
 ```
 
 ## 6. Why analytics may be missing in the backend

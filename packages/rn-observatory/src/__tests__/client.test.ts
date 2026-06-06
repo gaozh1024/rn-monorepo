@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createAppObservatoryClient, MemoryObservatoryStorage } from '..';
 import type { AppObservatoryEvent } from '..';
+import packageInfo from '../../package.json';
+import { appObservatorySdkInfo } from '../core/sdk-info';
 
 function createDeferred() {
   let resolve!: () => void;
@@ -11,6 +13,13 @@ function createDeferred() {
 }
 
 describe('createAppObservatoryClient', () => {
+  it('keeps emitted SDK version aligned with package version', () => {
+    expect(appObservatorySdkInfo).toEqual({
+      name: '@gaozh1024/rn-observatory',
+      version: packageInfo.version,
+    });
+  });
+
   it('captures exceptions with breadcrumbs and flushes them', async () => {
     const delivered: AppObservatoryEvent[] = [];
     const client = await createAppObservatoryClient({
@@ -34,6 +43,7 @@ describe('createAppObservatoryClient', () => {
       type: 'js_error',
       level: 'error',
       app: { id: 'mobile-app', version: '1.0.0' },
+      sdk: { name: '@gaozh1024/rn-observatory', version: '0.6.0' },
       error: { name: 'TypeError', message: 'boom', componentStack: 'CheckoutScreen' },
       breadcrumbs: [{ category: 'ui', message: 'tap submit' }],
       tags: { scene: 'submit', source: 'checkout' },
@@ -99,6 +109,73 @@ describe('createAppObservatoryClient', () => {
     expect(
       delivered.some(event => event.type === 'custom' && event.tags?.source === 'message')
     ).toBe(true);
+  });
+
+  it('keeps captureException fixed to js_error even if a caller supplies a different type', async () => {
+    const delivered: AppObservatoryEvent[] = [];
+    const client = await createAppObservatoryClient({
+      storage: new MemoryObservatoryStorage(),
+      flushIntervalMs: 0,
+      transports: [events => delivered.push(...events)],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.captureException(new Error('override ignored'), {
+      type: 'analytics_event',
+    } as never);
+    await client.flush();
+
+    expect(delivered).toContainEqual(
+      expect.objectContaining({
+        type: 'js_error',
+        error: expect.objectContaining({ message: 'override ignored' }),
+      })
+    );
+  });
+
+  it('keeps captureMessage fixed to custom even if a caller supplies a system type', async () => {
+    const delivered: AppObservatoryEvent[] = [];
+    const client = await createAppObservatoryClient({
+      storage: new MemoryObservatoryStorage(),
+      flushIntervalMs: 0,
+      transports: [events => delivered.push(...events)],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.captureMessage('manual event', { type: 'app_start' } as never);
+    await client.flush();
+
+    expect(delivered).toContainEqual(
+      expect.objectContaining({
+        type: 'custom',
+        tags: expect.objectContaining({ source: 'message' }),
+      })
+    );
+  });
+
+  it('emits app_ready through markAppReady()', async () => {
+    const delivered: AppObservatoryEvent[] = [];
+    const client = await createAppObservatoryClient({
+      consent: { analytics: true },
+      storage: new MemoryObservatoryStorage(),
+      flushIntervalMs: 0,
+      transports: [events => delivered.push(...events)],
+    });
+    await client.flush();
+    delivered.length = 0;
+
+    await client.markAppReady({ source: 'app_shell' });
+    await client.flush();
+
+    expect(delivered).toContainEqual(
+      expect.objectContaining({
+        type: 'app_ready',
+        level: 'info',
+        tags: expect.objectContaining({ source: 'app_shell' }),
+      })
+    );
   });
 
   it('reports previous ungraceful session on next startup', async () => {

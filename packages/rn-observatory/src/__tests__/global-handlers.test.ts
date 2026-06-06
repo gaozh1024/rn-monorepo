@@ -4,8 +4,14 @@ import type { AppObservatoryReporter } from '..';
 
 function reporter(): AppObservatoryReporter {
   return {
+    trackEvent: vi.fn(async () => undefined),
+    trackScreen: vi.fn(async () => undefined),
     captureException: vi.fn(async () => undefined),
     captureMessage: vi.fn(async () => undefined),
+    markAppReady: vi.fn(async () => undefined),
+    captureApiError: vi.fn(async () => undefined),
+    captureRenderException: vi.fn(async () => undefined),
+    captureUnhandledRejection: vi.fn(async () => undefined),
     addBreadcrumb: vi.fn(),
     setUser: vi.fn(),
     setTags: vi.fn(),
@@ -22,7 +28,7 @@ describe('installGlobalErrorHandlers', () => {
 
     expect(health.captureException).toHaveBeenCalledWith(
       expect.any(Error),
-      expect.objectContaining({ source: 'window.onerror', type: 'js_error' })
+      expect.objectContaining({ source: 'window.onerror', level: 'fatal' })
     );
     dispose();
   });
@@ -70,11 +76,10 @@ describe('installGlobalErrorHandlers', () => {
       reason,
     });
 
-    expect(health.captureException).toHaveBeenCalledWith(
+    expect(health.captureUnhandledRejection).toHaveBeenCalledWith(
       reason,
       expect.objectContaining({
         source: 'global.onunhandledrejection',
-        type: 'unhandled_rejection',
       })
     );
 

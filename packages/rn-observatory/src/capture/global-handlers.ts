@@ -62,7 +62,6 @@ function installReactNativeErrorHandler(
   const previousHandler = errorUtils.getGlobalHandler?.();
   errorUtils.setGlobalHandler((error, isFatal) => {
     void reporter.captureException(error, {
-      type: 'js_error',
       level: isFatal ? 'fatal' : 'error',
       source: 'global_error_utils',
       extra: { isFatal: Boolean(isFatal) },
@@ -80,7 +79,6 @@ function installWebErrorHandler(reporter: AppObservatoryReporter, disposers: Arr
 
   const handleError = (event: ErrorEvent) => {
     void reporter.captureException(event.error ?? event.message, {
-      type: 'js_error',
       level: 'fatal',
       source: 'window.onerror',
       extra: {
@@ -102,8 +100,7 @@ function installUnhandledRejectionHandler(
   const target = getUnhandledRejectionEventTarget();
   if (target) {
     const handleRejection = (event: unknown) => {
-      void reporter.captureException(getRejectionReason(event), {
-        type: 'unhandled_rejection',
+      void reporter.captureUnhandledRejection(getRejectionReason(event), {
         level: 'error',
         source:
           typeof window !== 'undefined' && target === window
@@ -137,8 +134,7 @@ function installCallbackUnhandledRejectionHandler(
   const previousHandler = globalTarget.onunhandledrejection;
 
   globalTarget.onunhandledrejection = event => {
-    void reporter.captureException(getRejectionReason(event), {
-      type: 'unhandled_rejection',
+    void reporter.captureUnhandledRejection(getRejectionReason(event), {
       level: 'error',
       source: 'global.onunhandledrejection',
     });

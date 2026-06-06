@@ -56,12 +56,18 @@ export interface AppObservatoryReleaseInfo {
   commitSha?: string;
 }
 
+export interface AppObservatorySdkInfo {
+  name: string;
+  version: string;
+}
+
 export interface AppObservatoryEvent {
   id: string;
   type: AppObservatoryEventType;
   level: AppObservatoryLevel;
   timestamp: number;
   app: AppObservatoryAppInfo;
+  sdk?: AppObservatorySdkInfo;
   device: AppObservatoryDeviceInfo;
   session: AppObservatorySessionInfo;
   user?: AppObservatoryUser;
@@ -73,13 +79,19 @@ export interface AppObservatoryEvent {
   release?: AppObservatoryReleaseInfo;
 }
 
-export interface AppObservatoryCaptureContext {
-  type?: AppObservatoryEventType;
+export interface AppObservatoryAnalyticsContext {
   level?: AppObservatoryLevel;
   source?: string;
-  componentStack?: string;
   tags?: Record<string, string>;
   extra?: Record<string, unknown>;
+}
+
+export interface AppObservatoryErrorContext extends AppObservatoryAnalyticsContext {
+  componentStack?: string;
+  analytics?: AppObservatoryAnalyticsPayload;
+}
+
+export interface AppObservatoryMessageContext extends AppObservatoryAnalyticsContext {
   analytics?: AppObservatoryAnalyticsPayload;
 }
 
@@ -87,15 +99,22 @@ export interface AppObservatoryReporter {
   trackEvent: (
     name: string,
     properties?: Record<string, unknown>,
-    context?: AppObservatoryCaptureContext
+    context?: AppObservatoryAnalyticsContext
   ) => Promise<void>;
   trackScreen: (
     screen: string,
     properties?: Record<string, unknown>,
-    context?: AppObservatoryCaptureContext
+    context?: AppObservatoryAnalyticsContext
   ) => Promise<void>;
-  captureException: (error: unknown, context?: AppObservatoryCaptureContext) => Promise<void>;
-  captureMessage: (message: string, context?: AppObservatoryCaptureContext) => Promise<void>;
+  captureException: (error: unknown, context?: AppObservatoryErrorContext) => Promise<void>;
+  captureMessage: (message: string, context?: AppObservatoryMessageContext) => Promise<void>;
+  markAppReady: (context?: AppObservatoryMessageContext) => Promise<void>;
+  captureApiError: (errorOrMessage: unknown, context?: AppObservatoryErrorContext) => Promise<void>;
+  captureRenderException: (error: unknown, context?: AppObservatoryErrorContext) => Promise<void>;
+  captureUnhandledRejection: (
+    reason: unknown,
+    context?: AppObservatoryErrorContext
+  ) => Promise<void>;
   addBreadcrumb: (breadcrumb: AppObservatoryBreadcrumb) => void;
   setUser: (user: AppObservatoryUser | null) => void;
   setTags: (tags: Record<string, string>) => void;

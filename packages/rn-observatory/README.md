@@ -134,6 +134,15 @@ await observatory.trackEvent('order.success', {
 });
 ```
 
+The reporter fixes the top-level event class for each public API:
+
+- `trackScreen()` -> `screen_view`
+- `trackEvent()` -> `analytics_event`
+- `captureException()` -> `js_error`
+- `captureMessage()` -> `custom`
+
+Apps should attach business semantics through event names, properties, tags, `source`, and `extra` instead of setting `type` manually.
+
 Analytics events are uploaded through the same queue and transport as error events, with `type: "analytics_event"` or `type: "screen_view"` and an `analytics` payload.
 
 ## Release metadata
@@ -260,6 +269,7 @@ Payload:
       "level": "error",
       "timestamp": 1710000000000,
       "app": { "id": "mobile-app", "version": "1.2.3", "buildNumber": "45" },
+      "sdk": { "name": "@gaozh1024/rn-observatory", "version": "0.6.0" },
       "device": { "platform": "ios", "osVersion": "17.0" },
       "session": { "id": "sess_xxx", "startedAt": 1710000000000 },
       "error": { "name": "TypeError", "message": "boom", "stack": "...", "fingerprint": "fp_xxx" },
@@ -272,6 +282,7 @@ Payload:
 A 2xx response is treated as success. Failed uploads remain queued and are retried on later `flush()` calls. If `ingestToken` is provided, the built-in fetch transport sends `authorization: Bearer <ingestToken>` automatically; explicit `headers.authorization` takes precedence. If you configure multiple transports, `rn-observatory` treats the first transport as the authoritative delivery path and sends any additional transports as best-effort mirrors so mirror failures do not cause duplicate retries on the primary path.
 
 `app.id`, `app.version`, and `app.buildNumber` are auto-resolved by default. Explicit `appId`, `appVersion`, and `buildNumber` props remain available as compatibility overrides for custom runtimes or unusual build pipelines.
+`sdk.name` and `sdk.version` are added automatically by `rn-observatory` so the backend can distinguish SDK versions during ingestion and debugging.
 
 ## Production setup checklist
 
