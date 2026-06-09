@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/photo-album-picker",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "role": "feature-package",
   "summary": "Photo album picker package for Expo or React Native apps with grid selection, fullscreen preview, and optional crop flow.",
   "entrypoints": [
@@ -18,30 +18,27 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/photo-album-picker",
-    "projectTypes": [
-      "expo",
-      "react-native"
-    ],
+    "projectTypes": ["expo", "react-native"],
     "peerDependencies": {
       "@gaozh1024/rn-kit": ">=0.4.20",
       "@react-navigation/native": ">=7.0.0",
-      "@shopify/flash-list": ">=2.0.0",
-      "expo": ">=54 <55",
-      "expo-image": ">=3 <4",
-      "expo-image-manipulator": ">=14 <15",
-      "expo-media-library": ">=18 <19",
-      "react": ">=18.2.0",
-      "react-native": ">=0.79 <0.82",
+      "@shopify/flash-list": ">=2 <3",
+      "expo": ">=54 <56",
+      "expo-image": ">=3 <56",
+      "expo-image-manipulator": ">=14 <56",
+      "expo-media-library": ">=18 <56",
+      "react": ">=19.1.0 <20",
+      "react-native": ">=0.81 <0.84",
       "react-native-gesture-handler": ">=2.19.0 <3",
-      "react-native-reanimated": ">=3.17.0 <5",
+      "react-native-reanimated": ">=4.1 <5",
       "react-native-safe-area-context": ">=4 <6",
       "react-native-zoom-toolkit": ">=5 <6"
     }
   },
   "recommendedUsage": {
     "minimumSetup": [
-      "Install rn-kit, @react-navigation/native, @shopify/flash-list, react-native-zoom-toolkit, and the listed Expo media dependencies.",
-      "Install Expo packages with expo install so versions match the current SDK.",
+      "Install rn-kit, @react-navigation/native, react-native-zoom-toolkit, and the listed Expo media dependencies.",
+      "Install Expo-managed native packages with expo install so versions match the current SDK, including @shopify/flash-list.",
       "Configure expo-media-library permissions in app.json or app.config.ts and regenerate native projects when using prebuild/dev build."
     ],
     "canonicalTemplate": "templates/expo-starter"
@@ -57,12 +54,14 @@
     "createCroppedPhotoAlbumItem"
   ],
   "compatibilityNotes": [
-    "Current package guidance is validated on Expo SDK 54 with expo-image-manipulator 14.x.",
+    "Current package guidance covers Expo SDK 54 and 55 when Expo media packages are installed with expo install.",
+    "Expo SDK 54 uses expo-image-manipulator 14.x; Expo SDK 55 uses the SDK 55 package line.",
+    "FlashList is an Expo-managed native dependency; install it with expo install so SDK 54 and SDK 55 projects receive the bundled version.",
     "The package depends on rn-kit and React Navigation being present in the consuming app.",
     "Crop mode automatically constrains mediaType and selection count to a single photo."
   ],
   "antiPatterns": [
-    "Using npm latest to install expo-image-manipulator in an Expo project instead of expo install.",
+    "Using npm latest to install expo-image-manipulator or @shopify/flash-list in an Expo project instead of expo install.",
     "Opening crop flow without registering PhotoCropScreen.",
     "Expecting this package to upload or persist selected media on behalf of the business app."
   ],
@@ -80,8 +79,5 @@
       "path": "packages/photo-album-picker/src/screens/PhotoCropScreen.tsx"
     }
   ],
-  "docs": [
-    "README.md",
-    "AI_USAGE.md"
-  ]
+  "docs": ["README.md", "AI_USAGE.md"]
 }

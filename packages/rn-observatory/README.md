@@ -269,7 +269,7 @@ Payload:
       "level": "error",
       "timestamp": 1710000000000,
       "app": { "id": "mobile-app", "version": "1.2.3", "buildNumber": "45" },
-      "sdk": { "name": "@gaozh1024/rn-observatory", "version": "0.6.0" },
+      "sdk": { "name": "@gaozh1024/rn-observatory", "version": "0.6.1" },
       "device": { "platform": "ios", "osVersion": "17.0" },
       "session": { "id": "sess_xxx", "startedAt": 1710000000000 },
       "error": { "name": "TypeError", "message": "boom", "stack": "...", "fingerprint": "fp_xxx" },

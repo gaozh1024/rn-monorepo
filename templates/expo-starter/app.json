@@ -2,10 +2,9 @@
   "expo": {
     "name": "Panther Starter",
     "slug": "expo-starter",
-    "version": "0.2.15",
+    "version": "0.3.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "icon": "./assets/logo.png",
     "splash": {
       "image": "./assets/logo.png",
@@ -22,7 +21,6 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.example.pantherstarter",
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {

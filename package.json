@@ -24,11 +24,15 @@
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
     "@testing-library/react-native": "^13.3.3",
+    "@types/react": "~19.2.10",
     "husky": "^9.1.7",
     "jsdom": "^28.1.0",
     "lint-staged": "^16.3.3",
     "prettier": "^3.8.1",
-    "react-test-renderer": "^19.0.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.6",
+    "react-test-renderer": "19.2.0",
     "tsup": "^8.5.1",
     "typescript": "~5.9.2",
     "vitest": "^4.0.18"
@@ -40,7 +44,15 @@
   ],
   "pnpm": {
     "overrides": {
-      "react-native-worklets": "0.5.1"
+      "react": "19.2.0",
+      "react-dom": "19.2.0",
+      "react-native": "0.83.6",
+      "react-native-reanimated": "4.2.1",
+      "react-native-safe-area-context": "5.6.2",
+      "react-native-screens": "4.23.0",
+      "react-native-svg": "15.15.3",
+      "react-test-renderer": "19.2.0",
+      "react-native-worklets": "0.7.4"
     }
   },
   "lint-staged": {

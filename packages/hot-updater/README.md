@@ -10,6 +10,18 @@
 - 发布脚本: `./docs/release-scripts.md`
 - Manifest 示例: `./docs/manifest.example.json`
 
+## 当前兼容基线
+
+当前 npm 包版本：`0.2.0`
+
+- React Native：`>=0.81 <0.84`
+- React：`>=19.1.0 <20`
+- `@hot-updater/react-native`：`>=0.28 <0.31`
+- `@hot-updater/expo`：`^0.30.5`（由本包依赖声明提供）
+- Expo SDK：覆盖 SDK 54 / SDK 55 宿主项目；升级原生热更新集成后需要重新构建 development build 或 native app。
+
+Expo SDK 54 老项目可以升级到本包 `0.2.x`，但应继续保留 RN 0.81 对应的宿主原生依赖；Expo SDK 55 项目使用 RN 0.83 依赖线。
+
 ## 当前推荐流程
 
 推荐把 OTA 分成两层：

@@ -41,6 +41,7 @@
   ],
   "compatibilityNotes": [
     "This package is built on top of @hot-updater/react-native and related tooling.",
+    "Current compatibility guidance targets React Native >=0.81 <0.84 and @hot-updater/react-native >=0.28 <0.31.",
     "The framework layer handles update orchestration, but business projects still own startup UX and product decisions.",
     "iOS native wiring may be mostly handled by the underlying plugin, but the resulting AppDelegate.swift should still be verified.",
     "A disabled manifest release (`release.disabled: true`) is treated as no update and can be used to pause a bad OTA."

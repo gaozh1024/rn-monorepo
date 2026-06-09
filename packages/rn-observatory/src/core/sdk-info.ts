@@ -2,5 +2,5 @@
 // Do not edit it by hand.
 export const appObservatorySdkInfo = {
   name: '@gaozh1024/rn-observatory',
-  version: '0.6.0',
+  version: '0.6.1',
 } as const;

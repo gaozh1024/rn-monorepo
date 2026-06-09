@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/hot-updater",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "role": "feature-package",
   "summary": "OTA hot update helper package for business apps, built around manifest fetch, update orchestration, provider hooks, and release helpers.",
   "entrypoints": [
@@ -18,14 +18,12 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/hot-updater",
-    "projectTypes": [
-      "react-native"
-    ],
+    "projectTypes": ["react-native"],
     "peerDependencies": {
       "@gaozh1024/rn-kit": ">=0.4.20",
-      "@hot-updater/react-native": ">=0.28 <0.29",
-      "react": ">=18.2.0",
-      "react-native": ">=0.79 <0.82"
+      "@hot-updater/react-native": ">=0.28 <0.31",
+      "react": ">=19.1.0 <20",
+      "react-native": ">=0.81 <0.84"
     }
   },
   "recommendedUsage": {
@@ -46,6 +44,7 @@
   ],
   "compatibilityNotes": [
     "This package is built on top of @hot-updater/react-native and related tooling.",
+    "Current compatibility guidance targets React Native >=0.81 <0.84 and @hot-updater/react-native >=0.28 <0.31.",
     "The framework layer handles update orchestration, but business projects still own startup UX and product decisions.",
     "iOS native wiring may be mostly handled by the underlying plugin, but the resulting AppDelegate.swift should still be verified.",
     "A disabled manifest release (`release.disabled: true`) is treated as no update and can be used to pause a bad OTA."
@@ -69,10 +68,5 @@
       "path": "packages/hot-updater/docs/manifest-spec.md"
     }
   ],
-  "docs": [
-    "README.md",
-    "AI_USAGE.md",
-    "docs/integration.md",
-    "docs/manifest-spec.md"
-  ]
+  "docs": ["README.md", "AI_USAGE.md", "docs/integration.md", "docs/manifest-spec.md"]
 }

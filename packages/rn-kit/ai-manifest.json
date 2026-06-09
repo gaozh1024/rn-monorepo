@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-kit",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "role": "core-framework",
   "summary": "Panther Expo Framework core package for app bootstrap, theme, UI, navigation helpers, overlays, and API factory usage in Expo or React Native apps.",
   "entrypoints": [
@@ -20,24 +20,25 @@
     "packageManagerCommand": "pnpm add @gaozh1024/rn-kit",
     "projectTypes": ["expo", "react-native"],
     "peerDependencies": {
-      "@expo/vector-icons": ">=14 <16",
-      "expo": ">=53 <55",
-      "expo-image": ">=2.4.1 <4",
-      "expo-linear-gradient": ">=14 <16",
-      "react": ">=18.2.0",
-      "react-native": ">=0.79 <0.82",
+      "@expo/vector-icons": ">=15 <16",
+      "expo": ">=54 <56",
+      "expo-image": ">=3 <56",
+      "expo-linear-gradient": ">=15 <56",
+      "react": ">=19.1.0 <20",
+      "react-native": ">=0.81 <0.84",
       "react-native-gesture-handler": ">=2.0.0 <3",
-      "react-native-reanimated": ">=3.17.0 <5",
+      "react-native-reanimated": ">=4.1 <5",
       "react-native-safe-area-context": ">=4.0.0 <6",
       "react-native-screens": ">=4.0.0 <5",
-      "react-native-worklets": ">=0.5.0 <0.6.0"
+      "react-native-svg": ">=15 <16",
+      "react-native-worklets": ">=0.5 <1"
     }
   },
   "recommendedUsage": {
     "minimumSetup": [
       "In Expo projects, install native peer dependencies with expo install before or alongside rn-kit.",
       "Configure NativeWind and Tailwind content scanning to include the consuming app and rn-kit dist output.",
-      "If the project uses Expo SDK 54 / RN 0.81, also confirm react-native-worklets compatibility."
+      "For Expo SDK 54 use the SDK 54 native dependency set; for Expo SDK 55 use the SDK 55 native dependency set, especially react-native-worklets."
     ],
     "primaryProvider": "AppProvider",
     "canonicalTemplate": "templates/expo-starter"
@@ -64,8 +65,9 @@
     "createTelemetryClient"
   ],
   "compatibilityNotes": [
-    "Current compatibility guidance targets Expo >=53 <55 and React Native >=0.79 <0.82.",
-    "Expo SDK 54 maps to React Native 0.81.",
+    "Current compatibility guidance targets Expo >=54 <56 and React Native >=0.81 <0.84.",
+    "Expo SDK 54 maps to React Native 0.81; Expo SDK 55 maps to React Native 0.83.",
+    "Use react-native-worklets 0.5.x on Expo SDK 54 and 0.7.x on Expo SDK 55 through expo install.",
     "AppImage is based on expo-image in rn-kit >= 0.4.6.",
     "AppPressable defaults to a no-motion native Pressable path; opt into motionPreset when animated press feedback is required.",
     "Progress, SegmentedTabs, Switch, Checkbox and Radio support explicit no-animation/reduced-motion paths that avoid Reanimated hook setup."

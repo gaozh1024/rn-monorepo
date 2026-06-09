@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/aliyun-speech",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Aliyun real-time speech-to-text package for Expo / React Native with headless hooks and optional UI.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,18 +29,18 @@
   },
   "peerDependencies": {
     "@siteed/audio-studio": ">=3 <4",
-    "expo": ">=53 <55",
-    "expo-audio": ">=1 <2",
-    "react": ">=18.2.0",
-    "react-native": ">=0.79 <0.82"
+    "expo": ">=54 <56",
+    "expo-audio": ">=1 <56",
+    "react": ">=19.1.0 <20",
+    "react-native": ">=0.81 <0.84"
   },
   "devDependencies": {
     "@siteed/audio-studio": "3.0.2",
-    "@types/react": "^19.2.14",
-    "expo": "~54.0.33",
-    "expo-audio": "1.1.1",
-    "react": "19.1.0",
-    "react-native": "0.81.5"
+    "@types/react": "~19.2.10",
+    "expo": "~55.0.26",
+    "expo-audio": "~55.0.14",
+    "react": "19.2.0",
+    "react-native": "0.83.6"
   },
   "keywords": [
     "@gaozh1024",

@@ -125,7 +125,7 @@ module.exports = function (api) {
 
 - `nativewind/babel` 在 NativeWind 4.x 里是 `preset`，不要放进 `plugins`
 - Expo 项目需要在 `babel-preset-expo` 上补 `jsxImportSource: 'nativewind'`
-- 对 Expo SDK 54 + Reanimated 4 场景，不需要再额外挂 `react-native-reanimated/plugin`
+- 对 Expo SDK 54/55 + Reanimated 4 场景，不需要再额外挂 `react-native-reanimated/plugin`
 
 错误示例：
 

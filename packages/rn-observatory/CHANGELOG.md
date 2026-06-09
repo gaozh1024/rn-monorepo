@@ -1,5 +1,14 @@
 # @gaozh1024/rn-observatory
 
+## 0.6.1
+
+### Patch Changes
+
+- Widen React Native peer compatibility for Expo SDK 54/55 projects.
+- Move the development baseline to React 19.2 and React Native 0.83 for Expo SDK 55 validation.
+- Remove the deprecated Android manifest package attribute now that the namespace is owned by Gradle.
+- Keep SDK version tests aligned with package metadata instead of hard-coded values.
+
 ## 0.6.0
 
 ### Minor Changes

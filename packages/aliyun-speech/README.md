@@ -23,6 +23,18 @@ pnpm add @siteed/audio-studio expo-audio
 npm install @gaozh1024/aliyun-speech @siteed/audio-studio expo-audio
 ```
 
+### 当前兼容基线
+
+当前 npm 包版本：`0.2.0`
+
+- Expo SDK：`>=54 <56`
+- React Native：`>=0.81 <0.84`
+- React：`>=19.1.0 <20`
+- `expo-audio`：`>=1 <56`（建议用 `npx expo install expo-audio` 让 Expo 按宿主 SDK 选择版本）
+- `@siteed/audio-studio`：`>=3 <4`
+
+Expo SDK 54 老项目可以升级到本包 `0.2.x`，但应继续保留 SDK 54 对应的录音/音频原生依赖；Expo SDK 55 项目使用 SDK 55 依赖线并重新构建 development build。
+
 ## 前置依赖与配置
 
 本包默认录音实现基于：

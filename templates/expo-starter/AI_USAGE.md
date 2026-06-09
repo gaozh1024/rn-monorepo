@@ -8,7 +8,7 @@ Canonical Expo starter template for Panther-based apps, showing the recommended 
 
 - Use this template as the canonical reference when creating a new app on top of rn-kit.
 - Use it as the primary integration reference when AI needs to infer project structure or recommended provider boundaries.
-- Use it to validate how rn-kit is expected to be wired into a real Expo SDK 54 app.
+- Use it to validate how rn-kit is expected to be wired into a real Expo SDK 55 app.
 
 ## When Not To Use
 
@@ -31,7 +31,7 @@ Canonical Expo starter template for Panther-based apps, showing the recommended 
 
 ## Required Project Setup
 
-- Follow the template dependency baseline for Expo SDK 54 / React Native 0.81 unless intentionally targeting another verified baseline.
+- Follow the template dependency baseline for Expo SDK 55 / React Native 0.83 unless intentionally targeting another verified baseline.
 - Keep NativeWind, Expo image dependencies, storage injection, and navigation packages aligned with the template.
 - Use expo install for Expo-managed native dependencies when recreating the template in a new project.
 
@@ -62,7 +62,7 @@ Canonical Expo starter template for Panther-based apps, showing the recommended 
 
 ## Compatibility Baseline
 
-- The current template baseline targets Expo SDK 54 and React Native 0.81.
+- The current template baseline targets Expo SDK 55 and React Native 0.83.
 - The template is a reference implementation, not an API surface.
 - Storage, linking, app bootstrap, and observability wiring are intentionally shown in real files rather than abstract docs alone.
 

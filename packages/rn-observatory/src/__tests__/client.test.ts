@@ -43,7 +43,7 @@ describe('createAppObservatoryClient', () => {
       type: 'js_error',
       level: 'error',
       app: { id: 'mobile-app', version: '1.0.0' },
-      sdk: { name: '@gaozh1024/rn-observatory', version: '0.6.0' },
+      sdk: { name: '@gaozh1024/rn-observatory', version: packageInfo.version },
       error: { name: 'TypeError', message: 'boom', componentStack: 'CheckoutScreen' },
       breadcrumbs: [{ category: 'ui', message: 'tap submit' }],
       tags: { scene: 'submit', source: 'checkout' },

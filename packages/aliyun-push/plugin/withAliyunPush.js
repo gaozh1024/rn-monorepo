@@ -11,7 +11,7 @@ const {
 } = require('@expo/config-plugins');
 
 const PLUGIN_NAME = 'withAliyunPush';
-const PLUGIN_VERSION = '0.1.3';
+const PLUGIN_VERSION = '0.2.0';
 
 const ALIYUN_MAVEN_REPOSITORY =
   "        maven { url 'https://maven.aliyun.com/nexus/content/repositories/releases/' }";

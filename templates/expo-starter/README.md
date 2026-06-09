@@ -24,7 +24,7 @@ npx create-expo-app@latest my-app --template @gaozh1024/expo-starter
 - ✅ 已内置 `expo-image`，可直接使用框架 `AppImage`
 - ✅ 已内置 `expo-linear-gradient`，可直接使用 `GradientView`
 - ✅ 已内置 `@expo/vector-icons`，可稳定使用框架 `Icon`
-- ✅ 基于 Expo SDK 54 / React Native 0.81 依赖基线维护
+- ✅ 基于 Expo SDK 55 / React Native 0.83 依赖基线维护
 - ✅ 默认接入 `expo-secure-store` 作为持久化 storage 适配
 - ✅ 内置 deep linking 配置脚手架，可直接扩展 App Scheme 路由
 - ✅ 预留业务级 Provider 扩展位，便于接入用户态、推送、埋点等能力
@@ -179,7 +179,7 @@ npx expo start
 
 ## 依赖兼容性说明
 
-当前模板以 **Expo SDK 54.0.x + React Native 0.81.x** 为基线维护，配套 `@gaozh1024/rn-kit ^0.5.4`。
+当前模板以 **Expo SDK 55.0.x + React Native 0.83.x** 为新项目基线维护，配套 `@gaozh1024/rn-kit ^0.6.0`。
 
 如果你准备把 `@gaozh1024/rn-kit` 接入到其他 Expo 项目，建议：
 
@@ -187,7 +187,7 @@ npx expo start
 2. 使用 `npx expo install ...` 安装原生依赖
 3. 再安装 `@gaozh1024/rn-kit`
 
-模板当前默认用法与 `rn-kit 0.5.4` 对齐，推荐保持下面这套根接入方式：
+模板当前默认用法与 `rn-kit 0.6.0` 对齐，推荐保持下面这套根接入方式：
 
 - 统一由 `src/root/providers.tsx` 包裹 `AppProvider`
 - 通过 `lightTheme` / `darkTheme` + `isDark` 做受控主题切换
@@ -202,13 +202,15 @@ npx expo start
 - `react-native-gesture-handler`
 - `react-native-safe-area-context`
 - `react-native-screens`
+- `react-native-svg`
 
 不要直接让 npm 在 Expo 项目里自由解析这些依赖的最新版本。
 
 补充说明：
 
 - 当前模板已经默认安装 `expo-image`，新建项目后可直接使用 `AppImage`
-- 只有把 `rn-kit >= 0.4.6` 接入到**旧项目**时，才需要手动执行 `npx expo install expo-image`
+- Expo SDK 54 老项目可以升级到 `rn-kit >=0.6.0`，但应继续保留 SDK 54 原生依赖版本，并执行 `npx expo install --check`
+- 只有把 `rn-kit >= 0.4.6` 接入到旧项目时，才需要手动执行 `npx expo install expo-image`
 
 ## 本地测试模板
 

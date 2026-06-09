@@ -20,6 +20,17 @@ pnpm add @gaozh1024/aliyun-push aliyun-react-native-push
 npm install @gaozh1024/aliyun-push aliyun-react-native-push
 ```
 
+### 当前兼容基线
+
+当前 npm 包版本：`0.2.0`
+
+- Expo SDK：`>=54 <56`
+- React Native：`>=0.81 <0.84`
+- React：`>=19.1.0 <20`
+- `@expo/config-plugins`：`>=54 <56`（由本包依赖声明提供）
+
+Expo SDK 54 老项目可以升级到本包 `0.2.x`，但应继续保留 SDK 54 对应的宿主原生依赖；Expo SDK 55 项目使用 SDK 55 依赖线并重新构建 development build。
+
 ## 必需依赖
 
 ### 运行时必需
@@ -32,7 +43,7 @@ npm install @gaozh1024/aliyun-push aliyun-react-native-push
 
 - `expo`
 
-> `@expo/config-plugins` 无需单独安装。本包已声明兼容 Expo 53-54 的插件依赖，常规项目只需安装 `expo` 即可。
+> `@expo/config-plugins` 无需单独安装。本包已声明兼容 Expo SDK 54/55 的插件依赖，常规项目只需安装 `expo` 即可。
 
 ## 适用场景
 

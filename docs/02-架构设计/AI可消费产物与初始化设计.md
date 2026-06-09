@@ -359,7 +359,7 @@ Canonical references:
     "packageManagerCommand": "npm install @gaozh1024/rn-kit",
     "projectTypes": ["expo", "react-native"],
     "peerDependencies": {
-      "expo": ">=53 <55"
+      "expo": ">=54 <56"
     }
   },
   "recommendedUsage": {
@@ -372,7 +372,7 @@ Canonical references:
     ]
   },
   "stableApis": ["AppProvider", "createTheme", "createAPI", "AppButton"],
-  "compatibilityNotes": ["Expo SDK 54 maps to RN 0.81"],
+  "compatibilityNotes": ["Expo SDK 54 maps to RN 0.81; Expo SDK 55 maps to RN 0.83"],
   "antiPatterns": [
     "Using ThemeProvider alone as the default app bootstrap",
     "Installing Expo native peers with plain npm latest"

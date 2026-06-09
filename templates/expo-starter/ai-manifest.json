@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/expo-starter",
-  "version": "0.2.17",
+  "version": "0.3.0",
   "role": "template",
   "summary": "Canonical Expo starter template for Panther-based apps, showing the recommended project structure, provider layout, navigation, storage wiring, and theme usage.",
   "entrypoints": [
@@ -18,14 +18,14 @@
   },
   "recommendedUsage": {
     "minimumSetup": [
-      "Follow the template dependency baseline for Expo SDK 54 / React Native 0.81 unless intentionally targeting another verified baseline.",
+      "Follow the template dependency baseline for Expo SDK 55 / React Native 0.83 unless intentionally targeting another verified baseline.",
       "Keep NativeWind, Expo image dependencies, storage injection, and navigation packages aligned with the template.",
       "Use expo install for Expo-managed native dependencies when recreating the template in a new project."
     ]
   },
   "stableApis": ["RootApp", "RootNavigator", "AppProviders", "createAPI integration", "PageScreen"],
   "compatibilityNotes": [
-    "The current template baseline targets Expo SDK 54 and React Native 0.81.",
+    "The current template baseline targets Expo SDK 55 and React Native 0.83.",
     "The template is a reference implementation, not an API surface.",
     "Storage, linking, app bootstrap, and observability wiring are intentionally shown in real files rather than abstract docs alone."
   ],

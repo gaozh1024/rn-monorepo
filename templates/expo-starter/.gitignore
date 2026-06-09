@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 .expo-shared/
+.env.local
 dist/
 build/
 npm-debug.*

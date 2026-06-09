@@ -1,5 +1,15 @@
 # @gaozh1024/rn-kit
 
+## 0.6.0
+
+### Minor Changes
+
+- Add Expo SDK 55 / React Native 0.83 compatibility while preserving Expo SDK 54 / React Native 0.81 support for existing projects.
+- Expand peer dependency ranges for Expo, React Native, Reanimated, and Worklets so host apps can keep SDK-aligned native packages.
+- Treat `react-native-svg` as an Expo-managed peer dependency to avoid duplicate native module versions in SDK 55 projects.
+- Move the development baseline to Expo SDK 55 package versions and document SDK-specific worklets guidance.
+- Refresh AI usage artifacts and compatibility docs for the dual SDK 54/55 support policy.
+
 ## 0.5.6
 
 ### Patch Changes

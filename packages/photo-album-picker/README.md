@@ -22,14 +22,12 @@ pnpm add @gaozh1024/photo-album-picker
 
 ### 当前兼容基线
 
-当前版本按 Expo SDK 54 验证，推荐依赖基线：
+当前版本支持 Expo SDK 54 + 55。推荐始终使用 `npx expo install` 让 Expo 选择宿主 SDK 对应的媒体包版本：
 
-- `expo`: `~54.0.33`
-- `expo-image`: `~3.0.11`
-- `expo-image-manipulator`: `~14.0.8`
-- `expo-media-library`: `~18.2.1`
+- Expo SDK 54：`expo-image` 3.x、`expo-image-manipulator` 14.x、`expo-media-library` 18.x
+- Expo SDK 55：Expo SDK 55 package line，例如 `expo-image` 55.x、`expo-image-manipulator` 55.x、`expo-media-library` 55.x
 
-当前 npm 包版本：`0.3.0`
+当前 npm 包版本：`0.4.0`
 
 ### 必需依赖
 
@@ -37,20 +35,20 @@ pnpm add @gaozh1024/photo-album-picker
 
 ```bash
 pnpm add @gaozh1024/rn-kit
-pnpm add @react-navigation/native @shopify/flash-list
-npx expo install expo-image expo-image-manipulator expo-media-library
+pnpm add @react-navigation/native
+npx expo install @shopify/flash-list expo-image expo-image-manipulator expo-media-library
 npx expo install react-native-safe-area-context react-native-gesture-handler react-native-reanimated
 pnpm add react-native-zoom-toolkit
 ```
 
-请优先使用 `npx expo install` 安装 Expo 官方包，让 Expo 根据当前 SDK 自动选择兼容版本；不要手动把 `expo-image-manipulator` 升到 55.x，否则在 Expo 54 项目里可能出现原生不兼容。
+请优先使用 `npx expo install` 安装 Expo 官方包，让 Expo 根据当前 SDK 自动选择兼容版本；不要在 Expo 54 项目里手动安装 SDK 55 线的媒体包，也不要在 Expo 55 项目里保留 SDK 54 线的媒体包。
 
-### Expo 54 推荐安装示例
+### 推荐安装示例
 
 ```bash
-pnpm add @gaozh1024/photo-album-picker@^0.3.0
-pnpm add @gaozh1024/rn-kit @react-navigation/native @shopify/flash-list
-npx expo install expo-image expo-image-manipulator expo-media-library
+pnpm add @gaozh1024/photo-album-picker@^0.4.0
+pnpm add @gaozh1024/rn-kit @react-navigation/native
+npx expo install @shopify/flash-list expo-image expo-image-manipulator expo-media-library
 npx expo install react-native-safe-area-context react-native-gesture-handler react-native-reanimated
 pnpm add react-native-zoom-toolkit
 ```
@@ -81,7 +79,7 @@ pnpm add react-native-zoom-toolkit
 
 ### Expo SDK 54
 
-当前版本按 Expo SDK 54 验证，裁剪能力依赖的 `expo-image-manipulator` 必须使用 `14.x`。
+Expo SDK 54 项目中，裁剪能力依赖的 `expo-image-manipulator` 必须使用 `14.x`。
 
 如果你在 Expo 54 项目里手动安装了 `expo-image-manipulator@55.x`，可能在裁剪时看到类似错误：
 
@@ -97,6 +95,16 @@ npx expo install expo-image-manipulator
 ```
 
 不要使用 `npm install --legacy-peer-deps` 去掩盖这个问题；正确做法是让 Expo 官方依赖回到和当前 SDK 一致的版本。
+
+### Expo SDK 55
+
+Expo SDK 55 项目应使用 SDK 55 package line：
+
+```bash
+npx expo install expo-image expo-image-manipulator expo-media-library
+```
+
+升级后建议重新构建 dev client 或 native app，确认裁剪和相册权限流程正常。
 
 ## 权限与 Expo 配置
 

@@ -31,13 +31,13 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 ## Install Prerequisites
 
 - Install command: pnpm add @gaozh1024/rn-kit
-- Peer dependencies: @expo/vector-icons, expo, expo-image, expo-linear-gradient, react, react-native, react-native-gesture-handler, react-native-reanimated, react-native-safe-area-context, react-native-screens, react-native-worklets
+- Peer dependencies: @expo/vector-icons, expo, expo-image, expo-linear-gradient, react, react-native, react-native-gesture-handler, react-native-reanimated, react-native-safe-area-context, react-native-screens, react-native-svg, react-native-worklets
 
 ## Required Project Setup
 
 - In Expo projects, install native peer dependencies with expo install before or alongside rn-kit.
 - Configure NativeWind and Tailwind content scanning to include the consuming app and rn-kit dist output.
-- If the project uses Expo SDK 54 / RN 0.81, also confirm react-native-worklets compatibility.
+- For Expo SDK 54 use the SDK 54 native dependency set; for Expo SDK 55 use the SDK 55 native dependency set, especially react-native-worklets.
 
 ## Minimal Working Example
 
@@ -84,8 +84,9 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 
 ## Compatibility Baseline
 
-- Current compatibility guidance targets Expo >=53 <55 and React Native >=0.79 <0.82.
-- Expo SDK 54 maps to React Native 0.81.
+- Current compatibility guidance targets Expo >=54 <56 and React Native >=0.81 <0.84.
+- Expo SDK 54 maps to React Native 0.81; Expo SDK 55 maps to React Native 0.83.
+- Use react-native-worklets 0.5.x on Expo SDK 54 and 0.7.x on Expo SDK 55 through expo install.
 - AppImage is based on expo-image in rn-kit >= 0.4.6.
 - AppPressable defaults to a no-motion native Pressable path; opt into motionPreset when animated press feedback is required.
 - Progress, SegmentedTabs, Switch, Checkbox and Radio support explicit no-animation/reduced-motion paths that avoid Reanimated hook setup.

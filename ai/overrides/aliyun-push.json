@@ -45,6 +45,7 @@
   ],
   "compatibilityNotes": [
     "The recommended path targets Expo prebuild or development build projects.",
+    "Current package peer dependencies target Expo >=54 <56 and React Native >=0.81 <0.84.",
     "The package separates three layers: runtime service, React provider, and Expo config plugin.",
     "Expo is optional only when the consuming app is willing to manage native setup manually."
   ],

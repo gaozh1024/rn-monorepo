@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-observatory",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "role": "feature-package",
   "summary": "Observability and product analytics SDK for Expo or React Native apps with error capture, breadcrumbs, local queueing, consent-aware analytics, and rn-kit integration.",
   "entrypoints": [
@@ -20,8 +20,8 @@
     "packageManagerCommand": "pnpm add @gaozh1024/rn-observatory",
     "projectTypes": ["react-native"],
     "peerDependencies": {
-      "react": ">=18.2.0",
-      "react-native": ">=0.79 <0.82"
+      "react": ">=19.1.0 <20",
+      "react-native": ">=0.81 <0.84"
     }
   },
   "recommendedUsage": {
@@ -53,7 +53,7 @@
     "installGlobalErrorHandlers"
   ],
   "compatibilityNotes": [
-    "Current compatibility guidance targets React Native >=0.79 <0.82.",
+    "Current compatibility guidance targets React Native >=0.81 <0.84.",
     "Expo Web / React Native Web are supported when the app still runs through the React Native runtime model.",
     "Expo apps can use this package without a config plugin for the JavaScript monitoring layer.",
     "Native crash capture is intentionally adapter-based and not bundled into the core package."

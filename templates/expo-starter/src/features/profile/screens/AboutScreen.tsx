@@ -283,14 +283,14 @@ export function AboutScreen() {
               backgroundColor: isDark ? appColors.slate[700] : appColors.slate[100],
             }}
           />
-          <VersionItem label="RN 版本" value="0.81.5" />
+          <VersionItem label="RN 版本" value="0.83.6" />
           <AppView
             style={{
               height: 1,
               backgroundColor: isDark ? appColors.slate[700] : appColors.slate[100],
             }}
           />
-          <VersionItem label="Expo SDK" value="~54.0.33" />
+          <VersionItem label="Expo SDK" value="~55.0.26" />
         </AppView>
       </AppView>
 

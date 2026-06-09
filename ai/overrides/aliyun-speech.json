@@ -41,7 +41,8 @@
   ],
   "compatibilityNotes": [
     "The default recorder implementation is based on @siteed/audio-studio and expo-audio.",
-    "Current package peer dependencies target Expo >=53 <55 and React Native >=0.79 <0.82.",
+    "Current package peer dependencies target Expo >=54 <56 and React Native >=0.81 <0.84.",
+    "Use the host Expo SDK's expo-audio version from expo install.",
     "The package is designed with a headless-first boundary: protocol core, hook, then optional UI."
   ],
   "canonicalExamples": [

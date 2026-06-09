@@ -1,5 +1,14 @@
 # @gaozh1024/photo-album-picker
 
+## 0.4.0
+
+### Minor Changes
+
+- Add Expo SDK 55 package-line compatibility while preserving Expo SDK 54 support through `expo install`.
+- Expand peer dependency ranges for Expo media packages, React Native, and Reanimated.
+- Treat `@shopify/flash-list` as an Expo-managed native dependency in docs and development baseline.
+- Update the development baseline to Expo SDK 55 and document SDK-specific `expo-image-manipulator` guidance.
+
 ## 0.3.0
 
 ### Minor Changes

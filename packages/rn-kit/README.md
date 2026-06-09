@@ -49,36 +49,34 @@ yarn add @gaozh1024/rn-kit
 npx expo install react-native-screens react-native-safe-area-context
 npx expo install react-native-gesture-handler react-native-reanimated
 npx expo install @expo/vector-icons expo-linear-gradient
-npm install react-native-svg
+npx expo install expo-image react-native-worklets react-native-svg
 ```
 
-如果你的项目是 **Expo SDK 54 / React Native 0.81**，还需要：
+`react-native-worklets` 的版本必须跟随宿主 Expo SDK：Expo SDK 54 通常使用 `0.5.x`，Expo SDK 55 通常使用 `0.7.x`。不要手动混装另一条 SDK 线的 worklets 版本。
 
-```bash
-npx expo install react-native-worklets
-```
-
-> 注意：**Expo SDK 54 对应的是 React Native 0.81，不是 0.79。**
-> 如果你的项目是 React Native 0.79，通常对应 Expo SDK 53 一档，请不要直接按 SDK 54 的版本理解依赖关系。
+> 注意：**Expo SDK 54 对应 React Native 0.81，Expo SDK 55 对应 React Native 0.83。**
+> 如果你的项目还在 React Native 0.79，通常对应 Expo SDK 53 一档，建议先停留在旧版 `rn-kit` 或单独验证。
 
 #### 非 Expo / 手动安装
 
 ```bash
 npm install react react-native
 npm install react-native-screens react-native-safe-area-context
-npm install react-native-gesture-handler react-native-reanimated
+npm install react-native-gesture-handler react-native-reanimated react-native-worklets
 npm install @expo/vector-icons expo-linear-gradient
 npm install react-native-svg
 ```
 
 #### 当前兼容性范围
 
-`0.4.3` 当前将 peerDependencies 收紧到以下范围，避免 npm 解析到和当前 RN 不兼容的过高版本：
+`0.6.0` 当前将 peerDependencies 扩展到 Expo SDK 54 + 55，避免旧项目被迫升级，同时支持新项目基线：
 
-- `expo`: `>=53 <55`
-- `react-native`: `>=0.79 <0.82`
-- `react-native-reanimated`: `>=3.17.0 <5`
-- `react-native-worklets`: `>=0.5.0 <0.6.0`（可选）
+- `expo`: `>=54 <56`
+- `react-native`: `>=0.81 <0.84`
+- `react`: `>=19.1.0 <20`
+- `react-native-reanimated`: `>=4.1 <5`
+- `react-native-worklets`: `>=0.5 <1`（由宿主 Expo SDK 决定具体版本）
+- `react-native-svg`: `>=15 <16`
 
 如果你在 Expo 项目中安装依赖，建议顺序是：
 
@@ -86,11 +84,11 @@ npm install react-native-svg
 npx expo install react-native-screens react-native-safe-area-context
 npx expo install react-native-gesture-handler react-native-reanimated
 npx expo install @expo/vector-icons expo-linear-gradient expo-image
-npx expo install react-native-worklets
+npx expo install react-native-worklets react-native-svg
 npm install @gaozh1024/rn-kit
 ```
 
-如果你是 Expo SDK 53 / RN 0.79 项目，通常不需要单独安装 `react-native-worklets`，以 `expo install` 给出的结果为准。
+如果你是 Expo SDK 54 老项目，可以升级到 `rn-kit >=0.6.0`，但应继续保留 SDK 54 的原生依赖版本，并用 `npx expo install --check` 校验。不要为了升级 `rn-kit` 而把 `expo-image`、`react-native-reanimated`、`react-native-worklets` 等原生包单独升到 SDK 55 线。
 
 > 从 `rn-kit 0.4.6` 开始，`AppImage` 基于 `expo-image` 实现。
 > **新建模板项目通常已内置，无需重复安装；旧项目升级到 `rn-kit >= 0.4.6` 时，请执行 `npx expo install expo-image`。**

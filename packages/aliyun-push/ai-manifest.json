@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/aliyun-push",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "role": "integration-plugin",
   "summary": "Aliyun mobile push integration package with runtime service APIs, React provider, and Expo config plugin support.",
   "entrypoints": [
@@ -28,15 +28,12 @@
   ],
   "installation": {
     "packageManagerCommand": "pnpm add @gaozh1024/aliyun-push",
-    "projectTypes": [
-      "expo",
-      "react-native"
-    ],
+    "projectTypes": ["expo", "react-native"],
     "peerDependencies": {
       "aliyun-react-native-push": ">=1 <2",
-      "expo": ">=53 <55",
-      "react": ">=18.2.0",
-      "react-native": ">=0.79 <0.82"
+      "expo": ">=54 <56",
+      "react": ">=19.1.0 <20",
+      "react-native": ">=0.81 <0.84"
     }
   },
   "recommendedUsage": {
@@ -59,6 +56,7 @@
   ],
   "compatibilityNotes": [
     "The recommended path targets Expo prebuild or development build projects.",
+    "Current package peer dependencies target Expo >=54 <56 and React Native >=0.81 <0.84.",
     "The package separates three layers: runtime service, React provider, and Expo config plugin.",
     "Expo is optional only when the consuming app is willing to manage native setup manually."
   ],
@@ -81,8 +79,5 @@
       "path": "packages/aliyun-push/plugin/withAliyunPush.js"
     }
   ],
-  "docs": [
-    "README.md",
-    "AI_USAGE.md"
-  ]
+  "docs": ["README.md", "AI_USAGE.md"]
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Add Expo SDK 55 compatibility while preserving React Native 0.81 / Expo SDK 54 project support.
+- Move the package development baseline to React 19.2 and React Native 0.83.
+- Update `@hot-updater/expo` and peer compatibility to the current SDK 55-compatible line.
+
 ## 0.1.1
 
 - Honor `release.disabled` in OTA manifests so paused releases are treated as no update.

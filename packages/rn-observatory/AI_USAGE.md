@@ -85,7 +85,7 @@ Observability and product analytics SDK for Expo or React Native apps with error
 
 ## Compatibility Baseline
 
-- Current compatibility guidance targets React Native >=0.79 <0.82.
+- Current compatibility guidance targets React Native >=0.81 <0.84.
 - Expo Web / React Native Web are supported when the app still runs through the React Native runtime model.
 - Expo apps can use this package without a config plugin for the JavaScript monitoring layer.
 - Native crash capture is intentionally adapter-based and not bundled into the core package.
