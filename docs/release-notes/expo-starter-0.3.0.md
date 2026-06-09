@@ -9,6 +9,9 @@
 - React Native moves to the SDK 55 RN 0.83 line.
 - Expo SDK packages such as `expo-image`, `expo-linear-gradient`, `expo-secure-store`, and `expo-status-bar` move to the SDK 55 package line.
 - Reanimated and Worklets move to SDK 55-compatible versions.
+- `@gaozh1024/hot-updater` is included so OTA helper scripts work out of the box.
+- Default scripts now cover env switching, `expo run`, Android release builds, web export builds, OTA manifest generation, and rn-observatory sourcemap publishing.
+- Placeholder `.env.local.dev`, `.env.local.server`, and `.env.production` files are included for script discoverability.
 - Android template package identity is aligned with `app.json`.
 
 ## Existing Apps

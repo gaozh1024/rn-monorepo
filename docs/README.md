@@ -62,6 +62,7 @@
 - [rn-observatory 0.2.0 Release Notes](./release-notes/rn-observatory-0.2.0.md)
 - [rn-observatory 0.1.1 Release Notes](./release-notes/rn-observatory-0.1.1.md)
 - [rn-observatory 0.1.0 Release Notes](./release-notes/rn-observatory-0.1.0.md)
+- [expo-starter 0.3.1 Release Notes](./release-notes/expo-starter-0.3.1.md)
 - [expo-starter 0.3.0 Release Notes](./release-notes/expo-starter-0.3.0.md)
 - [expo-starter 0.2.17 Release Notes](./release-notes/expo-starter-0.2.17.md)
 - [rn-kit 0.6.0 Release Notes](./release-notes/rn-kit-0.6.0.md)

@@ -17,12 +17,14 @@
     "Use PageScreen and existing feature screens as the canonical AppScreen page structure reference.",
     "Use src/recipes/stream-sse.ts as the canonical reference for Expo fetch based SSE streaming.",
     "Use src/recipes/segmented-tabs.tsx as the canonical reference for page-local animated status/category switching.",
-    "Use src/recipes/observatory-navigation.tsx as the canonical reference for rn-observatory screen tracking integration."
+    "Use src/recipes/observatory-navigation.tsx as the canonical reference for rn-observatory screen tracking integration.",
+    "Use package.json scripts plus templates/expo-starter/scripts/*.mjs as the canonical reference for env switching, release builds, web exports, OTA manifest generation, and observatory sourcemap publishing."
   ],
   "requiredProjectSetup": [
     "Follow the template dependency baseline for Expo SDK 55 / React Native 0.83 unless intentionally targeting another verified baseline.",
     "Keep NativeWind, Expo image dependencies, storage injection, and navigation packages aligned with the template.",
-    "Use expo install for Expo-managed native dependencies when recreating the template in a new project."
+    "Use expo install for Expo-managed native dependencies when recreating the template in a new project.",
+    "Treat .env.local.dev, .env.local.server, and .env.production as placeholder examples; replace public API URLs before release builds."
   ],
   "stableApis": ["RootApp", "RootNavigator", "AppProviders", "createAPI integration", "PageScreen"],
   "antiPatterns": [
@@ -37,6 +39,7 @@
   ],
   "compatibilityNotes": [
     "The current template baseline targets Expo SDK 55 and React Native 0.83.",
+    "The template includes default scripts for expo run, web export, Android release builds, OTA preparation, and rn-observatory sourcemap publishing.",
     "The template is a reference implementation, not an API surface.",
     "Storage, linking, app bootstrap, and observability wiring are intentionally shown in real files rather than abstract docs alone."
   ],
@@ -64,6 +67,10 @@
     {
       "name": "segmented-tabs-switcher",
       "path": "templates/expo-starter/src/recipes/segmented-tabs.tsx"
+    },
+    {
+      "name": "release-scripts",
+      "path": "templates/expo-starter/scripts"
     }
   ]
 }

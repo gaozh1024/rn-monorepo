@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/expo-starter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "role": "template",
   "summary": "Canonical Expo starter template for Panther-based apps, showing the recommended project structure, provider layout, navigation, storage wiring, and theme usage.",
   "entrypoints": [
@@ -20,12 +20,14 @@
     "minimumSetup": [
       "Follow the template dependency baseline for Expo SDK 55 / React Native 0.83 unless intentionally targeting another verified baseline.",
       "Keep NativeWind, Expo image dependencies, storage injection, and navigation packages aligned with the template.",
-      "Use expo install for Expo-managed native dependencies when recreating the template in a new project."
+      "Use expo install for Expo-managed native dependencies when recreating the template in a new project.",
+      "Treat .env.local.dev, .env.local.server, and .env.production as placeholder examples; replace public API URLs before release builds."
     ]
   },
   "stableApis": ["RootApp", "RootNavigator", "AppProviders", "createAPI integration", "PageScreen"],
   "compatibilityNotes": [
     "The current template baseline targets Expo SDK 55 and React Native 0.83.",
+    "The template includes default scripts for expo run, web export, Android release builds, OTA preparation, and rn-observatory sourcemap publishing.",
     "The template is a reference implementation, not an API surface.",
     "Storage, linking, app bootstrap, and observability wiring are intentionally shown in real files rather than abstract docs alone."
   ],
@@ -58,6 +60,10 @@
     {
       "name": "segmented-tabs-switcher",
       "path": "templates/expo-starter/src/recipes/segmented-tabs.tsx"
+    },
+    {
+      "name": "release-scripts",
+      "path": "templates/expo-starter/scripts"
     }
   ],
   "docs": ["README.md", "AI_USAGE.md"]

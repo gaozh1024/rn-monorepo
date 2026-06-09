@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/expo-starter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Expo starter template based on @gaozh1024/rn-kit",
   "main": "index.js",
   "files": [

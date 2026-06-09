@@ -114,8 +114,37 @@ pnpm install
 ### 启动开发服务器
 
 ```bash
-npx expo start
+pnpm start
 ```
+
+### 常用脚本
+
+模板默认带一组可直接复制到业务项目的脚本，覆盖环境切换、本地运行、Web export、Android release、OTA manifest 和 rn-observatory sourcemap 发布。
+
+```bash
+pnpm env:dev
+pnpm env:server
+pnpm android
+pnpm ios
+pnpm web
+pnpm web:build:staging
+pnpm web:build:prod
+pnpm android:release:staging
+pnpm android:release:prod
+pnpm ota:prepare
+pnpm ota:manifest
+pnpm observatory:publish:android
+```
+
+默认 env 文件是无敏感信息的占位示例：
+
+- `.env.local.dev`
+- `.env.local.server`
+- `.env.production`
+
+`env:dev` / `env:server` 会复制到 `.env.local`，而 `.env.local` 已被 `.gitignore` 忽略。接入真实项目时，请把 `EXPO_PUBLIC_API_BASE_URL` 等值替换成项目自己的地址。
+
+release 脚本会生成 `observatory-release.json`，并在设置 `APP_OBSERVATORY_AUTO_PUBLISH=true` 且提供 app-observatory 后端地址和管理员认证时自动创建 release / 上传 sourcemap。默认不会联网上传。
 
 ## AI / Recipe 参考
 
