@@ -69,7 +69,7 @@ const appMetadata = resolveExpoAppMetadata(Constants);
   endpoint="https://api.example.com/api/app-observatory/events"
   ingestToken="your-ingest-token"
 >
-  {children}
+  {/* app content */}
 </AppObservatoryProvider>;
 ```
 
@@ -94,7 +94,7 @@ For behavior analytics, use a stable anonymous install ID instead of phone numbe
 >
   {observatory => (
     <AppProvider enableErrorBoundary healthReporter={observatory}>
-      {children}
+      {/* app content */}
     </AppProvider>
   )}
 </AppObservatoryProvider>
@@ -159,7 +159,7 @@ The SDK can read app id, version, and build number from the bundled React Native
   endpoint="https://api.example.com/api/app-observatory/events"
   ingestToken="your-ingest-token"
 >
-  {children}
+  {/* app content */}
 </AppObservatoryProvider>
 ```
 

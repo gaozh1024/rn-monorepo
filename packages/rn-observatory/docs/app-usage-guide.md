@@ -81,7 +81,7 @@ export default function App() {
     >
       {observatory => (
         <AppProvider enableErrorBoundary healthReporter={observatory}>
-          {children}
+          {/* app content */}
         </AppProvider>
       )}
     </AppObservatoryProvider>
@@ -106,7 +106,7 @@ const appMetadata = resolveExpoAppMetadata(Constants);
   endpoint="https://your-domain.com/api/app-observatory/events"
   ingestToken="your-ingest-token"
 >
-  {children}
+  {/* app content */}
 </AppObservatoryProvider>;
 ```
 
@@ -240,7 +240,7 @@ If the app has a real release pipeline, pass release metadata so the backend can
   endpoint="https://api.example.com/api/app-observatory/events"
   ingestToken="your-ingest-token"
 >
-  {children}
+  {/* app content */}
 </AppObservatoryProvider>
 ```
 

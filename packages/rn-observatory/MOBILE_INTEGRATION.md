@@ -42,12 +42,31 @@ export default function App() {
     >
       {observatory => (
         <AppProvider enableErrorBoundary healthReporter={observatory}>
-          {children}
+          {/* app content */}
         </AppProvider>
       )}
     </AppObservatoryProvider>
   );
 }
+```
+
+Expo apps should additionally pass app metadata from app-owned `expo-constants` setup:
+
+```tsx
+import Constants from 'expo-constants';
+import { AppObservatoryProvider, resolveExpoAppMetadata } from '@gaozh1024/rn-observatory';
+
+const appMetadata = resolveExpoAppMetadata(Constants);
+
+<AppObservatoryProvider
+  appId={appMetadata.appId}
+  appVersion={appMetadata.version}
+  buildNumber={appMetadata.buildNumber}
+  endpoint="https://your-domain.com/api/app-observatory/events"
+  ingestToken="your-ingest-token"
+>
+  {/* app content */}
+</AppObservatoryProvider>;
 ```
 
 ## 2. Critical note about analytics
@@ -194,9 +213,11 @@ The SDK can read app id, version, and build number from the bundled React Native
   endpoint="https://your-domain.com/api/app-observatory/events"
   ingestToken="your-ingest-token"
 >
-  {children}
+  {/* app content */}
 </AppObservatoryProvider>
 ```
+
+For Expo apps, combine the `release` block above with the `appId`, `appVersion`, and `buildNumber` props shown in the metadata example.
 
 Recommended fields:
 
