@@ -1,5 +1,25 @@
 # @gaozh1024/rn-kit
 
+## 0.6.2
+
+### Patch Changes
+
+- Expand `AppButton` with design-spec styling hooks: `style`, `contentStyle`, `textStyle`, `pressedStyle`, and `disabledStyle`.
+- Add `AppButton` icon/content composition APIs: `leftIcon`, `rightIcon`, `iconGap`, and `renderContent`; non-text children can now render as-is instead of being forced through `AppText`.
+- Add `surface` and `soft` button variants for white/card buttons with light elevation and low-emphasis colored actions.
+- Add `AppInput` focus styling APIs, visual variants, fixed input sizes, and `soft-login` / `surface` presets for login-form inputs.
+- Add theme design tokens for outline/surface/primary-fixed colors, `radii`, `shadows`, and typography presets.
+- Add `IconName` typing and snake_case-to-kebab-case icon name compatibility with clearer development warnings.
+
+## 0.6.1
+
+### Patch Changes
+
+- Add bottom tab bar metrics helpers so apps can read the content height, bottom safe-area inset, and total occupied tab bar height from one framework API.
+- Refactor `BottomTabBar` so the configured tab height is the content row height and the bottom safe-area inset is rendered as an explicit spacer instead of being folded into the tab content row.
+- Ignore `style.height` on `BottomTabBar` in favor of the `height` prop / `tabBarOptions.height`, preventing consumer styles from accidentally overriding safe-area-aware layout.
+- Document the canonical tab root screen pattern: when a tab page uses `AppScreen`, pass `bottom={false}` because `BottomTabBar` owns the bottom safe-area inset.
+
 ## 0.6.0
 
 ### Minor Changes

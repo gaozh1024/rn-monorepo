@@ -1,10 +1,12 @@
-import { View, StyleSheet, type TextStyle, type ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useThemeColors } from '@/theme';
 import { AppText, AppPressable, useMotionConfig } from '@/ui';
 import { Presence } from '@/ui/motion';
 import type { PresencePreset, PressMotionPreset, PressMotionProps } from '@/ui/motion';
+import { DEFAULT_BOTTOM_TAB_BAR_HEIGHT } from '../constants';
+import { useBottomTabBarMetrics } from '../hooks/useBottomTabBarMetrics';
+import { flattenTabBarStyle, withoutTabBarHeight } from '../utils/tab-bar-style';
 
 /**
  * 自定义底部标签栏组件 Props
@@ -27,8 +29,8 @@ export interface CustomBottomTabBarProps extends BottomTabBarProps, PressMotionP
   iconStyle?: ViewStyle;
   /** 标签样式 */
   labelStyle?: TextStyle;
-  /** 标签栏样式 */
-  style?: ViewStyle;
+  /** 标签栏样式。高度请使用 height 属性配置，style.height 会被忽略。 */
+  style?: StyleProp<ViewStyle>;
   /** 是否显示激活态指示器 */
   showActiveIndicator?: boolean;
   /** 激活态指示器颜色 */
@@ -48,9 +50,6 @@ export interface CustomBottomTabBarProps extends BottomTabBarProps, PressMotionP
   /** 是否关闭激活态指示器动画 */
   indicatorMotionReduceMotion?: boolean;
 }
-
-/** 默认 TabBar 高度 */
-const DEFAULT_TAB_BAR_HEIGHT = 65;
 
 interface BottomTabBarItemProps {
   activeBackgroundColor?: string;
@@ -196,7 +195,7 @@ export function BottomTabBar({
   showLabel = true,
   activeTintColor,
   inactiveTintColor,
-  height = DEFAULT_TAB_BAR_HEIGHT,
+  height = DEFAULT_BOTTOM_TAB_BAR_HEIGHT,
   activeBackgroundColor,
   inactiveBackgroundColor,
   iconStyle,
@@ -217,99 +216,110 @@ export function BottomTabBar({
 }: CustomBottomTabBarProps) {
   const motionConfig = useMotionConfig();
   const colors = useThemeColors();
-  const insets = useSafeAreaInsets();
+  const metrics = useBottomTabBarMetrics({ height });
   const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'soft';
+  const flattenedStyle = flattenTabBarStyle(style);
+  const safeStyle = withoutTabBarHeight(flattenedStyle);
 
   const activeColor = activeTintColor || colors.primary;
   const inactiveColor = inactiveTintColor || colors.textMuted;
-  const backgroundColor = style?.backgroundColor || colors.card;
+  const backgroundColor = flattenedStyle?.backgroundColor || colors.card;
   const borderTopColor = colors.divider;
   const resolvedIndicatorColor = indicatorColor || activeColor;
 
   return (
     <View
+      testID="bottom-tab-bar"
       style={[
         styles.container,
         { borderTopColor },
-        { backgroundColor, height: height + insets.bottom, paddingBottom: insets.bottom },
-        style,
+        { backgroundColor, height: metrics.totalHeight },
+        safeStyle,
       ]}
     >
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
+      <View
+        testID="bottom-tab-bar-content"
+        style={[styles.content, { height: metrics.contentHeight }]}
+      >
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.index === index;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
 
-        const onLongPress = () => {
-          navigation.emit({
-            type: 'tabLongPress',
-            target: route.key,
-          });
-        };
+          const onLongPress = () => {
+            navigation.emit({
+              type: 'tabLongPress',
+              target: route.key,
+            });
+          };
 
-        // 获取标签和图标
-        const label =
-          options.tabBarLabel !== undefined
-            ? options.tabBarLabel
-            : options.title !== undefined
-              ? options.title
-              : route.name;
+          // 获取标签和图标
+          const label =
+            options.tabBarLabel !== undefined
+              ? options.tabBarLabel
+              : options.title !== undefined
+                ? options.title
+                : route.name;
 
-        const iconName = options.tabBarIcon
-          ? (options.tabBarIcon as Function)({
-              focused: isFocused,
-              color: isFocused ? activeColor : inactiveColor,
-              size: 24,
-            })
-          : null;
+          const iconName = options.tabBarIcon
+            ? (options.tabBarIcon as Function)({
+                focused: isFocused,
+                color: isFocused ? activeColor : inactiveColor,
+                size: 24,
+              })
+            : null;
 
-        // 徽标
-        const badge = options.tabBarBadge;
+          // 徽标
+          const badge = options.tabBarBadge;
 
-        return (
-          <BottomTabBarItem
-            key={route.key}
-            testID={(options as any).tabBarTestID}
-            accessibilityLabel={options.tabBarAccessibilityLabel}
-            onPress={onPress}
-            onLongPress={onLongPress}
-            motionPreset={resolvedMotionPreset}
-            activeBackgroundColor={activeBackgroundColor}
-            inactiveBackgroundColor={inactiveBackgroundColor}
-            activeColor={activeColor}
-            inactiveColor={inactiveColor}
-            iconNode={iconName}
-            iconStyle={iconStyle}
-            badge={badge}
-            isFocused={isFocused}
-            label={label as string}
-            labelStyle={labelStyle}
-            showLabel={showLabel}
-            showActiveIndicator={showActiveIndicator}
-            indicatorColor={resolvedIndicatorColor}
-            indicatorHeight={indicatorHeight}
-            indicatorMotionPreset={indicatorMotionPreset}
-            indicatorMotionDuration={indicatorMotionDuration}
-            indicatorMotionEnterDuration={indicatorMotionEnterDuration}
-            indicatorMotionExitDuration={indicatorMotionExitDuration}
-            indicatorMotionDistance={indicatorMotionDistance}
-            indicatorMotionReduceMotion={indicatorMotionReduceMotion}
-            motionDuration={motionDuration}
-            motionReduceMotion={motionReduceMotion}
-          />
-        );
-      })}
+          return (
+            <BottomTabBarItem
+              key={route.key}
+              testID={(options as any).tabBarTestID}
+              accessibilityLabel={options.tabBarAccessibilityLabel}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              motionPreset={resolvedMotionPreset}
+              activeBackgroundColor={activeBackgroundColor}
+              inactiveBackgroundColor={inactiveBackgroundColor}
+              activeColor={activeColor}
+              inactiveColor={inactiveColor}
+              iconNode={iconName}
+              iconStyle={iconStyle}
+              badge={badge}
+              isFocused={isFocused}
+              label={label as string}
+              labelStyle={labelStyle}
+              showLabel={showLabel}
+              showActiveIndicator={showActiveIndicator}
+              indicatorColor={resolvedIndicatorColor}
+              indicatorHeight={indicatorHeight}
+              indicatorMotionPreset={indicatorMotionPreset}
+              indicatorMotionDuration={indicatorMotionDuration}
+              indicatorMotionEnterDuration={indicatorMotionEnterDuration}
+              indicatorMotionExitDuration={indicatorMotionExitDuration}
+              indicatorMotionDistance={indicatorMotionDistance}
+              indicatorMotionReduceMotion={indicatorMotionReduceMotion}
+              motionDuration={motionDuration}
+              motionReduceMotion={motionReduceMotion}
+            />
+          );
+        })}
+      </View>
+      {metrics.safeAreaBottom > 0 && (
+        <View testID="bottom-tab-bar-safe-area" style={{ height: metrics.safeAreaBottom }} />
+      )}
     </View>
   );
 }
@@ -317,13 +327,16 @@ export function BottomTabBar({
 /** 组件样式 */
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     borderTopWidth: 0.5,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
+  },
+  content: {
+    flexDirection: 'row',
   },
   tab: {
     flex: 1,

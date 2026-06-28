@@ -16,14 +16,37 @@ export interface ColorPalette {
 
 export type ColorToken = string | ColorPalette;
 
+export interface ShadowToken {
+  shadowColor?: string;
+  shadowOffset?: {
+    width: number;
+    height: number;
+  };
+  shadowOpacity?: number;
+  shadowRadius?: number;
+  elevation?: number;
+}
+
+export interface TypographyToken {
+  fontSize: number;
+  lineHeight: number;
+  fontWeight?: string;
+}
+
 export interface ThemeConfig {
   colors: Record<string, ColorToken>;
   spacing?: Record<string, number>;
   borderRadius?: Record<string, number>;
+  radii?: Record<string, number>;
+  shadows?: Record<string, ShadowToken>;
+  typography?: Record<string, TypographyToken>;
 }
 
 export interface Theme {
   colors: Record<string, ColorPalette>;
   spacing: Record<string, number>;
   borderRadius: Record<string, number>;
+  radii: Record<string, number>;
+  shadows: Record<string, ShadowToken>;
+  typography: Record<string, TypographyToken>;
 }

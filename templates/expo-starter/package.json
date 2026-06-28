@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/expo-starter",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Expo starter template based on @gaozh1024/rn-kit",
   "main": "index.js",
   "files": [
@@ -63,7 +63,7 @@
   "license": "MIT",
   "dependencies": {
     "@expo/vector-icons": "~15.1.1",
-    "@gaozh1024/rn-kit": "^0.6.0",
+    "@gaozh1024/rn-kit": "^0.6.1",
     "@gaozh1024/rn-observatory": "^0.6.1",
     "@react-native-masked-view/masked-view": "~0.3.2",
     "@react-navigation/bottom-tabs": "^7.15.5",

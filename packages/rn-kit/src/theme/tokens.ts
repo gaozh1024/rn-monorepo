@@ -18,6 +18,12 @@ export interface ThemeColorTokens {
   textMuted: string;
   textInverse: string;
   border: string;
+  outline: string;
+  outlineVariant: string;
+  surfaceContainerLowest: string;
+  surfaceContainerLow: string;
+  primaryFixed: string;
+  primaryFixedDim: string;
   divider: string;
   iconMuted: string;
 }
@@ -45,6 +51,14 @@ export function getThemeColors(theme: Theme, isDark: boolean): ThemeColorTokens 
     border: isDark
       ? theme.colors.border?.[600] || theme.colors.border?.[500] || '#4b5563'
       : theme.colors.border?.[500] || '#d1d5db',
+    outline: theme.colors.outline?.[500] || (isDark ? '#9ca3af' : '#6b7280'),
+    outlineVariant: theme.colors.outlineVariant?.[500] || (isDark ? '#4b5563' : '#d1d5db'),
+    surfaceContainerLowest:
+      theme.colors.surfaceContainerLowest?.[500] || (isDark ? '#111827' : '#ffffff'),
+    surfaceContainerLow:
+      theme.colors.surfaceContainerLow?.[500] || (isDark ? '#1f2937' : '#f8fafc'),
+    primaryFixed: theme.colors.primaryFixed?.[500] || (isDark ? '#7c2d12' : '#ffedd5'),
+    primaryFixedDim: theme.colors.primaryFixedDim?.[500] || (isDark ? '#9a3412' : '#fed7aa'),
     divider: isDark
       ? theme.colors.border?.[700] || theme.colors.border?.[500] || '#374151'
       : theme.colors.border?.[500] || '#e5e7eb',

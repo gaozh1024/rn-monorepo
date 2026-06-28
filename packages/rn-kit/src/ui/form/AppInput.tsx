@@ -19,6 +19,10 @@ import { Icon } from '../display/Icon';
 /**
  * AppInput 组件属性接口
  */
+export type AppInputVariant = 'outline' | 'filled' | 'soft' | 'surface';
+export type AppInputSize = 'sm' | 'md' | 'lg';
+export type AppInputVisualPreset = 'default' | 'soft-login' | 'surface';
+
 export interface AppInputProps
   extends
     Omit<TextInputProps, 'editable'>,
@@ -71,6 +75,20 @@ export interface AppInputProps
   containerStyle?: StyleProp<ViewStyle>;
   /** 输入框文本样式 */
   inputStyle?: StyleProp<TextStyle>;
+  /** 聚焦时输入容器样式 */
+  focusedContainerStyle?: StyleProp<ViewStyle>;
+  /** 聚焦描边/光晕颜色 */
+  focusRingColor?: string;
+  /** 聚焦描边宽度 */
+  focusRingWidth?: number;
+  /** 聚焦背景色 */
+  focusBackgroundColor?: string;
+  /** 输入框视觉变体 */
+  variant?: AppInputVariant;
+  /** 输入框尺寸 */
+  inputSize?: AppInputSize;
+  /** 常用视觉预设 */
+  visualPreset?: AppInputVisualPreset;
 }
 
 const CONTAINER_STYLE_KEYS = new Set<keyof ViewStyle>([
@@ -117,6 +135,40 @@ const webInputFocusReset =
         outlineWidth: 0,
       } as unknown as TextStyle)
     : undefined;
+
+const inputSizeStyles = {
+  sm: { height: 40, paddingX: 10, fontSize: 14, paddingY: 8 },
+  md: { height: 48, paddingX: 12, fontSize: 16, paddingY: 12 },
+  lg: { height: 56, paddingX: 16, fontSize: 16, paddingY: 14 },
+} as const satisfies Record<
+  AppInputSize,
+  { height: number; paddingX: number; fontSize: number; paddingY: number }
+>;
+
+const visualPresetDefaults = {
+  default: {
+    inputSize: 'md',
+    rounded: 'lg',
+    variant: 'outline',
+  },
+  'soft-login': {
+    inputSize: 'lg',
+    rounded: 'xl',
+    variant: 'surface',
+  },
+  surface: {
+    inputSize: 'md',
+    rounded: 'xl',
+    variant: 'surface',
+  },
+} as const satisfies Record<
+  AppInputVisualPreset,
+  {
+    inputSize: AppInputSize;
+    rounded: NonNullable<CommonLayoutProps['rounded']>;
+    variant: AppInputVariant;
+  }
+>;
 
 function splitInputStyles(style?: StyleProp<TextStyle>) {
   const flattened = StyleSheet.flatten(style) ?? {};
@@ -176,7 +228,15 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
       style,
       containerStyle,
       inputStyle,
+      focusedContainerStyle,
+      focusRingColor,
+      focusRingWidth,
+      focusBackgroundColor,
+      variant,
+      inputSize,
+      visualPreset = 'default',
       secureTextEntry,
+      placeholderTextColor,
       onFocus,
       onBlur,
       ...props
@@ -188,17 +248,86 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
     const [isFocused, setIsFocused] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(passwordVisibleDefault);
     const resolvedStyles = useMemo(() => splitInputStyles(style), [style]);
+    const preset = visualPresetDefaults[visualPreset];
+    const resolvedVariant = variant ?? preset.variant;
+    const resolvedInputSize = inputSize ?? preset.inputSize;
+    const sizeStyle = inputSizeStyles[resolvedInputSize];
     const resolvedBgColor =
       resolveSurfaceColor(surface, theme, isDark) ?? resolveNamedColor(bg, theme, isDark);
+    const resolvedFocusRingColor =
+      resolveNamedColor(focusRingColor, theme, isDark) ?? focusRingColor ?? colors.primary;
+    const resolvedFocusBackgroundColor =
+      resolveNamedColor(focusBackgroundColor, theme, isDark) ?? focusBackgroundColor;
+    const outlineColor =
+      theme.colors.outline?.[500] ?? theme.colors.border?.[500] ?? (isDark ? '#4b5563' : '#d1d5db');
+    const outlineVariantColor =
+      theme.colors.outlineVariant?.[500] ??
+      theme.colors.border?.[500] ??
+      (isDark ? '#374151' : '#e5e7eb');
+    const surfaceLowestColor =
+      theme.colors.surfaceContainerLowest?.[500] ??
+      theme.colors.card?.[500] ??
+      (isDark ? '#1f2937' : '#ffffff');
+    const surfaceLowColor =
+      theme.colors.surfaceContainerLow?.[500] ?? (isDark ? '#111827' : '#f8fafc');
+    const softBackgroundColor = isDark
+      ? theme.colors.primary?.[950] || '#111827'
+      : theme.colors.primary?.[50] || '#fff7ed';
 
     const errorColor = '#ef4444';
 
     // 边框颜色
     const getBorderColor = () => {
       if (error) return errorColor;
-      if (isFocused) return colors.primary;
-      return colors.border;
+      if (isFocused) return resolvedFocusRingColor;
+      if (resolvedVariant === 'outline') return outlineColor;
+      return 'transparent';
     };
+
+    const variantStyle: ViewStyle =
+      resolvedVariant === 'filled'
+        ? {
+            backgroundColor: surfaceLowColor,
+            borderColor: 'transparent',
+          }
+        : resolvedVariant === 'soft'
+          ? {
+              backgroundColor: softBackgroundColor,
+              borderColor: 'transparent',
+            }
+          : resolvedVariant === 'surface'
+            ? {
+                backgroundColor: surfaceLowestColor,
+                borderColor: 'transparent',
+                borderWidth: 0,
+                ...(isDark
+                  ? {}
+                  : {
+                      shadowColor: '#000000',
+                      shadowOffset: { width: 0, height: 3 },
+                      shadowOpacity: 0.06,
+                      shadowRadius: 10,
+                      elevation: 1,
+                    }),
+              }
+            : {
+                backgroundColor: colors.card,
+              };
+    const focusStyle: ViewStyle | undefined =
+      isFocused && !error
+        ? {
+            borderColor: resolvedFocusRingColor,
+            borderWidth: focusRingWidth ?? (resolvedVariant === 'surface' ? 0 : 1),
+            backgroundColor: resolvedFocusBackgroundColor,
+            shadowColor: resolvedFocusRingColor,
+            shadowOpacity: focusRingWidth === 0 ? 0 : 0.12,
+            shadowRadius: focusRingWidth === 0 ? 0 : 8,
+            shadowOffset: { width: 0, height: 0 },
+          }
+        : undefined;
+    const resolvedPlaceholderTextColor =
+      placeholderTextColor ??
+      (visualPreset === 'soft-login' ? outlineVariantColor : colors.textMuted);
 
     const shouldRenderPasswordToggle = passwordToggle;
     const computedSecureTextEntry = shouldRenderPasswordToggle
@@ -239,23 +368,26 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
           testID={props.testID ? `${props.testID}-container` : undefined}
           row
           items="center"
-          px={12}
-          h={h}
+          px={sizeStyle.paddingX}
+          h={h ?? sizeStyle.height}
           minW={minW}
           minH={minH}
           maxW={maxW}
           maxH={maxH}
-          rounded={rounded ?? 'lg'}
+          rounded={rounded ?? preset.rounded}
           style={[
             styles.inputContainer,
+            variantStyle,
             resolvedBgColor ? { backgroundColor: resolvedBgColor } : undefined,
             resolvedStyles.containerStyle,
             containerStyle,
             {
-              backgroundColor: resolvedBgColor ?? colors.card,
               borderColor: getBorderColor(),
               opacity: disabled ? 0.6 : 1,
             },
+            focusStyle,
+            isFocused ? focusedContainerStyle : undefined,
+            error ? { borderColor: errorColor } : undefined,
           ]}
         >
           {leftIcon && <View style={styles.icon}>{leftIcon}</View>}
@@ -265,11 +397,16 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
             style={[
               styles.input,
               webInputFocusReset,
-              { color: colors.text },
+              {
+                color: colors.text,
+                fontSize: sizeStyle.fontSize,
+                paddingTop: sizeStyle.paddingY,
+                paddingBottom: sizeStyle.paddingY,
+              },
               resolvedStyles.inputStyle,
               inputStyle,
             ]}
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={resolvedPlaceholderTextColor}
             editable={!disabled}
             secureTextEntry={computedSecureTextEntry}
             onFocus={e => {

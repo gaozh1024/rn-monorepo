@@ -1,8 +1,15 @@
-import { useCallback } from 'react';
-import { ActivityIndicator, Keyboard } from 'react-native';
+import { useCallback, type ReactNode } from 'react';
+import {
+  ActivityIndicator,
+  Keyboard,
+  StyleSheet,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import { useOptionalTheme } from '@/theme';
 import { useMotionConfig, type PressMotionProps } from '@/ui/motion';
-import { AppPressable, AppText } from '@/ui/primitives';
+import { AppPressable, AppText, AppView } from '@/ui/primitives';
 import { cn } from '@/utils';
 import type { CommonLayoutProps } from '../utils/layout-shortcuts';
 
@@ -40,8 +47,8 @@ export interface AppButtonProps
       | 'rounded'
     >,
     PressMotionProps {
-  /** 按钮样式变体：solid(实心)、outline(描边)、ghost(透明) */
-  variant?: 'solid' | 'outline' | 'ghost';
+  /** 按钮样式变体：solid(实心)、outline(描边)、ghost(透明)、surface(卡片面)、soft(浅色底) */
+  variant?: 'solid' | 'outline' | 'ghost' | 'surface' | 'soft';
   /** 按钮尺寸：sm(小)、md(中)、lg(大) */
   size?: 'sm' | 'md' | 'lg';
   /** 按钮颜色主题 */
@@ -55,9 +62,27 @@ export interface AppButtonProps
   /** 点击前是否先收起键盘 */
   dismissKeyboardOnPress?: boolean;
   /** 按钮内容 */
-  children: React.ReactNode;
+  children?: ReactNode;
+  /** 左侧图标 */
+  leftIcon?: ReactNode;
+  /** 右侧图标 */
+  rightIcon?: ReactNode;
+  /** 图标与内容间距 */
+  iconGap?: number;
+  /** 自定义内容渲染，设置后会覆盖 children/leftIcon/rightIcon 的默认排版 */
+  renderContent?: () => ReactNode;
   /** 自定义类名 */
   className?: string;
+  /** 按钮外层样式 */
+  style?: StyleProp<ViewStyle>;
+  /** 按钮内容容器样式 */
+  contentStyle?: StyleProp<ViewStyle>;
+  /** 默认文本样式 */
+  textStyle?: StyleProp<TextStyle>;
+  /** 按下状态样式 */
+  pressedStyle?: StyleProp<ViewStyle>;
+  /** 禁用状态样式 */
+  disabledStyle?: StyleProp<ViewStyle>;
 }
 
 /**
@@ -130,7 +155,16 @@ export function AppButton({
   onPress,
   dismissKeyboardOnPress = true,
   children,
+  leftIcon,
+  rightIcon,
+  iconGap = 8,
+  renderContent,
   className,
+  style,
+  contentStyle,
+  textStyle,
+  pressedStyle,
+  disabledStyle,
   motionPreset,
   motionDuration,
   motionReduceMotion,
@@ -159,12 +193,33 @@ export function AppButton({
   const ghostTextColor = isDark ? '#ffffff' : theme.colors.text?.[500] || '#1f2937';
   const ghostBackgroundColor = isDark ? 'rgba(255,255,255,0.04)' : 'transparent';
 
-  // 根据变体设置 loading 指示器颜色
-  // solid: 白色（因为背景是彩色的）
-  // outline/ghost: 对应主题色（因为背景是透明的）
+  const softBackgroundColor = isDark
+    ? theme.colors[color]?.[900] || 'rgba(255,255,255,0.08)'
+    : theme.colors[color]?.[50] || 'rgba(243,139,50,0.12)';
+  const surfaceBackgroundColor =
+    theme.colors.surfaceContainerLowest?.[500] ||
+    theme.colors.card?.[500] ||
+    (isDark ? '#1f2937' : '#ffffff');
+  const surfaceTextColor = theme.colors.text?.[500] || (isDark ? '#ffffff' : '#1f2937');
+  const surfaceShadow: ViewStyle = isDark
+    ? {}
+    : {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 2,
+      };
+
   const loadingColor = variant === 'solid' ? 'white' : buttonColors[color];
   const textColor =
-    variant === 'solid' ? '#ffffff' : variant === 'ghost' ? ghostTextColor : buttonColors[color];
+    variant === 'solid'
+      ? '#ffffff'
+      : variant === 'ghost'
+        ? ghostTextColor
+        : variant === 'surface'
+          ? surfaceTextColor
+          : buttonColors[color];
 
   const handlePress = useCallback(() => {
     if (dismissKeyboardOnPress) {
@@ -174,12 +229,55 @@ export function AppButton({
     onPress?.();
   }, [dismissKeyboardOnPress, onPress]);
 
-  const buttonStyle =
+  const buttonStyle: ViewStyle =
     variant === 'solid'
       ? { backgroundColor: buttonColors[color] }
       : variant === 'outline'
         ? { borderWidth: 0.5, borderColor: buttonColors[color], backgroundColor: 'transparent' }
-        : { backgroundColor: ghostBackgroundColor };
+        : variant === 'surface'
+          ? {
+              backgroundColor: surfaceBackgroundColor,
+              borderWidth: 0,
+              ...surfaceShadow,
+            }
+          : variant === 'soft'
+            ? { backgroundColor: softBackgroundColor }
+            : { backgroundColor: ghostBackgroundColor };
+
+  const content = loading ? (
+    <ActivityIndicator size="small" color={loadingColor} />
+  ) : (
+    (renderContent?.() ?? (
+      <AppView row items="center" justify="center" gap={iconGap} style={contentStyle}>
+        {leftIcon}
+        {typeof children === 'string' || typeof children === 'number' ? (
+          <AppText weight="semibold" style={[{ color: textColor }, textStyle]}>
+            {children}
+          </AppText>
+        ) : (
+          children
+        )}
+        {rightIcon}
+      </AppView>
+    ))
+  );
+  const hasStateStyle = style !== undefined || isDisabled || disabledStyle !== undefined;
+  const pressableStyle = pressedStyle
+    ? ({ pressed }: { pressed: boolean }) => [
+        buttonStyle,
+        style,
+        isDisabled ? styles.disabled : undefined,
+        isDisabled ? disabledStyle : undefined,
+        pressed && !isDisabled ? pressedStyle : undefined,
+      ]
+    : hasStateStyle
+      ? [
+          buttonStyle,
+          style,
+          isDisabled ? styles.disabled : undefined,
+          isDisabled ? disabledStyle : undefined,
+        ]
+      : buttonStyle;
 
   return (
     <AppPressable
@@ -214,15 +312,15 @@ export function AppButton({
         isDisabled && 'opacity-50',
         className
       )}
-      style={buttonStyle}
+      style={pressableStyle}
     >
-      {loading ? (
-        <ActivityIndicator size="small" color={loadingColor} />
-      ) : (
-        <AppText weight="semibold" style={{ color: textColor }}>
-          {children}
-        </AppText>
-      )}
+      {content}
     </AppPressable>
   );
 }
+
+const styles = StyleSheet.create({
+  disabled: {
+    opacity: 0.5,
+  },
+});

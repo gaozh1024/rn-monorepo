@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-kit",
-  "version": "0.6.0",
+  "version": "0.6.2",
   "role": "core-framework",
   "summary": "Panther Expo Framework core package for app bootstrap, theme, UI, navigation helpers, overlays, and API factory usage in Expo or React Native apps.",
   "entrypoints": [
@@ -48,12 +48,20 @@
     "ThemeProvider",
     "createTheme",
     "useTheme",
+    "useThemeColors",
+    "getThemeColors",
     "AppScreen",
     "AppButton",
+    "AppInput",
+    "Icon",
+    "IconName",
     "createAPI",
     "createApiStreamRequest",
     "readApiSSEStream",
     "useStreamRequest",
+    "useAppSafeAreaInsets",
+    "useBottomTabBarMetrics",
+    "DEFAULT_BOTTOM_TAB_BAR_HEIGHT",
     "useToggle",
     "SegmentedTabs",
     "AppPressable",
@@ -70,13 +78,19 @@
     "Use react-native-worklets 0.5.x on Expo SDK 54 and 0.7.x on Expo SDK 55 through expo install.",
     "AppImage is based on expo-image in rn-kit >= 0.4.6.",
     "AppPressable defaults to a no-motion native Pressable path; opt into motionPreset when animated press feedback is required.",
-    "Progress, SegmentedTabs, Switch, Checkbox and Radio support explicit no-animation/reduced-motion paths that avoid Reanimated hook setup."
+    "Progress, SegmentedTabs, Switch, Checkbox and Radio support explicit no-animation/reduced-motion paths that avoid Reanimated hook setup.",
+    "AppButton supports solid, outline, ghost, surface, and soft variants plus style/content/text/pressed/disabled style hooks.",
+    "AppInput supports outline, filled, soft, and surface variants plus sm/md/lg sizes and default, soft-login, and surface visual presets.",
+    "createTheme includes outline, outlineVariant, surfaceContainerLowest, surfaceContainerLow, primaryFixed, primaryFixedDim, radii, shadows, and typography design tokens."
   ],
   "antiPatterns": [
     "Installing Expo-native peer dependencies with plain npm latest versions instead of expo install.",
     "Treating missing styles as a ThemeProvider issue before checking NativeWind and Tailwind configuration.",
     "Rebuilding the whole app tree to switch theme when passing isDark to AppProvider or ThemeProvider is sufficient.",
-    "Do not call vendor monitoring SDKs directly from scattered components; wrap them behind createTelemetryClient transports."
+    "Do not call vendor monitoring SDKs directly from scattered components; wrap them behind createTelemetryClient transports.",
+    "Do not set BottomTabBar height through style.height; use height or tabBarOptions.height so safe-area metrics stay correct.",
+    "Do not replace AppButton with raw Pressable just to match fixed-height, icon, shadow, pressed, or disabled button designs; use AppButton style hooks, slots, and variants first.",
+    "Do not hand-roll login inputs only to get 56px height, 16px radius, white background, or custom focus rings; use AppInput visual presets and focus APIs first."
   ],
   "canonicalExamples": [
     {

@@ -100,6 +100,20 @@ describe('AppScreen', () => {
     expect(flattened.paddingBottom).toBe(24);
   });
 
+  it('bottom=false 时不应该追加底部安全区', () => {
+    const { getByTestId } = render(
+      <ThemeProvider light={theme}>
+        <AppScreen testID="screen" p={4} bottom={false}>
+          <div>content</div>
+        </AppScreen>
+      </ThemeProvider>
+    );
+
+    const flattened = flattenStyle(getByTestId('screen').props.style);
+
+    expect(flattened.paddingBottom).toBe(4);
+  });
+
   it('显式传入 top 后应该重新包含顶部安全区', () => {
     const { getByTestId } = render(
       <ThemeProvider light={theme}>

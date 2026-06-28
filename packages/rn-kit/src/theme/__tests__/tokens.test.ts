@@ -25,6 +25,12 @@ describe('getThemeColors', () => {
     expect(colors.background).toBe(theme.colors.background?.[500]);
     expect(colors.card).toBe(theme.colors.card?.[500]);
     expect(colors.text).toBe(theme.colors.text?.[500]);
+    expect(colors.outline).toBe(theme.colors.outline?.[500]);
+    expect(colors.outlineVariant).toBe(theme.colors.outlineVariant?.[500]);
+    expect(colors.surfaceContainerLowest).toBe(theme.colors.surfaceContainerLowest?.[500]);
+    expect(colors.surfaceContainerLow).toBe(theme.colors.surfaceContainerLow?.[500]);
+    expect(colors.primaryFixed).toBe(theme.colors.primaryFixed?.[500]);
+    expect(colors.primaryFixedDim).toBe(theme.colors.primaryFixedDim?.[500]);
     expect(colors.divider).toBe(theme.colors.border?.[500]);
   });
 

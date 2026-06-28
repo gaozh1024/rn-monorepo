@@ -1,9 +1,10 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react-native';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ThemeProvider, createTheme } from '@/theme';
 import { BottomTabBar } from '../components/BottomTabBar';
+import { DEFAULT_BOTTOM_TAB_BAR_HEIGHT } from '../constants';
 
 vi.mock('@/ui/motion', async () => {
   const actual = await vi.importActual<any>('@/ui/motion');
@@ -66,6 +67,25 @@ function createProps(index = 0) {
   } as any;
 }
 
+function flattenStyle(style: any) {
+  if (!style) return {};
+  if (Array.isArray(style)) {
+    return style.filter(Boolean).reduce((acc, item) => ({ ...acc, ...flattenStyle(item) }), {});
+  }
+  return StyleSheet.flatten(style) ?? {};
+}
+
+function hasAncestorTestId(node: any, testID: string) {
+  let current = node?.parent;
+  while (current) {
+    if (current.props?.testID === testID || current.props?.['data-testid'] === testID) {
+      return true;
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
 describe('BottomTabBar', () => {
   it('默认不应该渲染激活态指示器', () => {
     const props = createProps(0);
@@ -124,5 +144,59 @@ describe('BottomTabBar', () => {
     expect(props.navigation.emit).toHaveBeenCalled();
     expect(props.navigation.navigate).toHaveBeenCalledWith('Profile');
     expect(getByText('99+')).toBeTruthy();
+  });
+
+  it('应该将底部安全区作为独立 spacer，并保持内容行高度不变', () => {
+    const { getAllByTestId } = render(
+      <ThemeProvider light={theme}>
+        <BottomTabBar {...createProps()} height={82} />
+      </ThemeProvider>
+    );
+
+    const containerStyle = flattenStyle(getAllByTestId('bottom-tab-bar')[0].props.style);
+    const contentStyle = flattenStyle(getAllByTestId('bottom-tab-bar-content')[0].props.style);
+    const safeAreaStyle = flattenStyle(getAllByTestId('bottom-tab-bar-safe-area')[0].props.style);
+
+    expect(containerStyle.height).toBe(92);
+    expect(containerStyle.flexDirection).toBe('column');
+    expect(contentStyle.height).toBe(82);
+    expect(contentStyle.flexDirection).toBe('row');
+    expect(safeAreaStyle.height).toBe(10);
+
+    expect(hasAncestorTestId(getAllByTestId('home-tab')[0], 'bottom-tab-bar-content')).toBe(true);
+    expect(hasAncestorTestId(getAllByTestId('profile-tab')[0], 'bottom-tab-bar-content')).toBe(
+      true
+    );
+  });
+
+  it('默认高度应该使用框架常量并计入底部安全区', () => {
+    const { getAllByTestId } = render(
+      <ThemeProvider light={theme}>
+        <BottomTabBar {...createProps()} />
+      </ThemeProvider>
+    );
+
+    const containerStyle = flattenStyle(getAllByTestId('bottom-tab-bar')[0].props.style);
+    const contentStyle = flattenStyle(getAllByTestId('bottom-tab-bar-content')[0].props.style);
+
+    expect(contentStyle.height).toBe(DEFAULT_BOTTOM_TAB_BAR_HEIGHT);
+    expect(containerStyle.height).toBe(DEFAULT_BOTTOM_TAB_BAR_HEIGHT + 10);
+  });
+
+  it('style.height 不应该覆盖由 height 属性和安全区计算出的总高度', () => {
+    const { getAllByTestId } = render(
+      <ThemeProvider light={theme}>
+        <BottomTabBar
+          {...createProps()}
+          height={82}
+          style={{ height: 1, backgroundColor: '#ffffff' }}
+        />
+      </ThemeProvider>
+    );
+
+    const containerStyle = flattenStyle(getAllByTestId('bottom-tab-bar')[0].props.style);
+
+    expect(containerStyle.height).toBe(92);
+    expect(containerStyle.backgroundColor).toBe('#ffffff');
   });
 });

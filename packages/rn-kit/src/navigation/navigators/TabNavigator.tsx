@@ -9,6 +9,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BottomTabBar } from '../components/BottomTabBar';
 import type { TabParamList, TabNavigatorProps, TabRouteConfig } from '../types';
+import { flattenTabBarStyle, withoutTabBarHeight } from '../utils/tab-bar-style';
 
 const NativeTab = createBottomTabNavigator<TabParamList>();
 
@@ -83,7 +84,7 @@ export function TabNavigator({
         options.tabBarLabelStyle = tabBarOptions.labelStyle;
       }
       if (tabBarOptions.style) {
-        options.tabBarStyle = tabBarOptions.style;
+        options.tabBarStyle = withoutTabBarHeight(flattenTabBarStyle(tabBarOptions.style));
       }
     }
 

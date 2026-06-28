@@ -2,6 +2,7 @@ export { Progress, type ProgressProps } from './Progress';
 export { Card, type CardProps, type CardVariant } from './Card';
 export {
   Icon,
+  type IconName,
   type IconProps,
   type IconSize,
   NavigationIcons,

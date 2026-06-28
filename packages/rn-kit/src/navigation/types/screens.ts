@@ -1,4 +1,4 @@
-import type { TextStyle, ViewStyle } from 'react-native';
+import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import type { StackNavigationOptions } from '@react-navigation/stack';
 
 /**
@@ -57,8 +57,8 @@ export interface TabBarOptions {
   indicatorColor?: string;
   /** 激活态指示器高度 */
   indicatorHeight?: number;
-  /** 标签栏样式 */
-  style?: ViewStyle;
+  /** 标签栏样式。高度请使用 height 配置，style.height 会被 BottomTabBar 忽略。 */
+  style?: StyleProp<ViewStyle>;
   /** 标签栏高度（不含底部安全区，默认 65） */
   height?: number;
 }

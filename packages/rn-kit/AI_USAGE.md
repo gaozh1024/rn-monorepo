@@ -11,6 +11,9 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Use createAPI when you want the framework's typed API factory and its observability integration.
 - Use createApiStreamRequest and readApiSSEStream when an Expo app needs expo/fetch based SSE or AI/chat streaming.
 - Use createTelemetryClient when you need to forward sanitized production telemetry to an app-owned collector.
+- Use useBottomTabBarMetrics when a tab page, floating action area, or scroll container needs safe-area-aware bottom tab spacing.
+- Use AppButton surface/soft variants, icon slots, and style hooks when login, verification-code, or custom action buttons need to match a design spec without leaving rn-kit.
+- Use AppInput visualPreset="soft-login", inputSize, variant, and focus styling APIs for login-form inputs that need fixed visual dimensions and custom focus treatment.
 - Use SegmentedTabs for page-local menu/status/category switching when the selected background should slide horizontally between options.
 - Use Card variant="flat" and AppPressable motionPreset="none" for high-density list/grid interactions where press feedback should stay lightweight.
 - Use animated={false} or motionReduceMotion on Progress, SegmentedTabs, Switch, Checkbox and Radio when reduced motion or Reanimated-free render paths are required.
@@ -26,6 +29,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Prefer importing from the root package entry @gaozh1024/rn-kit.
 - For app bootstrap, prefer AppProvider over manually assembling providers.
 - For page containers, prefer AppScreen for ordinary business pages and SafeScreen only when you need direct safe-area control.
+- For tab root screens rendered under BottomTabBar, use AppScreen bottom={false}; BottomTabBar owns the bottom safe-area inset.
 - For SSE streaming, prefer createApiStreamRequest plus readApiSSEStream instead of hand-rolling response.body parsing in every feature.
 
 ## Install Prerequisites
@@ -50,12 +54,20 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Prefer the stable public API `ThemeProvider` when it matches the use case.
 - Prefer the stable public API `createTheme` when it matches the use case.
 - Prefer the stable public API `useTheme` when it matches the use case.
+- Prefer the stable public API `useThemeColors` when it matches the use case.
+- Prefer the stable public API `getThemeColors` when it matches the use case.
 - Prefer the stable public API `AppScreen` when it matches the use case.
 - Prefer the stable public API `AppButton` when it matches the use case.
+- Prefer the stable public API `AppInput` when it matches the use case.
+- Prefer the stable public API `Icon` when it matches the use case.
+- Prefer the stable public API `IconName` when it matches the use case.
 - Prefer the stable public API `createAPI` when it matches the use case.
 - Prefer the stable public API `createApiStreamRequest` when it matches the use case.
 - Prefer the stable public API `readApiSSEStream` when it matches the use case.
 - Prefer the stable public API `useStreamRequest` when it matches the use case.
+- Prefer the stable public API `useAppSafeAreaInsets` when it matches the use case.
+- Prefer the stable public API `useBottomTabBarMetrics` when it matches the use case.
+- Prefer the stable public API `DEFAULT_BOTTOM_TAB_BAR_HEIGHT` when it matches the use case.
 - Prefer the stable public API `useToggle` when it matches the use case.
 - Prefer the stable public API `SegmentedTabs` when it matches the use case.
 - Prefer the stable public API `AppPressable` when it matches the use case.
@@ -72,6 +84,9 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Treating missing styles as a ThemeProvider issue before checking NativeWind and Tailwind configuration.
 - Rebuilding the whole app tree to switch theme when passing isDark to AppProvider or ThemeProvider is sufficient.
 - Do not call vendor monitoring SDKs directly from scattered components; wrap them behind createTelemetryClient transports.
+- Do not set BottomTabBar height through style.height; use height or tabBarOptions.height so safe-area metrics stay correct.
+- Do not replace AppButton with raw Pressable just to match fixed-height, icon, shadow, pressed, or disabled button designs; use AppButton style hooks, slots, and variants first.
+- Do not hand-roll login inputs only to get 56px height, 16px radius, white background, or custom focus rings; use AppInput visual presets and focus APIs first.
 
 ## Common Failure Cases
 
@@ -81,6 +96,9 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - SegmentedTabs appears not to move its selected indicator if the container has not measured yet; ensure it is rendered with a non-zero width via layout, w, or style.width.
 - Reanimated-related warnings in dense lists can often be avoided by choosing AppPressable/Card no-motion paths and no-animation form/display controls where animated feedback is not needed.
 - SSE streams fail in non-Expo or custom runtimes when expo/fetch is unavailable; pass a compatible fetcher if the app owns a different streaming transport.
+- Tab root pages can show device-specific blank space above the tab bar if AppScreen keeps bottom safe-area padding while BottomTabBar also renders the bottom safe-area spacer.
+- Buttons with ReactNode children may need renderContent, leftIcon, or rightIcon when the design expects custom layout instead of automatic text wrapping.
+- MaterialIcons names should be kebab-case such as check-circle; snake_case names are normalized for compatibility but should be migrated in new code.
 
 ## Compatibility Baseline
 
@@ -90,6 +108,9 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - AppImage is based on expo-image in rn-kit >= 0.4.6.
 - AppPressable defaults to a no-motion native Pressable path; opt into motionPreset when animated press feedback is required.
 - Progress, SegmentedTabs, Switch, Checkbox and Radio support explicit no-animation/reduced-motion paths that avoid Reanimated hook setup.
+- AppButton supports solid, outline, ghost, surface, and soft variants plus style/content/text/pressed/disabled style hooks.
+- AppInput supports outline, filled, soft, and surface variants plus sm/md/lg sizes and default, soft-login, and surface visual presets.
+- createTheme includes outline, outlineVariant, surfaceContainerLowest, surfaceContainerLow, primaryFixed, primaryFixedDim, radii, shadows, and typography design tokens.
 
 ## See Also
 

@@ -104,7 +104,7 @@ describe('导航器模块', () => {
             indicatorHeight: 4,
             labelStyle: { fontSize: 13 },
             iconStyle: { marginBottom: 4 },
-            style: { borderTopWidth: 0, backgroundColor: '#ffffff' },
+            style: { height: 1, borderTopWidth: 0, backgroundColor: '#ffffff' },
             height: 72,
           }}
         >
@@ -135,8 +135,16 @@ describe('导航器模块', () => {
     expect(tabBarElement.props.indicatorHeight).toBe(4);
     expect(tabBarElement.props.labelStyle).toEqual({ fontSize: 13 });
     expect(tabBarElement.props.iconStyle).toEqual({ marginBottom: 4 });
-    expect(tabBarElement.props.style).toEqual({ borderTopWidth: 0, backgroundColor: '#ffffff' });
+    expect(tabBarElement.props.style).toEqual({
+      height: 1,
+      borderTopWidth: 0,
+      backgroundColor: '#ffffff',
+    });
     expect(tabBarElement.props.height).toBe(72);
+    expect(navigatorProps.screenOptions.tabBarStyle).toEqual({
+      borderTopWidth: 0,
+      backgroundColor: '#ffffff',
+    });
   });
 
   it('TabNavigator 应该允许自定义 tabBar 覆盖默认实现', async () => {

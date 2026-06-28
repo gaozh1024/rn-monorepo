@@ -68,6 +68,51 @@ describe('createTheme', () => {
     const theme = createTheme({ colors: {} });
     expect(theme.borderRadius.none).toBe(0);
     expect(theme.borderRadius.full).toBe(9999);
+    expect(theme.radii.lg).toBe(16);
+    expect(theme.radii.xl).toBe(24);
+  });
+
+  it('应该提供设计 token 默认值并支持覆盖', () => {
+    const theme = createTheme({
+      colors: {
+        outline: '#111827',
+      },
+      radii: {
+        lg: 20,
+      },
+      shadows: {
+        level1: {
+          shadowColor: '#111111',
+          shadowOpacity: 0.2,
+        },
+      },
+      typography: {
+        bodyLg: {
+          fontSize: 18,
+          lineHeight: 28,
+          fontWeight: '500',
+        },
+      },
+    });
+
+    expect(theme.colors.outline[500]).toBe('#111827');
+    expect(theme.colors.outlineVariant).toBeDefined();
+    expect(theme.colors.surfaceContainerLowest).toBeDefined();
+    expect(theme.colors.surfaceContainerLow).toBeDefined();
+    expect(theme.colors.primaryFixed).toBeDefined();
+    expect(theme.colors.primaryFixedDim).toBeDefined();
+    expect(theme.radii.lg).toBe(20);
+    expect(theme.shadows.level1).toMatchObject({
+      shadowColor: '#111111',
+      shadowOpacity: 0.2,
+    });
+    expect(theme.shadows.level2).toBeDefined();
+    expect(theme.typography.bodyLg).toMatchObject({
+      fontSize: 18,
+      lineHeight: 28,
+      fontWeight: '500',
+    });
+    expect(theme.typography.headlineSm).toBeDefined();
   });
 
   it('应该支持多颜色', () => {

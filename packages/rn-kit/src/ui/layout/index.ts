@@ -8,3 +8,4 @@ export {
   type SafeScreenProps,
   type AppScreenProps,
 } from './SafeScreen';
+export { useAppSafeAreaInsets } from './useAppSafeAreaInsets';

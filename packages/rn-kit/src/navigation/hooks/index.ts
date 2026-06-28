@@ -31,3 +31,10 @@ export {
   useFocusEffect,
   useScrollToTop,
 } from './useNavigationState';
+
+// Layout metrics
+export {
+  useBottomTabBarMetrics,
+  type BottomTabBarMetrics,
+  type UseBottomTabBarMetricsOptions,
+} from './useBottomTabBarMetrics';

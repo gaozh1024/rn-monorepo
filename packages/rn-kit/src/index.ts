@@ -2,7 +2,15 @@
 export * from '@/utils';
 
 // Theme - 重命名冲突的类型
-export type { Theme, ThemeConfig, ColorPalette as ThemeColorPalette, ColorToken } from '@/theme';
+export type {
+  Theme,
+  ThemeConfig,
+  ColorPalette as ThemeColorPalette,
+  ColorToken,
+  ShadowToken,
+  TypographyToken,
+  ThemeColorTokens,
+} from '@/theme';
 export { createTheme, ThemeProvider, useTheme, useThemeColors, getThemeColors } from '@/theme';
 
 // Core

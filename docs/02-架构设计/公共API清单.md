@@ -68,10 +68,15 @@
 | `ThemeConfig`        | type      | ✅ 稳定 | 主题配置类型        |
 | `ColorPalette`       | type      | ✅ 稳定 | 色板类型            |
 | `ColorToken`         | type      | ✅ 稳定 | 颜色令牌类型        |
+| `ShadowToken`        | type      | ✅ 稳定 | 阴影令牌类型        |
+| `TypographyToken`    | type      | ✅ 稳定 | 排版令牌类型        |
 | `createTheme`        | function  | ✅ 稳定 | 创建主题            |
 | `ThemeProvider`      | component | ✅ 稳定 | 主题提供者          |
 | `useTheme`           | hook      | ✅ 稳定 | 获取主题上下文      |
 | `ThemeProviderProps` | type      | ✅ 稳定 | Provider Props 类型 |
+| `getThemeColors`     | function  | ✅ 稳定 | 读取语义颜色令牌    |
+| `useThemeColors`     | hook      | ✅ 稳定 | Hook 形式读取语义色 |
+| `ThemeColorTokens`   | type      | ✅ 稳定 | 语义颜色令牌类型    |
 
 **注意**: 根入口 `index.ts` 将 `ColorPalette` 重命名为 `ThemeColorPalette` 导出，以避免与 `utils` 中的同名类型冲突。
 
@@ -185,18 +190,19 @@ UI 组件库，所有组件均为**稳定公共 API**。
 
 ### 4.2 Layout 布局组件
 
-| 导出项            | 类型      | 稳定性  | 备注             |
-| ----------------- | --------- | ------- | ---------------- |
-| `Row`             | component | ✅ 稳定 | 水平布局         |
-| `RowProps`        | type      | ✅ 稳定 | Props 类型       |
-| `Col`             | component | ✅ 稳定 | 垂直布局         |
-| `ColProps`        | type      | ✅ 稳定 | Props 类型       |
-| `Center`          | component | ✅ 稳定 | 居中布局         |
-| `CenterProps`     | type      | ✅ 稳定 | Props 类型       |
-| `SafeScreen`      | component | ✅ 稳定 | 安全区域基础容器 |
-| `AppScreen`       | component | ✅ 稳定 | 页面容器（推荐） |
-| `SafeBottom`      | component | ✅ 稳定 | 底部安全区域     |
-| `SafeScreenProps` | type      | ✅ 稳定 | Props 类型       |
+| 导出项                 | 类型      | 稳定性  | 备注                      |
+| ---------------------- | --------- | ------- | ------------------------- |
+| `Row`                  | component | ✅ 稳定 | 水平布局                  |
+| `RowProps`             | type      | ✅ 稳定 | Props 类型                |
+| `Col`                  | component | ✅ 稳定 | 垂直布局                  |
+| `ColProps`             | type      | ✅ 稳定 | Props 类型                |
+| `Center`               | component | ✅ 稳定 | 居中布局                  |
+| `CenterProps`          | type      | ✅ 稳定 | Props 类型                |
+| `SafeScreen`           | component | ✅ 稳定 | 安全区域基础容器          |
+| `AppScreen`            | component | ✅ 稳定 | 页面容器（推荐）          |
+| `SafeBottom`           | component | ✅ 稳定 | 底部安全区域              |
+| `useAppSafeAreaInsets` | hook      | ✅ 稳定 | 读取框架统一安全区 Insets |
+| `SafeScreenProps`      | type      | ✅ 稳定 | Props 类型                |
 
 ### 4.3 Actions 操作组件
 
@@ -204,6 +210,13 @@ UI 组件库，所有组件均为**稳定公共 API**。
 | ---------------- | --------- | ------- | ---------- |
 | `AppButton`      | component | ✅ 稳定 | 按钮组件   |
 | `AppButtonProps` | type      | ✅ 稳定 | Props 类型 |
+
+#### 0.6.2 AppButton 设计稿级扩展
+
+- `variant` 增加 `surface` / `soft`，其中 `surface` 默认白底/卡片底、无边框、轻阴影，`soft` 默认浅色背景 + 主题文字。
+- 新增精细样式入口：`style` / `contentStyle` / `textStyle` / `pressedStyle` / `disabledStyle`。
+- 新增内容插槽：`leftIcon` / `rightIcon` / `iconGap` / `renderContent`。
+- 字符串/数字 children 仍会包进 `AppText`，复杂 ReactNode children 会按原样渲染，适合“登录 + 箭头”这类组合按钮。
 
 ### 4.4 Feedback 反馈组件
 
@@ -227,6 +240,7 @@ UI 组件库，所有组件均为**稳定公共 API**。
 | `CardVariant`              | type      | ✅ 稳定 | 卡片表面重量：flat / outlined / elevated |
 | `Icon`                     | component | ✅ 稳定 | 图标组件                                 |
 | `IconProps`                | type      | ✅ 稳定 | Props 类型                               |
+| `IconName`                 | type      | ✅ 稳定 | 图标名称类型，兼容 MaterialIcons 字符串  |
 | `IconSize`                 | type      | ✅ 稳定 | 图标尺寸                                 |
 | `NavigationIcons`          | object    | ✅ 稳定 | 导航图标集合                             |
 | `ActionIcons`              | object    | ✅ 稳定 | 操作图标集合                             |
@@ -264,30 +278,40 @@ UI 组件库，所有组件均为**稳定公共 API**。
 
 ### 4.6 Form 表单组件
 
-| 导出项               | 类型      | 稳定性  | 备注       |
-| -------------------- | --------- | ------- | ---------- |
-| `AppInput`           | component | ✅ 稳定 | 输入框     |
-| `AppInputProps`      | type      | ✅ 稳定 | Props 类型 |
-| `Checkbox`           | component | ✅ 稳定 | 复选框     |
-| `CheckboxProps`      | type      | ✅ 稳定 | Props 类型 |
-| `CheckboxGroup`      | component | ✅ 稳定 | 复选框组   |
-| `CheckboxGroupProps` | type      | ✅ 稳定 | Props 类型 |
-| `Radio`              | component | ✅ 稳定 | 单选框     |
-| `RadioProps`         | type      | ✅ 稳定 | Props 类型 |
-| `RadioGroup`         | component | ✅ 稳定 | 单选框组   |
-| `RadioGroupProps`    | type      | ✅ 稳定 | Props 类型 |
-| `Switch`             | component | ✅ 稳定 | 开关       |
-| `SwitchProps`        | type      | ✅ 稳定 | Props 类型 |
-| `Slider`             | component | ✅ 稳定 | 滑块       |
-| `SliderProps`        | type      | ✅ 稳定 | Props 类型 |
-| `Select`             | component | ✅ 稳定 | 选择器     |
-| `SelectProps`        | type      | ✅ 稳定 | Props 类型 |
-| `SelectOption`       | type      | ✅ 稳定 | 选项类型   |
-| `DatePicker`         | component | ✅ 稳定 | 日期选择器 |
-| `DatePickerProps`    | type      | ✅ 稳定 | Props 类型 |
-| `FormItem`           | component | ✅ 稳定 | 表单项     |
-| `FormItemProps`      | type      | ✅ 稳定 | Props 类型 |
-| `useForm`            | hook      | ✅ 稳定 | 表单管理   |
+| 导出项                 | 类型      | 稳定性  | 备注           |
+| ---------------------- | --------- | ------- | -------------- |
+| `AppInput`             | component | ✅ 稳定 | 输入框         |
+| `AppInputProps`        | type      | ✅ 稳定 | Props 类型     |
+| `AppInputVariant`      | type      | ✅ 稳定 | 输入框视觉变体 |
+| `AppInputSize`         | type      | ✅ 稳定 | 输入框尺寸     |
+| `AppInputVisualPreset` | type      | ✅ 稳定 | 输入框视觉预设 |
+| `Checkbox`             | component | ✅ 稳定 | 复选框         |
+| `CheckboxProps`        | type      | ✅ 稳定 | Props 类型     |
+| `CheckboxGroup`        | component | ✅ 稳定 | 复选框组       |
+| `CheckboxGroupProps`   | type      | ✅ 稳定 | Props 类型     |
+| `Radio`                | component | ✅ 稳定 | 单选框         |
+| `RadioProps`           | type      | ✅ 稳定 | Props 类型     |
+| `RadioGroup`           | component | ✅ 稳定 | 单选框组       |
+| `RadioGroupProps`      | type      | ✅ 稳定 | Props 类型     |
+| `Switch`               | component | ✅ 稳定 | 开关           |
+| `SwitchProps`          | type      | ✅ 稳定 | Props 类型     |
+| `Slider`               | component | ✅ 稳定 | 滑块           |
+| `SliderProps`          | type      | ✅ 稳定 | Props 类型     |
+| `Select`               | component | ✅ 稳定 | 选择器         |
+| `SelectProps`          | type      | ✅ 稳定 | Props 类型     |
+| `SelectOption`         | type      | ✅ 稳定 | 选项类型       |
+| `DatePicker`           | component | ✅ 稳定 | 日期选择器     |
+| `DatePickerProps`      | type      | ✅ 稳定 | Props 类型     |
+| `FormItem`             | component | ✅ 稳定 | 表单项         |
+| `FormItemProps`        | type      | ✅ 稳定 | Props 类型     |
+| `useForm`              | hook      | ✅ 稳定 | 表单管理       |
+
+#### 0.6.2 AppInput 设计稿级扩展
+
+- 新增 focus API：`focusedContainerStyle` / `focusRingColor` / `focusRingWidth` / `focusBackgroundColor`。
+- 新增视觉变体：`variant="outline" | "filled" | "soft" | "surface"`。
+- 新增固定视觉规格：`inputSize="sm" | "md" | "lg"` 与 `visualPreset="default" | "soft-login" | "surface"`。
+- `soft-login` 默认适合登录页输入框：高度 56、圆角 16、白底、无边框、弱阴影、outline-variant 占位色。
 
 #### Select 可本地化文案参数（可选）
 
@@ -368,36 +392,39 @@ UI 组件库，所有组件均为**稳定公共 API**。
 
 ### 5.3 Components
 
-| 导出项                    | 类型      | 稳定性  | 备注                    |
-| ------------------------- | --------- | ------- | ----------------------- |
-| `AppHeader`               | component | ✅ 稳定 | 应用头部                |
-| `AppHeaderProps`          | type      | ✅ 稳定 | Props 类型              |
-| `AppScrollView`           | component | ✅ 稳定 | 滚动容器                |
-| `AppScrollViewProps`      | type      | ✅ 稳定 | Props 类型              |
-| `BottomTabBar`            | component | ✅ 稳定 | 底部标签栏，默认高度 65 |
-| `CustomBottomTabBarProps` | type      | ✅ 稳定 | Props 类型              |
-| `DrawerContent`           | component | ✅ 稳定 | 抽屉内容                |
-| `DrawerContentProps`      | type      | ✅ 稳定 | Props 类型              |
-| `DrawerItem`              | type      | ✅ 稳定 | 抽屉项类型              |
+| 导出项                    | 类型      | 稳定性  | 备注                                            |
+| ------------------------- | --------- | ------- | ----------------------------------------------- |
+| `AppHeader`               | component | ✅ 稳定 | 应用头部                                        |
+| `AppHeaderProps`          | type      | ✅ 稳定 | Props 类型                                      |
+| `AppScrollView`           | component | ✅ 稳定 | 滚动容器                                        |
+| `AppScrollViewProps`      | type      | ✅ 稳定 | Props 类型                                      |
+| `BottomTabBar`            | component | ✅ 稳定 | 底部标签栏，默认内容高度 65，自动追加底部安全区 |
+| `CustomBottomTabBarProps` | type      | ✅ 稳定 | Props 类型                                      |
+| `DrawerContent`           | component | ✅ 稳定 | 抽屉内容                                        |
+| `DrawerContentProps`      | type      | ✅ 稳定 | Props 类型                                      |
+| `DrawerItem`              | type      | ✅ 稳定 | 抽屉项类型                                      |
 
 ### 5.4 Hooks
 
-| 导出项                      | 类型 | 稳定性    | 备注                       |
-| --------------------------- | ---- | --------- | -------------------------- |
-| `useStackNavigation`        | hook | ✅ 稳定   | 堆栈导航 Hook              |
-| `useTabNavigation`          | hook | ✅ 稳定   | 标签导航 Hook              |
-| `useDrawerNavigation`       | hook | ✅ 稳定   | 抽屉导航 Hook              |
-| `useRoute`                  | hook | ✅ 稳定   | 获取当前路由               |
-| `useNavigationState`        | hook | ✅ 稳定   | 获取导航状态               |
-| `useBackHandler`            | hook | ✅ 稳定   | 安卓返回键处理             |
-| `useIsFocused`              | hook | ✅ 稳定   | React Navigation 官方 Hook |
-| `useFocusEffect`            | hook | ✅ 稳定   | React Navigation 官方 Hook |
-| `useScrollToTop`            | hook | ✅ 稳定   | React Navigation 官方 Hook |
-| `NativeStackNavigationProp` | type | ⚠️ 待观察 | React Navigation 原始类型  |
-| `BottomTabNavigationProp`   | type | ⚠️ 待观察 | React Navigation 原始类型  |
-| `DrawerNavigationProp`      | type | ⚠️ 待观察 | React Navigation 原始类型  |
-| `RouteProp`                 | type | ⚠️ 待观察 | React Navigation 原始类型  |
-| `NavigationProp`            | type | ⚠️ 待观察 | React Navigation 原始类型  |
+| 导出项                          | 类型 | 稳定性    | 备注                                     |
+| ------------------------------- | ---- | --------- | ---------------------------------------- |
+| `useStackNavigation`            | hook | ✅ 稳定   | 堆栈导航 Hook                            |
+| `useTabNavigation`              | hook | ✅ 稳定   | 标签导航 Hook                            |
+| `useDrawerNavigation`           | hook | ✅ 稳定   | 抽屉导航 Hook                            |
+| `useRoute`                      | hook | ✅ 稳定   | 获取当前路由                             |
+| `useNavigationState`            | hook | ✅ 稳定   | 获取导航状态                             |
+| `useBackHandler`                | hook | ✅ 稳定   | 安卓返回键处理                           |
+| `useBottomTabBarMetrics`        | hook | ✅ 稳定   | 获取底部导航内容高度、安全区与总占位高度 |
+| `useIsFocused`                  | hook | ✅ 稳定   | React Navigation 官方 Hook               |
+| `useFocusEffect`                | hook | ✅ 稳定   | React Navigation 官方 Hook               |
+| `useScrollToTop`                | hook | ✅ 稳定   | React Navigation 官方 Hook               |
+| `NativeStackNavigationProp`     | type | ⚠️ 待观察 | React Navigation 原始类型                |
+| `BottomTabNavigationProp`       | type | ⚠️ 待观察 | React Navigation 原始类型                |
+| `DrawerNavigationProp`          | type | ⚠️ 待观察 | React Navigation 原始类型                |
+| `RouteProp`                     | type | ⚠️ 待观察 | React Navigation 原始类型                |
+| `NavigationProp`                | type | ⚠️ 待观察 | React Navigation 原始类型                |
+| `BottomTabBarMetrics`           | type | ✅ 稳定   | 底部导航高度指标                         |
+| `UseBottomTabBarMetricsOptions` | type | ✅ 稳定   | 底部导航高度指标 Hook 参数               |
 
 ### 5.5 Types
 

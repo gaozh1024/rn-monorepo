@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
+import { act, create } from 'react-test-renderer';
 import { AppInput, AppTextInput } from '../../form/AppInput';
+import { AppView } from '../../primitives/AppView';
 import { renderWithTheme } from './test-utils';
 
 function flattenStyle(style: any): Record<string, any> {
@@ -47,8 +49,10 @@ describe('AppInput', () => {
     const input = getByTestId('input');
 
     fireEvent.changeText(input, 'panther');
-    input.props.onFocus?.({ nativeEvent: {} });
-    input.props.onBlur?.({ nativeEvent: {} });
+    act(() => {
+      input.props.onFocus?.({ nativeEvent: {} });
+      input.props.onBlur?.({ nativeEvent: {} });
+    });
 
     expect(onChangeText).toHaveBeenCalledWith('panther');
     expect(onFocus).toHaveBeenCalledTimes(1);
@@ -102,6 +106,63 @@ describe('AppInput', () => {
       paddingBottom: 12,
       fontSize: 16,
     });
+  });
+
+  it('应该支持 focus API 覆盖聚焦容器样式', () => {
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <AppInput
+          testID="input"
+          value=""
+          focusRingColor="#38bdf8"
+          focusRingWidth={2}
+          focusBackgroundColor="#f0f9ff"
+          focusedContainerStyle={{ shadowRadius: 14 }}
+        />
+      );
+    });
+
+    act(() => {
+      renderer!.root.findByType('TextInput').props.onFocus?.({ nativeEvent: {} });
+    });
+
+    const container = renderer!.root
+      .findAllByType(AppView)
+      .find(view => view.props.testID === 'input-container');
+    const containerStyle = flattenStyle(container?.props.style);
+
+    expect(containerStyle).toMatchObject({
+      borderColor: '#38bdf8',
+      borderWidth: 2,
+      backgroundColor: '#f0f9ff',
+      shadowColor: '#38bdf8',
+      shadowRadius: 14,
+    });
+  });
+
+  it('应该支持 soft-login 视觉预设', () => {
+    const { getByTestId } = renderWithTheme(
+      <AppInput testID="input" value="" visualPreset="soft-login" placeholder="手机号" />
+    );
+
+    const containerStyle = flattenStyle(getByTestId('input-container').props.style);
+    const inputStyle = flattenStyle(getByTestId('input').props.style);
+
+    expect(containerStyle).toMatchObject({
+      height: 56,
+      borderRadius: 16,
+      borderWidth: 0,
+      backgroundColor: '#ffffff',
+      shadowColor: '#000000',
+    });
+    expect(inputStyle).toMatchObject({
+      fontSize: 16,
+      paddingTop: 14,
+      paddingBottom: 14,
+    });
+    expect(getByTestId('input').props.placeholderTextColor).toBe('#d1d5db');
   });
 
   it('默认不显示密码切换图标', () => {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/expo-starter",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "role": "template",
   "summary": "Canonical Expo starter template for Panther-based apps, showing the recommended project structure, provider layout, navigation, storage wiring, and theme usage.",
   "entrypoints": [
@@ -34,7 +34,8 @@
   "antiPatterns": [
     "Treating the template as proof that any newer Expo-native package version will be safe in the same app.",
     "Flattening all provider layers into a single app file instead of preserving the stable root-vs-business provider split.",
-    "Ignoring the template's AppScreen conventions and then diagnosing safe-area or theme issues as component bugs."
+    "Ignoring the template's AppScreen conventions and then diagnosing safe-area or theme issues as component bugs.",
+    "Setting BottomTabBar height through style.height instead of tabBarOptions.height."
   ],
   "canonicalExamples": [
     {

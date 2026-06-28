@@ -186,7 +186,7 @@ export function LoginScreen() {
 
 ### TabNavigator 默认底栏
 
-框架的 `TabNavigator` 在未传入 `tabBar` 时，会默认使用内置 `BottomTabBar`，默认高度为 `65`。
+框架的 `TabNavigator` 在未传入 `tabBar` 时，会默认使用内置 `BottomTabBar`，默认内容高度为 `65`。这个高度不包含底部安全区，`BottomTabBar` 会自动把设备底部安全区追加为底栏背景延伸。
 
 ```tsx
 <TabNavigator
@@ -199,6 +199,24 @@ export function LoginScreen() {
 >
   {/* screens */}
 </TabNavigator>
+```
+
+Tab 一级页面如果使用 `AppScreen`，请关闭页面自己的底部安全区，避免和底栏重复叠加：
+
+```tsx
+<AppScreen surface="background" bottom={false}>
+  {/* tab root content */}
+</AppScreen>
+```
+
+如果滚动内容需要主动避开固定底栏，请使用 `useBottomTabBarMetrics()` 计算总高度：
+
+```tsx
+const tabBar = useBottomTabBarMetrics({ height: 72 });
+
+<AppScrollView contentContainerStyle={{ paddingBottom: tabBar.totalHeight + 24 }}>
+  {/* content */}
+</AppScrollView>;
 ```
 
 如需完全自定义：

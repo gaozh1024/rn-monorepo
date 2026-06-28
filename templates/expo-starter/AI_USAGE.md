@@ -21,6 +21,7 @@ Canonical Expo starter template for Panther-based apps, showing the recommended 
 - Prefer RootApp, root/providers.tsx, and AppProviders.tsx as the primary reference for app bootstrap and provider layering.
 - Use the template's data/api.ts as the canonical createAPI integration example.
 - Use PageScreen and existing feature screens as the canonical AppScreen page structure reference.
+- For tab root screens rendered under MainTabs, use AppScreen bottom={false} if a tab page uses AppScreen; BottomTabBar owns the bottom safe-area inset.
 - Use src/recipes/stream-sse.ts as the canonical reference for Expo fetch based SSE streaming.
 - Use src/recipes/segmented-tabs.tsx as the canonical reference for page-local animated status/category switching.
 - Use src/recipes/observatory-navigation.tsx as the canonical reference for rn-observatory screen tracking integration.
@@ -55,12 +56,14 @@ Canonical Expo starter template for Panther-based apps, showing the recommended 
 - Treating the template as proof that any newer Expo-native package version will be safe in the same app.
 - Flattening all provider layers into a single app file instead of preserving the stable root-vs-business provider split.
 - Ignoring the template's AppScreen conventions and then diagnosing safe-area or theme issues as component bugs.
+- Setting BottomTabBar height through style.height instead of tabBarOptions.height.
 
 ## Common Failure Cases
 
 - Existing apps diverge from the template's dependency baseline and then hit version skew with native packages.
 - Business capabilities are placed into root providers instead of AppProviders, making future template alignment harder.
 - Page containers diverge from AppScreen conventions and lose the template's expected safe-area or background behavior.
+- Tab root pages use default AppScreen bottom padding while BottomTabBar also owns the bottom safe area, creating device-specific blank space above the tab bar.
 
 ## Compatibility Baseline
 

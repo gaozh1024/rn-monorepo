@@ -208,7 +208,7 @@ release 脚本会生成 `observatory-release.json`，并在设置 `APP_OBSERVATO
 
 ## 依赖兼容性说明
 
-当前模板以 **Expo SDK 55.0.x + React Native 0.83.x** 为新项目基线维护，配套 `@gaozh1024/rn-kit ^0.6.0`。
+当前模板以 **Expo SDK 55.0.x + React Native 0.83.x** 为新项目基线维护，配套 `@gaozh1024/rn-kit ^0.6.1`。
 
 如果你准备把 `@gaozh1024/rn-kit` 接入到其他 Expo 项目，建议：
 
@@ -216,7 +216,7 @@ release 脚本会生成 `observatory-release.json`，并在设置 `APP_OBSERVATO
 2. 使用 `npx expo install ...` 安装原生依赖
 3. 再安装 `@gaozh1024/rn-kit`
 
-模板当前默认用法与 `rn-kit 0.6.0` 对齐，推荐保持下面这套根接入方式：
+模板当前默认用法与 `rn-kit 0.6.x` 对齐，推荐保持下面这套根接入方式：
 
 - 统一由 `src/root/providers.tsx` 包裹 `AppProvider`
 - 通过 `lightTheme` / `darkTheme` + `isDark` 做受控主题切换
@@ -547,6 +547,16 @@ import { KeyboardDismissView } from '@gaozh1024/rn-kit';
   {/* screens */}
 </TabNavigator>
 ```
+
+`height` 表示底部导航内容区高度，不包含设备底部安全区；`BottomTabBar` 会自动追加底部安全区背景。Tab 一级页面如果改为使用 `AppScreen`，请使用 `bottom={false}`，避免页面容器和底栏重复叠加底部安全区：
+
+```tsx
+<AppScreen surface="background" bottom={false}>
+  {/* tab root content */}
+</AppScreen>
+```
+
+如果某个滚动区域需要主动避开固定底栏，可以从 `rn-kit` 引入 `useBottomTabBarMetrics()`，用 `metrics.totalHeight + 业务间距` 作为 `contentContainerStyle.paddingBottom`。
 
 ### 导航类型约定
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { Icon } from '../../display/Icon';
+import { Icon, type IconName } from '../../display/Icon';
 import { AppView } from '../../primitives/AppView';
 import { act, create } from 'react-test-renderer';
 import { ThemeProvider, createTheme } from '@/theme';
@@ -66,5 +66,33 @@ describe('Icon', () => {
     expect(wrapper.props.p).toBe(4);
     expect(wrapper.props.rounded).toBe('full');
     expect(wrapper.props.bg).toBe('primary-500');
+  });
+
+  it('应该兼容 snake_case 图标名称并提示使用 kebab-case', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <Icon testID="icon" name="check_circle" />
+        </ThemeProvider>
+      );
+    });
+
+    const materialIcon = renderer!.root.findByType('MaterialIcon');
+
+    expect(materialIcon.props.name).toBe('check-circle');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('check_circle'));
+
+    warn.mockRestore();
+  });
+
+  it('应该导出 IconName 类型兼容内置常量和普通 MaterialIcons 名称', () => {
+    const builtinName: IconName = 'check-circle';
+    const materialName: IconName = 'arrow-forward-ios';
+
+    expect(builtinName).toBe('check-circle');
+    expect(materialName).toBe('arrow-forward-ios');
   });
 });

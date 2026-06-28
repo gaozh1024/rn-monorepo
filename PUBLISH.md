@@ -133,6 +133,51 @@ pnpm --dir packages/aliyun-push pack --pack-destination /tmp/aliyun-push-pack
 npm login
 ```
 
+### 本次联动发布：rn-kit 0.6.1 + expo-starter 0.3.2
+
+本次只发布两个包，并且模板依赖框架包，所以顺序必须是：
+
+1. `@gaozh1024/rn-kit@0.6.1`
+2. `@gaozh1024/expo-starter@0.3.2`
+
+发布前最小复核：
+
+```bash
+pnpm --dir packages/rn-kit lint
+pnpm --dir packages/rn-kit build
+pnpm --dir templates/expo-starter lint
+pnpm ai:check
+git diff --check
+```
+
+打包内容复核：
+
+```bash
+cd packages/rn-kit
+npm_config_cache=/tmp/rn-kit-npm-cache npm pack --dry-run --json
+
+cd ../../templates/expo-starter
+npm_config_cache=/tmp/expo-starter-npm-cache npm pack --dry-run --json
+```
+
+正式发布：
+
+```bash
+cd packages/rn-kit
+npm publish --access public
+
+cd ../../templates/expo-starter
+npm publish --access public
+```
+
+发布后核验：
+
+```bash
+npm view @gaozh1024/rn-kit@0.6.1 version
+npm view @gaozh1024/expo-starter@0.3.2 version
+npm view @gaozh1024/expo-starter@0.3.2 dependencies --json
+```
+
 ### 3.2 发布框架包
 
 ```bash

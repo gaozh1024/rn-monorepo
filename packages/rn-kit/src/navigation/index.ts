@@ -56,6 +56,8 @@ export type { NavigationProviderProps } from './provider';
 // Navigators
 // ============================================================================
 
+export { DEFAULT_BOTTOM_TAB_BAR_HEIGHT } from './constants';
+
 export {
   // 导航器组件
   StackNavigator,
@@ -105,6 +107,7 @@ export {
   useRoute,
   useNavigationState,
   useBackHandler,
+  useBottomTabBarMetrics,
   // React Navigation 官方 Hooks
   useIsFocused,
   useFocusEffect,
@@ -115,6 +118,8 @@ export {
   type DrawerNavigationProp,
   type RouteProp,
   type NavigationProp,
+  type BottomTabBarMetrics,
+  type UseBottomTabBarMetricsOptions,
 } from './hooks';
 
 // ============================================================================

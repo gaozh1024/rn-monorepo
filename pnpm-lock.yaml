@@ -275,7 +275,7 @@ importers:
         specifier: ^0.2.0
         version: link:../../packages/hot-updater
       '@gaozh1024/rn-kit':
-        specifier: ^0.6.0
+        specifier: ^0.6.1
         version: link:../../packages/rn-kit
       '@gaozh1024/rn-observatory':
         specifier: ^0.6.1
