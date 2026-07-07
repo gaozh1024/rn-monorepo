@@ -124,6 +124,11 @@ describe('AppInput', () => {
       );
     });
 
+    const containerBeforeFocus = renderer!.root
+      .findAllByType(AppView)
+      .find(view => view.props.testID === 'input-container');
+    const beforeFocusStyle = flattenStyle(containerBeforeFocus?.props.style);
+
     act(() => {
       renderer!.root.findByType('TextInput').props.onFocus?.({ nativeEvent: {} });
     });
@@ -133,12 +138,151 @@ describe('AppInput', () => {
       .find(view => view.props.testID === 'input-container');
     const containerStyle = flattenStyle(container?.props.style);
 
+    expect(beforeFocusStyle.borderWidth).toBe(2);
     expect(containerStyle).toMatchObject({
       borderColor: '#38bdf8',
       borderWidth: 2,
       backgroundColor: '#f0f9ff',
       shadowColor: '#38bdf8',
       shadowRadius: 14,
+    });
+  });
+
+  it('focus 状态不应通过 borderWidth 触发布局跳动', () => {
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(<AppInput testID="input" value="" focusRingWidth={2} />);
+    });
+
+    const getContainerStyle = () => {
+      const container = renderer!.root
+        .findAllByType(AppView)
+        .find(view => view.props.testID === 'input-container');
+
+      return flattenStyle(container?.props.style);
+    };
+
+    expect(getContainerStyle().borderWidth).toBe(2);
+
+    act(() => {
+      renderer!.root.findByType('TextInput').props.onFocus?.({ nativeEvent: {} });
+    });
+
+    expect(getContainerStyle().borderWidth).toBe(2);
+  });
+
+  it('错误态应该在 focus 和 focusedContainerStyle 之后覆盖边框颜色', () => {
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <AppInput
+          testID="input"
+          value=""
+          error="请输入内容"
+          focusRingColor="#38bdf8"
+          focusedContainerStyle={{ borderColor: '#22c55e' }}
+        />
+      );
+    });
+
+    act(() => {
+      renderer!.root.findByType('TextInput').props.onFocus?.({ nativeEvent: {} });
+    });
+
+    const container = renderer!.root
+      .findAllByType(AppView)
+      .find(view => view.props.testID === 'input-container');
+    const containerStyle = flattenStyle(container?.props.style);
+
+    expect(containerStyle.borderColor).toBe('#ef4444');
+  });
+
+  it('应该支持显式 textarea 模式并内置多行输入默认行为', () => {
+    const { getByTestId } = renderWithTheme(<AppInput testID="input" value="" textarea />);
+
+    const input = getByTestId('input');
+    const containerStyle = flattenStyle(getByTestId('input-container').props.style);
+    const inputStyle = flattenStyle(input.props.style);
+
+    expect(input.props.multiline).toBe(true);
+    expect(input.props.blurOnSubmit).toBe(false);
+    expect(input.props.scrollEnabled).toBe(false);
+    expect(input.props.textAlignVertical).toBe('top');
+    expect(containerStyle).toMatchObject({
+      alignItems: 'flex-start',
+      minHeight: 96,
+    });
+    expect(containerStyle.height).toBeUndefined();
+    expect(inputStyle).toMatchObject({
+      minHeight: 72,
+      textAlignVertical: 'top',
+    });
+  });
+
+  it('只传 multiline 时应保持旧的单行容器模型', () => {
+    const { getByTestId } = renderWithTheme(<AppInput testID="input" value="" multiline />);
+
+    const input = getByTestId('input');
+    const containerStyle = flattenStyle(getByTestId('input-container').props.style);
+
+    expect(input.props.multiline).toBe(true);
+    expect(input.props.blurOnSubmit).toBeUndefined();
+    expect(containerStyle).toMatchObject({
+      alignItems: 'center',
+      height: 48,
+    });
+  });
+
+  it('textarea 模式应允许覆盖提交、滚动和垂直对齐行为', () => {
+    const { getByTestId } = renderWithTheme(
+      <AppInput
+        testID="input"
+        value=""
+        textarea
+        blurOnSubmit
+        scrollEnabled
+        textAlignVertical="bottom"
+        inputStyle={{ textAlignVertical: 'center' }}
+      />
+    );
+
+    const input = getByTestId('input');
+    const inputStyle = flattenStyle(input.props.style);
+
+    expect(input.props.multiline).toBe(true);
+    expect(input.props.blurOnSubmit).toBe(true);
+    expect(input.props.scrollEnabled).toBe(true);
+    expect(input.props.textAlignVertical).toBe('bottom');
+    expect(inputStyle.textAlignVertical).toBe('center');
+  });
+
+  it('textarea 模式应允许容器和输入样式覆盖默认视觉', () => {
+    const { getByTestId } = renderWithTheme(
+      <AppInput
+        testID="input"
+        value=""
+        textarea
+        minH={58}
+        focusRingWidth={2}
+        containerStyle={{ borderWidth: 0 }}
+        inputStyle={{ fontSize: 17, lineHeight: 26, paddingVertical: 0 }}
+      />
+    );
+
+    const containerStyle = flattenStyle(getByTestId('input-container').props.style);
+    const inputStyle = flattenStyle(getByTestId('input').props.style);
+
+    expect(containerStyle).toMatchObject({
+      minHeight: 58,
+      borderWidth: 0,
+    });
+    expect(inputStyle).toMatchObject({
+      minHeight: 58,
+      fontSize: 17,
+      lineHeight: 26,
+      paddingVertical: 0,
     });
   });
 

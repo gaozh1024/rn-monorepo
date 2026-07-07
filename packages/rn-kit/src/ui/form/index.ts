@@ -6,6 +6,7 @@ export {
   type AppInputVariant,
   type AppInputVisualPreset,
 } from './AppInput';
+export { AppTextarea, type AppTextareaProps } from './AppTextarea';
 export { Checkbox, type CheckboxProps } from './Checkbox';
 export { CheckboxGroup, type CheckboxGroupProps } from './CheckboxGroup';
 export { Radio, type RadioProps } from './Radio';

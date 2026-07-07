@@ -285,6 +285,8 @@ UI 组件库，所有组件均为**稳定公共 API**。
 | `AppInputVariant`      | type      | ✅ 稳定 | 输入框视觉变体 |
 | `AppInputSize`         | type      | ✅ 稳定 | 输入框尺寸     |
 | `AppInputVisualPreset` | type      | ✅ 稳定 | 输入框视觉预设 |
+| `AppTextarea`          | component | ✅ 稳定 | 多行文本域     |
+| `AppTextareaProps`     | type      | ✅ 稳定 | Props 类型     |
 | `Checkbox`             | component | ✅ 稳定 | 复选框         |
 | `CheckboxProps`        | type      | ✅ 稳定 | Props 类型     |
 | `CheckboxGroup`        | component | ✅ 稳定 | 复选框组       |
@@ -312,6 +314,13 @@ UI 组件库，所有组件均为**稳定公共 API**。
 - 新增视觉变体：`variant="outline" | "filled" | "soft" | "surface"`。
 - 新增固定视觉规格：`inputSize="sm" | "md" | "lg"` 与 `visualPreset="default" | "soft-login" | "surface"`。
 - `soft-login` 默认适合登录页输入框：高度 56、圆角 16、白底、无边框、弱阴影、outline-variant 占位色。
+
+#### 0.6.3 AppTextarea 与 AppInput textarea 模式
+
+- 新增 `AppTextarea`，用于备注、评论、描述等多行输入场景，内部复用 `AppInput`。
+- 新增 `AppInput textarea` 显式模式，默认启用 `multiline`、顶部对齐、`blurOnSubmit={false}`、`scrollEnabled={false}`。
+- `AppInput multiline` 保持原始透传行为，不自动进入 textarea 视觉模式，避免旧项目行为变化。
+- `focusRingWidth` 现在会在 focus/unfocus 间保持同一 `borderWidth`，聚焦态只改变颜色、背景和阴影。
 
 #### Select 可本地化文案参数（可选）
 

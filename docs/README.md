@@ -66,6 +66,8 @@
 - [expo-starter 0.3.1 Release Notes](./release-notes/expo-starter-0.3.1.md)
 - [expo-starter 0.3.0 Release Notes](./release-notes/expo-starter-0.3.0.md)
 - [expo-starter 0.2.17 Release Notes](./release-notes/expo-starter-0.2.17.md)
+- [rn-kit 0.6.3 Release Notes](./release-notes/rn-kit-0.6.3.md)
+- [rn-kit 0.6.3 Publish Checklist](./release-notes/publish-checklist-rn-kit-0.6.3-2026-07-07.md)
 - [rn-kit 0.6.2 Release Notes](./release-notes/rn-kit-0.6.2.md)
 - [rn-kit 0.6.2 Publish Checklist](./release-notes/publish-checklist-rn-kit-0.6.2-2026-06-27.md)
 - [rn-kit 0.6.1 Release Notes](./release-notes/rn-kit-0.6.1.md)

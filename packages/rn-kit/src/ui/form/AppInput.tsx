@@ -89,6 +89,12 @@ export interface AppInputProps
   inputSize?: AppInputSize;
   /** 常用视觉预设 */
   visualPreset?: AppInputVisualPreset;
+  /** 启用多行文本域布局语义；不会由 multiline 自动触发，避免旧项目视觉变化 */
+  textarea?: boolean;
+  /** 文本域容器默认最小高度 */
+  textareaMinHeight?: NonNullable<CommonLayoutProps['minH']>;
+  /** 文本域容器默认最大高度 */
+  textareaMaxHeight?: NonNullable<CommonLayoutProps['maxH']>;
 }
 
 const CONTAINER_STYLE_KEYS = new Set<keyof ViewStyle>([
@@ -235,10 +241,17 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
       variant,
       inputSize,
       visualPreset = 'default',
+      textarea = false,
+      textareaMinHeight,
+      textareaMaxHeight,
       secureTextEntry,
       placeholderTextColor,
       onFocus,
       onBlur,
+      multiline,
+      blurOnSubmit,
+      scrollEnabled,
+      textAlignVertical,
       ...props
     },
     ref
@@ -252,6 +265,9 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
     const resolvedVariant = variant ?? preset.variant;
     const resolvedInputSize = inputSize ?? preset.inputSize;
     const sizeStyle = inputSizeStyles[resolvedInputSize];
+    const isTextarea = textarea === true;
+    const textareaInputMinHeight = textareaMinHeight ?? minH ?? 72;
+    const resolvedTextAlignVertical = isTextarea ? (textAlignVertical ?? 'top') : textAlignVertical;
     const resolvedBgColor =
       resolveSurfaceColor(surface, theme, isDark) ?? resolveNamedColor(bg, theme, isDark);
     const resolvedFocusRingColor =
@@ -275,6 +291,7 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
       : theme.colors.primary?.[50] || '#fff7ed';
 
     const errorColor = '#ef4444';
+    const reservedBorderWidth = focusRingWidth ?? (resolvedVariant === 'surface' ? 0 : 1);
 
     // 边框颜色
     const getBorderColor = () => {
@@ -299,7 +316,6 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
             ? {
                 backgroundColor: surfaceLowestColor,
                 borderColor: 'transparent',
-                borderWidth: 0,
                 ...(isDark
                   ? {}
                   : {
@@ -317,8 +333,9 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
       isFocused && !error
         ? {
             borderColor: resolvedFocusRingColor,
-            borderWidth: focusRingWidth ?? (resolvedVariant === 'surface' ? 0 : 1),
-            backgroundColor: resolvedFocusBackgroundColor,
+            ...(resolvedFocusBackgroundColor
+              ? { backgroundColor: resolvedFocusBackgroundColor }
+              : undefined),
             shadowColor: resolvedFocusRingColor,
             shadowOpacity: focusRingWidth === 0 ? 0 : 0.12,
             shadowRadius: focusRingWidth === 0 ? 0 : 8,
@@ -367,24 +384,25 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
         <AppView
           testID={props.testID ? `${props.testID}-container` : undefined}
           row
-          items="center"
+          items={isTextarea ? 'start' : 'center'}
           px={sizeStyle.paddingX}
-          h={h ?? sizeStyle.height}
+          h={isTextarea ? h : (h ?? sizeStyle.height)}
           minW={minW}
-          minH={minH}
+          minH={isTextarea ? (minH ?? textareaMinHeight ?? 96) : minH}
           maxW={maxW}
-          maxH={maxH}
+          maxH={isTextarea ? (maxH ?? textareaMaxHeight) : maxH}
           rounded={rounded ?? preset.rounded}
           style={[
             styles.inputContainer,
             variantStyle,
+            {
+              borderColor: getBorderColor(),
+              borderWidth: reservedBorderWidth,
+              opacity: disabled ? 0.6 : 1,
+            },
             resolvedBgColor ? { backgroundColor: resolvedBgColor } : undefined,
             resolvedStyles.containerStyle,
             containerStyle,
-            {
-              borderColor: getBorderColor(),
-              opacity: disabled ? 0.6 : 1,
-            },
             focusStyle,
             isFocused ? focusedContainerStyle : undefined,
             error ? { borderColor: errorColor } : undefined,
@@ -403,6 +421,14 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
                 paddingTop: sizeStyle.paddingY,
                 paddingBottom: sizeStyle.paddingY,
               },
+              isTextarea
+                ? {
+                    minHeight: textareaInputMinHeight,
+                    paddingTop: sizeStyle.paddingY,
+                    paddingBottom: sizeStyle.paddingY,
+                    textAlignVertical: resolvedTextAlignVertical,
+                  }
+                : undefined,
               resolvedStyles.inputStyle,
               inputStyle,
             ]}
@@ -418,6 +444,10 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
               onBlur?.(e);
             }}
             {...props}
+            multiline={isTextarea ? true : multiline}
+            blurOnSubmit={isTextarea ? (blurOnSubmit ?? false) : blurOnSubmit}
+            scrollEnabled={isTextarea ? (scrollEnabled ?? false) : scrollEnabled}
+            textAlignVertical={resolvedTextAlignVertical}
           />
           {shouldRenderPasswordToggle ? (
             <AppPressable
@@ -455,8 +485,7 @@ AppTextInput.displayName = 'AppTextInput';
 
 const styles = StyleSheet.create({
   inputContainer: {
-    borderWidth: 0.5,
-    minHeight: 48,
+    borderWidth: 1,
   },
   input: {
     flex: 1,

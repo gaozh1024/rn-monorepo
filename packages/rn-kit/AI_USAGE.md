@@ -14,6 +14,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Use useBottomTabBarMetrics when a tab page, floating action area, or scroll container needs safe-area-aware bottom tab spacing.
 - Use AppButton surface/soft variants, icon slots, and style hooks when login, verification-code, or custom action buttons need to match a design spec without leaving rn-kit.
 - Use AppInput visualPreset="soft-login", inputSize, variant, and focus styling APIs for login-form inputs that need fixed visual dimensions and custom focus treatment.
+- Use AppTextarea for notes, comments, descriptions, chat drafts, or other multiline text entry instead of hand-rolling raw React Native TextInput configuration.
 - Use SegmentedTabs for page-local menu/status/category switching when the selected background should slide horizontally between options.
 - Use Card variant="flat" and AppPressable motionPreset="none" for high-density list/grid interactions where press feedback should stay lightweight.
 - Use animated={false} or motionReduceMotion on Progress, SegmentedTabs, Switch, Checkbox and Radio when reduced motion or Reanimated-free render paths are required.
@@ -59,6 +60,8 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Prefer the stable public API `AppScreen` when it matches the use case.
 - Prefer the stable public API `AppButton` when it matches the use case.
 - Prefer the stable public API `AppInput` when it matches the use case.
+- Prefer the stable public API `AppTextarea` when it matches the use case.
+- Prefer the stable public API `AppTextareaProps` when it matches the use case.
 - Prefer the stable public API `Icon` when it matches the use case.
 - Prefer the stable public API `IconName` when it matches the use case.
 - Prefer the stable public API `createAPI` when it matches the use case.
@@ -87,6 +90,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Do not set BottomTabBar height through style.height; use height or tabBarOptions.height so safe-area metrics stay correct.
 - Do not replace AppButton with raw Pressable just to match fixed-height, icon, shadow, pressed, or disabled button designs; use AppButton style hooks, slots, and variants first.
 - Do not hand-roll login inputs only to get 56px height, 16px radius, white background, or custom focus rings; use AppInput visual presets and focus APIs first.
+- Do not hand-roll multiline text areas just to get top alignment, fixed min/max height, no submit blur, or no internal scrolling; use AppTextarea or AppInput textarea first.
 
 ## Common Failure Cases
 
@@ -98,6 +102,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - SSE streams fail in non-Expo or custom runtimes when expo/fetch is unavailable; pass a compatible fetcher if the app owns a different streaming transport.
 - Tab root pages can show device-specific blank space above the tab bar if AppScreen keeps bottom safe-area padding while BottomTabBar also renders the bottom safe-area spacer.
 - Buttons with ReactNode children may need renderContent, leftIcon, or rightIcon when the design expects custom layout instead of automatic text wrapping.
+- Using AppInput multiline alone preserves legacy TextInput pass-through behavior; use AppTextarea or AppInput textarea when you expect rn-kit textarea sizing and top alignment.
 - MaterialIcons names should be kebab-case such as check-circle; snake_case names are normalized for compatibility but should be migrated in new code.
 
 ## Compatibility Baseline
@@ -110,6 +115,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Progress, SegmentedTabs, Switch, Checkbox and Radio support explicit no-animation/reduced-motion paths that avoid Reanimated hook setup.
 - AppButton supports solid, outline, ghost, surface, and soft variants plus style/content/text/pressed/disabled style hooks.
 - AppInput supports outline, filled, soft, and surface variants plus sm/md/lg sizes and default, soft-login, and surface visual presets.
+- AppTextarea is the semantic multiline input wrapper; AppInput textarea is the lower-level opt-in mode, while AppInput multiline remains a legacy-safe pass-through.
 - createTheme includes outline, outlineVariant, surfaceContainerLowest, surfaceContainerLow, primaryFixed, primaryFixedDim, radii, shadows, and typography design tokens.
 
 ## See Also

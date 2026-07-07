@@ -1,5 +1,14 @@
 # @gaozh1024/rn-kit
 
+## 0.6.3
+
+### Patch Changes
+
+- Add `AppTextarea` as the semantic rn-kit component for notes, comments, descriptions, and other multiline text entry.
+- Add explicit `AppInput textarea` mode with top-aligned multiline defaults, configurable min/max heights, and legacy-safe behavior that does not auto-trigger from `multiline`.
+- Reserve AppInput focus border width across focus and blur so focus styling no longer changes layout dimensions.
+- Document textarea usage, public API exports, release notes, and AI usage guidance for migrating raw multiline `TextInput` usage back to rn-kit.
+
 ## 0.6.2
 
 ### Patch Changes
