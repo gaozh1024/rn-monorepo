@@ -104,6 +104,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - Buttons with ReactNode children may need renderContent, leftIcon, or rightIcon when the design expects custom layout instead of automatic text wrapping.
 - Using AppInput multiline alone preserves legacy TextInput pass-through behavior; use AppTextarea or AppInput textarea when you expect rn-kit textarea sizing and top alignment.
 - MaterialIcons names should be kebab-case such as check-circle; snake_case names are normalized for compatibility but should be migrated in new code.
+- Native AppScreen, SafeScreen, and KeyboardDismissView do not add a full-screen keyboard-dismiss wrapper; use AppScrollView, AppFlatList, or AppList keyboard tap handling for native forms.
 
 ## Compatibility Baseline
 
@@ -116,6 +117,7 @@ Panther Expo Framework core package for app bootstrap, theme, UI, navigation hel
 - AppButton supports solid, outline, ghost, surface, and soft variants plus style/content/text/pressed/disabled style hooks.
 - AppInput supports outline, filled, soft, and surface variants plus sm/md/lg sizes and default, soft-login, and surface visual presets.
 - AppTextarea is the semantic multiline input wrapper; AppInput textarea is the lower-level opt-in mode, while AppInput multiline remains a legacy-safe pass-through.
+- KeyboardDismissView wrapper-based outside dismissal is Web-only; Native renders children without injecting TouchableWithoutFeedback so TextInput/AppInput focus is not cancelled.
 - createTheme includes outline, outlineVariant, surfaceContainerLowest, surfaceContainerLow, primaryFixed, primaryFixedDim, radii, shadows, and typography design tokens.
 
 ## See Also

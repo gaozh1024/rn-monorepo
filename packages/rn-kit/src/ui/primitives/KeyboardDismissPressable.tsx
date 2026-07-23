@@ -41,10 +41,14 @@ export function dismissKeyboardFromPress(event?: GestureResponderEvent) {
 }
 
 /**
- * KeyboardDismissPressable - dismisses the keyboard for outside presses while
- * preserving editable focus on React Native Web.
+ * KeyboardDismissPressable - keeps Web outside-press dismissal while avoiding
+ * native responder wrappers that can cancel TextInput focus.
  */
 export function KeyboardDismissPressable({ children }: KeyboardDismissPressableProps) {
+  if (Platform.OS !== 'web') {
+    return <>{children}</>;
+  }
+
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboardFromPress} accessible={false}>
       {children}

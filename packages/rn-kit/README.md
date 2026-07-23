@@ -289,7 +289,7 @@ import {
 - `SafeScreen` / `AppScreen` 同时支持：
   - `bg="primary-500"` 这类显式颜色
   - `surface="background" | "card" | "muted"` 这类语义背景
-  - `dismissKeyboardOnPressOutside`：点击非输入区域时收起键盘
+  - `dismissKeyboardOnPressOutside`：Web 端点击非输入区域时收起键盘；Native 端不注入全屏点击包装，避免打断 `TextInput` / `AppInput` 聚焦
 - 语义建议：
   - `SafeScreen`：底层安全区容器，默认 `top=true` / `bottom=true`
   - `AppScreen`：业务页面容器，默认 `top=false` / `bottom=true`，更适合和 `AppHeader` 搭配
@@ -316,13 +316,13 @@ import {
 ```
 
 - `AppScrollView` 支持 `dismissKeyboardOnPressOutside`
-  - 开启后会自动启用点击空白收起键盘
-  - 并默认补上 `keyboardShouldPersistTaps="handled"`
+  - 开启后默认补上 `keyboardShouldPersistTaps="handled"`
+  - Native 表单页优先使用滚动容器处理键盘点击行为，避免在整页容器外层包全屏 responder
 - `AppFlatList` 支持与 `AppScrollView` 一致的容器快捷参数
   - 外层支持：`flex` / 外边距 / 尺寸 / `bg` / `surface` / `rounded`
   - 内容区支持：布局 / 内边距 / `gap`
   - 开启 `dismissKeyboardOnPressOutside` 时默认补上 `keyboardShouldPersistTaps="handled"`
-- `KeyboardDismissView` 适合非页面容器、自定义布局场景下单独包裹使用
+- `KeyboardDismissView` 的包装式点击空白收键盘行为仅在 Web 端启用；Native 端会直接渲染 children，不额外包裹点击层
 - `KeyboardInsetView` 适合底部输入栏 / 评论框 / 聊天输入区的键盘避让
 - `AppInput` 的尺寸与样式控制建议：
   - `style={{ height: 56 }}` 会作用到输入框外层容器
@@ -557,14 +557,20 @@ const tabs = [
 容器侧推荐这样使用：
 
 ```tsx
-<AppScreen dismissKeyboardOnPressOutside>
-  <AppScrollView dismissKeyboardOnPressOutside>
+<AppScreen>
+  <AppScrollView dismissKeyboardOnPressOutside keyboardShouldPersistTaps="handled">
     <AppInput placeholder="请输入手机号" />
     <AppInput placeholder="请输入密码" secureTextEntry />
     <AppButton onPress={handleLogin}>登录</AppButton>
   </AppScrollView>
 </AppScreen>
 ```
+
+Native 端不要在 `AppScreen` / `SafeScreen` 外层依赖全屏点击包装来收起键盘；
+`KeyboardDismissPressable` 在 Native 会直接渲染 children，避免点击 `AppInput`
+时外层 responder 立刻调用 `Keyboard.dismiss()`，导致输入框刚聚焦就被取消。
+登录页、表单页优先把 `dismissKeyboardOnPressOutside` 放在
+`AppScrollView` / `AppFlatList` / `AppList` 这类滚动容器上。
 
 #### `AppInput` 视觉规格与聚焦态
 
@@ -676,7 +682,9 @@ const tabs = [
 
 在 React Native Web 上，`dismissKeyboardOnPressOutside` 会自动忽略
 `input` / `textarea` / `contenteditable` 目标及其子节点，避免点击 `AppInput`
-后刚获得焦点就被外层容器立即 `Keyboard.dismiss()`。
+后刚获得焦点就被外层容器立即 `Keyboard.dismiss()`。Native 端为了保证
+`TextInput` / `AppInput` 可以稳定聚焦，不会注入 `TouchableWithoutFeedback`
+全屏包装；`KeyboardDismissView` 在 Native 端同样只渲染 children。
 
 如果不是整页容器，而是局部自定义布局，也可以单独使用：
 

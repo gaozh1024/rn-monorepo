@@ -74,6 +74,7 @@ describe('Picker', () => {
     const getScrollView = () => renderer!.root.findByType(ScrollView);
 
     return {
+      getRenderer: () => renderer!,
       getScrollView,
       onTempChange,
     };
@@ -212,6 +213,18 @@ describe('Picker', () => {
       borderRadius: 9999,
       backgroundColor: '#f38b32',
     });
+  });
+
+  it('选中行高亮背景应该绘制在滚轮文字下方', () => {
+    const { getRenderer, getScrollView } = renderWheelPicker();
+    const scrollView = getScrollView();
+    const siblings = scrollView.parent?.children ?? [];
+    const selectionOverlay = getRenderer()
+      .root.findAllByProps({ testID: 'picker-selection-overlay-wheel' })
+      .find(node => node.parent === scrollView.parent);
+
+    expect(selectionOverlay).toBeDefined();
+    expect(siblings.indexOf(selectionOverlay!)).toBeLessThan(siblings.indexOf(scrollView));
   });
 
   it('惯性滚动时应该只在 momentum 结束后吸附一次', () => {

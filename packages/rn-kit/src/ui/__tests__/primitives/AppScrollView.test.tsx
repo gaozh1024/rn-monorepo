@@ -2,8 +2,9 @@ import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react-native';
 import { act, create } from 'react-test-renderer';
+import { TouchableWithoutFeedback } from 'react-native';
 
-import { AppScrollView, KeyboardDismissPressable } from '@/ui';
+import { AppScrollView } from '@/ui';
 
 function flattenStyle(style: any) {
   if (!style) return {};
@@ -45,7 +46,7 @@ describe('AppScrollView', () => {
     expect(contentStyle.gap).toBe(3);
   });
 
-  it('开启点击空白收起键盘时应设置 keyboardShouldPersistTaps 并包裹 dismiss 逻辑', () => {
+  it('Native 开启点击空白收起键盘时应设置 keyboardShouldPersistTaps 且不注入包装', () => {
     let renderer: ReturnType<typeof create>;
 
     act(() => {
@@ -59,7 +60,7 @@ describe('AppScrollView', () => {
     const scrollView = renderer!.root.findByType('ScrollView');
 
     expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled');
-    expect(renderer!.root.findAllByType(KeyboardDismissPressable)).toHaveLength(1);
+    expect(renderer!.root.findAllByType(TouchableWithoutFeedback)).toHaveLength(0);
   });
 
   it('应该支持语义化背景', () => {

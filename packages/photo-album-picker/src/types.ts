@@ -200,6 +200,8 @@ export interface ImagePickerButtonProps {
 }
 
 export interface PhotoAlbumItem extends Asset {
+  /** 可播放/上传的本地文件 URI，部分 iOS 视频需要通过详情接口补全 */
+  localUri?: string;
   /** 是否被选中 */
   selected?: boolean;
   /** 选中顺序索引 */

@@ -19,6 +19,79 @@ import type { PhotoAlbumGridProps, PhotoAlbumItem, PhotoAlbumMediaType } from '.
 import { mediaPickerColors } from '../constants';
 import { formatPhotoAlbumText, resolvePhotoAlbumUiConfig } from '../utils/photoAlbumFlow';
 
+type ExpoVideoModule = {
+  VideoView: React.ComponentType<{
+    player: unknown;
+    style?: object;
+    allowsFullscreen?: boolean;
+    allowsPictureInPicture?: boolean;
+    nativeControls?: boolean;
+    contentFit?: 'contain' | 'cover' | 'fill';
+  }>;
+  useVideoPlayer: (
+    source: string | { uri: string },
+    setup?: (player: { loop?: boolean; play?: () => void }) => void
+  ) => unknown;
+};
+
+function resolveExpoVideo(): ExpoVideoModule | null {
+  try {
+    // Keep expo-video optional for apps that only use photo picking.
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const maybeRequire = Function(
+      'return typeof require === "function" ? require : undefined'
+    )() as ((moduleName: string) => ExpoVideoModule) | undefined;
+
+    return maybeRequire?.('expo-video') ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const expoVideo = resolveExpoVideo();
+
+function PreviewMedia({ item, previewHeight }: { item: PhotoAlbumItem; previewHeight: number }) {
+  if (item.mediaType === 'video' && expoVideo) {
+    return <PreviewVideo item={item} previewHeight={previewHeight} videoModule={expoVideo} />;
+  }
+
+  return (
+    <Image
+      source={{ uri: item.uri }}
+      style={[styles.previewImage, { height: previewHeight }]}
+      contentFit="contain"
+      cachePolicy="memory-disk"
+      transition={0}
+    />
+  );
+}
+
+function PreviewVideo({
+  item,
+  previewHeight,
+  videoModule,
+}: {
+  item: PhotoAlbumItem;
+  previewHeight: number;
+  videoModule: ExpoVideoModule;
+}) {
+  const player = videoModule.useVideoPlayer(item.uri, createdPlayer => {
+    createdPlayer.loop = false;
+  });
+  const VideoView = videoModule.VideoView;
+
+  return (
+    <VideoView
+      player={player}
+      style={[styles.previewImage, { height: previewHeight }]}
+      allowsFullscreen
+      allowsPictureInPicture
+      nativeControls
+      contentFit="contain"
+    />
+  );
+}
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -385,6 +458,18 @@ export function PhotoAlbumGrid({
     const selected = getSelectedPhotos();
     onComplete?.(selected);
   }, [getSelectedPhotos, onComplete]);
+
+  const handlePreviewComplete = useCallback(() => {
+    if (!previewItem) return;
+
+    const selected = getSelectedPhotos();
+    if (!allowsMultipleSelection || selected.length === 0) {
+      onComplete?.([previewItem]);
+      return;
+    }
+
+    onComplete?.(selected);
+  }, [allowsMultipleSelection, getSelectedPhotos, onComplete, previewItem]);
 
   const closePreview = useCallback(() => {
     setPreviewIndex(null);
@@ -796,20 +881,14 @@ export function PhotoAlbumGrid({
               initialScrollIndex={previewIndex}
               renderItem={({ item }) => (
                 <View style={[styles.previewPage, { height: previewContentHeight }]}>
-                  <Image
-                    source={{ uri: item.uri }}
-                    style={[styles.previewImage, { height: previewContentHeight - 20 }]}
-                    contentFit="contain"
-                    cachePolicy="memory-disk"
-                    transition={0}
-                  />
+                  <PreviewMedia item={item} previewHeight={previewContentHeight - 20} />
 
                   {item.mediaType === 'video' ? (
                     <View pointerEvents="none" style={styles.previewVideoBadge}>
                       <Icon name="play-arrow" size={18} color="#ffffff" />
                       <AppText size="sm" weight="medium" style={{ color: '#ffffff' }}>
                         {formatPhotoAlbumText(resolvedUiConfig.texts.previewVideoBadgeText, {
-                          duration: item.duration ? formatDuration(item.duration) : '',
+                          duration: item.duration ? formatDuration(item.duration) : '0:00',
                         }).trim()}
                       </AppText>
                     </View>
@@ -859,15 +938,11 @@ export function PhotoAlbumGrid({
               </AppPressable>
 
               <AppPressable
-                onPress={handleComplete}
-                disabled={selectedCount === 0}
+                onPress={handlePreviewComplete}
                 style={[
                   styles.completeButton,
                   {
-                    backgroundColor:
-                      selectedCount === 0
-                        ? 'rgba(255,255,255,0.2)'
-                        : mediaPickerColors.primary[500],
+                    backgroundColor: mediaPickerColors.primary[500],
                   },
                 ]}
               >
@@ -887,7 +962,7 @@ export function PhotoAlbumGrid({
  * 格式化视频时长
  */
 function formatDuration(milliseconds: number): string {
-  const totalSeconds = Math.floor(milliseconds / 1000);
+  const totalSeconds = Math.floor(milliseconds < 1000 ? milliseconds : milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;

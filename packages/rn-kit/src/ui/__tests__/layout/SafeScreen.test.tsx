@@ -30,9 +30,11 @@ const theme = {
   },
 };
 
+const originalPlatformOS = Platform.OS;
+
 beforeEach(() => {
   vi.clearAllMocks();
-  (Platform as any).OS = 'ios';
+  (Platform as any).OS = originalPlatformOS;
 });
 
 function flattenStyle(style: any) {
@@ -44,7 +46,26 @@ function flattenStyle(style: any) {
 }
 
 describe('AppScreen', () => {
-  it('开启 dismissKeyboardOnPressOutside 时应包裹点击收键盘逻辑', () => {
+  it('Native 开启 dismissKeyboardOnPressOutside 时不应注入全屏点击收键盘包装', () => {
+    (Platform as any).OS = 'ios';
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <AppScreen dismissKeyboardOnPressOutside>
+            <div>content</div>
+          </AppScreen>
+        </ThemeProvider>
+      );
+    });
+
+    expect(renderer!.root.findAllByType(TouchableWithoutFeedback)).toHaveLength(0);
+    expect(Keyboard.dismiss).not.toHaveBeenCalled();
+  });
+
+  it('Web 开启 dismissKeyboardOnPressOutside 时应保留点击空白收键盘逻辑', () => {
+    (Platform as any).OS = 'web';
     let renderer: ReturnType<typeof create>;
 
     act(() => {
@@ -60,7 +81,7 @@ describe('AppScreen', () => {
     const dismissWrapper = renderer!.root.findByType(TouchableWithoutFeedback);
 
     act(() => {
-      dismissWrapper.props.onPress();
+      dismissWrapper.props.onPress({ target: { tagName: 'div', closest: vi.fn(() => null) } });
     });
 
     expect(Keyboard.dismiss).toHaveBeenCalled();

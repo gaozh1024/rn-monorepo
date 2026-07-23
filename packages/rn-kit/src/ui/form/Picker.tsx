@@ -270,6 +270,21 @@ function WheelPickerColumn({
           },
         ]}
       >
+        {/* Keep the opaque selection background behind the scroll content. */}
+        <AppView
+          testID={`picker-selection-overlay-${column.key}`}
+          pointerEvents="none"
+          style={[
+            styles.selectionOverlay,
+            {
+              top: rowHeight * paddingRows,
+              height: rowHeight,
+              borderColor: colors.divider,
+              backgroundColor: colors.primarySurface,
+            },
+          ]}
+        />
+
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
@@ -351,19 +366,6 @@ function WheelPickerColumn({
             />
           ))}
         </AppView>
-
-        <AppView
-          pointerEvents="none"
-          style={[
-            styles.selectionOverlay,
-            {
-              top: rowHeight * paddingRows,
-              height: rowHeight,
-              borderColor: colors.divider,
-              backgroundColor: colors.primarySurface,
-            },
-          ]}
-        />
       </AppView>
     </AppView>
   );

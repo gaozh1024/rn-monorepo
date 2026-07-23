@@ -1,5 +1,17 @@
 # @gaozh1024/rn-kit
 
+## 0.6.5
+
+### Patch Changes
+
+- Fix Native `dismissKeyboardOnPressOutside` focus cancellation by keeping the wrapper-based `TouchableWithoutFeedback` keyboard dismiss behavior Web-only. Native `AppScreen`, `SafeScreen`, and `KeyboardDismissView` now render children without injecting a full-screen responder wrapper, while scroll/list containers keep `keyboardShouldPersistTaps="handled"`.
+
+## 0.6.4
+
+### Patch Changes
+
+- Fix Native `Picker` and `DatePicker` selected-row text being obscured by the opaque selection highlight by rendering the highlight behind the scroll content.
+
 ## 0.6.3
 
 ### Patch Changes

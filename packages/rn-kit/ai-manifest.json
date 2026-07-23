@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/rn-kit",
-  "version": "0.6.3",
+  "version": "0.6.5",
   "role": "core-framework",
   "summary": "Panther Expo Framework core package for app bootstrap, theme, UI, navigation helpers, overlays, and API factory usage in Expo or React Native apps.",
   "entrypoints": [
@@ -84,6 +84,7 @@
     "AppButton supports solid, outline, ghost, surface, and soft variants plus style/content/text/pressed/disabled style hooks.",
     "AppInput supports outline, filled, soft, and surface variants plus sm/md/lg sizes and default, soft-login, and surface visual presets.",
     "AppTextarea is the semantic multiline input wrapper; AppInput textarea is the lower-level opt-in mode, while AppInput multiline remains a legacy-safe pass-through.",
+    "KeyboardDismissView wrapper-based outside dismissal is Web-only; Native renders children without injecting TouchableWithoutFeedback so TextInput/AppInput focus is not cancelled.",
     "createTheme includes outline, outlineVariant, surfaceContainerLowest, surfaceContainerLow, primaryFixed, primaryFixedDim, radii, shadows, and typography design tokens."
   ],
   "antiPatterns": [

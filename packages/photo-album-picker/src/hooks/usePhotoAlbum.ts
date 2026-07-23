@@ -3,6 +3,7 @@ import {
   requestPermissionsAsync,
   getPermissionsAsync,
   getAssetsAsync,
+  getAssetInfoAsync,
   PermissionStatus,
   MediaTypeValue,
   SortByValue,
@@ -23,6 +24,8 @@ interface FetchPageResult {
   hasNextPage: boolean;
   totalCount: number;
 }
+
+type AssetInfoRecord = Partial<PhotoAlbumItem> & Record<string, unknown>;
 
 export interface PhotoAlbumPaginationDebugInfo {
   totalCount: number;
@@ -199,6 +202,40 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     console.log('[PhotoAlbumPagination]', message, payload);
   }, []);
 
+  const enrichVideoAssets = useCallback(async (assets: PhotoAlbumItem[]) => {
+    const enrichedAssets = await Promise.all(
+      assets.map(async item => {
+        if (item.mediaType !== 'video') return item;
+
+        try {
+          const assetInfo = (await getAssetInfoAsync(item.id)) as AssetInfoRecord;
+          const duration = normalizeDuration(assetInfo.duration, item.duration);
+          const localUri = stringValue(assetInfo.localUri);
+          const fileSize = numberValue(
+            assetInfo.fileSize ?? assetInfo.size ?? assetInfo.fileSizeBytes
+          );
+
+          return {
+            ...item,
+            duration,
+            localUri: localUri ?? item.localUri,
+            fileSize: fileSize ?? item.fileSize,
+          };
+        } catch (err) {
+          if (__DEV__) {
+            console.debug('[PhotoAlbum] video-asset-info:unavailable', {
+              id: item.id,
+              message: err instanceof Error ? err.message : 'asset info unavailable',
+            });
+          }
+          return item;
+        }
+      })
+    );
+
+    return enrichedAssets;
+  }, []);
+
   const fetchPhotos = useCallback(
     async (after?: string, first: number = initialLoadCount) => {
       try {
@@ -208,10 +245,11 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
           mediaType,
           sortBy,
         });
+        const assets = await enrichVideoAssets(result.assets as PhotoAlbumItem[]);
 
         return {
-          assets: result.assets as PhotoAlbumItem[],
-          endCursor: result.endCursor || result.assets[result.assets.length - 1]?.id,
+          assets,
+          endCursor: result.endCursor || assets[assets.length - 1]?.id,
           hasNextPage: result.hasNextPage,
           totalCount: result.totalCount,
         };
@@ -219,7 +257,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
         throw err instanceof Error ? err : new Error(uiTexts?.loadPhotosError ?? '加载照片失败');
       }
     },
-    [initialLoadCount, mediaType, sortBy, uiTexts?.loadPhotosError]
+    [enrichVideoAssets, initialLoadCount, mediaType, sortBy, uiTexts?.loadPhotosError]
   );
 
   const applyPageResult = useCallback(
@@ -468,4 +506,21 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     selectedCount: selectedIdSet.size,
     paginationDebugInfo,
   };
+}
+
+function normalizeDuration(primary: unknown, fallback: unknown): number | undefined {
+  return numberValue(primary) ?? numberValue(fallback);
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function numberValue(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
 }
