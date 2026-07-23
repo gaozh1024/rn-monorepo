@@ -36,6 +36,7 @@
     "expo-image": ">=3 <56",
     "expo-image-manipulator": ">=14 <56",
     "expo-media-library": ">=18 <56",
+    "expo-video": ">=55 <56",
     "react": ">=19.1.0 <20",
     "react-native": ">=0.81 <0.84",
     "react-native-gesture-handler": ">=2.19.0 <3",
@@ -52,6 +53,7 @@
     "expo-image": "~55.0.11",
     "expo-image-manipulator": "~55.0.16",
     "expo-media-library": "~55.0.17",
+    "expo-video": "~55.0.19",
     "react": "19.2.0",
     "react-native": "0.83.6",
     "react-native-gesture-handler": "2.30.0",
@@ -70,5 +72,10 @@
     "picker",
     "crop"
   ],
+  "peerDependenciesMeta": {
+    "expo-video": {
+      "optional": true
+    }
+  },
   "license": "MIT"
 }

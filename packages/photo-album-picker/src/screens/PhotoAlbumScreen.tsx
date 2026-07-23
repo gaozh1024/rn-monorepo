@@ -92,7 +92,7 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
           item =>
             item.mediaType === 'video' &&
             typeof item.duration === 'number' &&
-            item.duration > maxVideoDuration * 1000
+            item.duration > maxVideoDuration
         );
 
         if (overLimitVideo) {

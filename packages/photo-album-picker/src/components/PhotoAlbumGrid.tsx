@@ -21,7 +21,7 @@ import { formatPhotoAlbumText, resolvePhotoAlbumUiConfig } from '../utils/photoA
 
 type ExpoVideoModule = {
   VideoView: React.ComponentType<{
-    player: unknown;
+    player: ExpoVideoPlayer;
     style?: object;
     allowsFullscreen?: boolean;
     allowsPictureInPicture?: boolean;
@@ -30,8 +30,14 @@ type ExpoVideoModule = {
   }>;
   useVideoPlayer: (
     source: string | { uri: string },
-    setup?: (player: { loop?: boolean; play?: () => void }) => void
-  ) => unknown;
+    setup?: (player: ExpoVideoPlayer) => void
+  ) => ExpoVideoPlayer;
+};
+
+type ExpoVideoPlayer = {
+  loop?: boolean;
+  play?: () => void;
+  pause?: () => void;
 };
 
 function resolveExpoVideo(): ExpoVideoModule | null {
@@ -75,10 +81,19 @@ function PreviewVideo({
   previewHeight: number;
   videoModule: ExpoVideoModule;
 }) {
-  const player = videoModule.useVideoPlayer(item.uri, createdPlayer => {
+  const videoSource = item.localUri ?? item.uri;
+  const player = videoModule.useVideoPlayer(videoSource, createdPlayer => {
     createdPlayer.loop = false;
+    createdPlayer.play?.();
   });
   const VideoView = videoModule.VideoView;
+
+  React.useEffect(() => {
+    player.play?.();
+    return () => {
+      player.pause?.();
+    };
+  }, [player]);
 
   return (
     <VideoView
@@ -189,7 +204,7 @@ const PhotoGridItem = React.memo(function PhotoGridItem({
       {item.mediaType === 'video' && (
         <View pointerEvents="none" style={styles.videoBadge}>
           <Icon name="play-arrow" size={12} color="#ffffff" />
-          {item.duration !== undefined && (
+          {typeof item.duration === 'number' && Number.isFinite(item.duration) && (
             <AppText size="xs" style={styles.videoDuration}>
               {formatDuration(item.duration)}
             </AppText>
@@ -888,7 +903,7 @@ export function PhotoAlbumGrid({
                       <Icon name="play-arrow" size={18} color="#ffffff" />
                       <AppText size="sm" weight="medium" style={{ color: '#ffffff' }}>
                         {formatPhotoAlbumText(resolvedUiConfig.texts.previewVideoBadgeText, {
-                          duration: item.duration ? formatDuration(item.duration) : '0:00',
+                          duration: formatDuration(item.duration),
                         }).trim()}
                       </AppText>
                     </View>
@@ -961,8 +976,11 @@ export function PhotoAlbumGrid({
 /**
  * 格式化视频时长
  */
-function formatDuration(milliseconds: number): string {
-  const totalSeconds = Math.floor(milliseconds < 1000 ? milliseconds : milliseconds / 1000);
+function formatDuration(duration?: number | null): string {
+  const totalSeconds = Math.max(
+    0,
+    Math.floor(Number.isFinite(duration) ? (duration as number) : 0)
+  );
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;

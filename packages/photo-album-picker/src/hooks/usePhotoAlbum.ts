@@ -206,6 +206,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     const enrichedAssets = await Promise.all(
       assets.map(async item => {
         if (item.mediaType !== 'video') return item;
+        if (typeof item.duration === 'number' && item.localUri) return item;
 
         try {
           const assetInfo = (await getAssetInfoAsync(item.id)) as AssetInfoRecord;
@@ -217,9 +218,9 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
 
           return {
             ...item,
-            duration,
-            localUri: localUri ?? item.localUri,
-            fileSize: fileSize ?? item.fileSize,
+            ...(duration !== undefined ? { duration } : {}),
+            ...(localUri ? { localUri } : {}),
+            ...(fileSize !== undefined ? { fileSize } : {}),
           };
         } catch (err) {
           if (__DEV__) {
