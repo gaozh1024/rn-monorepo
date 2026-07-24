@@ -75,6 +75,12 @@ pnpm add react-native-zoom-toolkit
 
 如果你的项目已经在使用 `@gaozh1024/rn-kit`，通常这几个基础依赖已经存在；但接入 `@gaozh1024/photo-album-picker` 时仍建议确认版本兼容。
 
+#### 视频预览附加依赖
+
+如果你需要视频预览播放能力，还需要额外安装：
+
+- `expo-video`
+
 ## 版本兼容与排障
 
 ### Expo SDK 54

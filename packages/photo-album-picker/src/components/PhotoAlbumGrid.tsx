@@ -11,6 +11,7 @@ import {
   ViewToken,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { FlashList } from '@shopify/flash-list';
 import { AppText, Center, Icon, AppPressable, useTheme } from '@gaozh1024/rn-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,46 +20,25 @@ import type { PhotoAlbumGridProps, PhotoAlbumItem, PhotoAlbumMediaType } from '.
 import { mediaPickerColors } from '../constants';
 import { formatPhotoAlbumText, resolvePhotoAlbumUiConfig } from '../utils/photoAlbumFlow';
 
-type ExpoVideoModule = {
-  VideoView: React.ComponentType<{
-    player: ExpoVideoPlayer;
-    style?: object;
-    allowsFullscreen?: boolean;
-    allowsPictureInPicture?: boolean;
-    nativeControls?: boolean;
-    contentFit?: 'contain' | 'cover' | 'fill';
-  }>;
-  useVideoPlayer: (
-    source: string | { uri: string },
-    setup?: (player: ExpoVideoPlayer) => void
-  ) => ExpoVideoPlayer;
-};
-
-type ExpoVideoPlayer = {
-  loop?: boolean;
-  play?: () => void;
-  pause?: () => void;
-};
-
-function resolveExpoVideo(): ExpoVideoModule | null {
-  try {
-    // Keep expo-video optional for apps that only use photo picking.
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    const maybeRequire = Function(
-      'return typeof require === "function" ? require : undefined'
-    )() as ((moduleName: string) => ExpoVideoModule) | undefined;
-
-    return maybeRequire?.('expo-video') ?? null;
-  } catch {
-    return null;
-  }
-}
-
-const expoVideo = resolveExpoVideo();
-
-function PreviewMedia({ item, previewHeight }: { item: PhotoAlbumItem; previewHeight: number }) {
-  if (item.mediaType === 'video' && expoVideo) {
-    return <PreviewVideo item={item} previewHeight={previewHeight} videoModule={expoVideo} />;
+function PreviewMedia({
+  item,
+  previewHeight,
+  active,
+  previewVideoBadgeText,
+}: {
+  item: PhotoAlbumItem;
+  previewHeight: number;
+  active: boolean;
+  previewVideoBadgeText: string;
+}) {
+  if (item.mediaType === 'video' && active) {
+    return (
+      <PreviewVideo
+        item={item}
+        previewHeight={previewHeight}
+        previewVideoBadgeText={previewVideoBadgeText}
+      />
+    );
   }
 
   return (
@@ -75,35 +55,59 @@ function PreviewMedia({ item, previewHeight }: { item: PhotoAlbumItem; previewHe
 function PreviewVideo({
   item,
   previewHeight,
-  videoModule,
+  previewVideoBadgeText,
 }: {
   item: PhotoAlbumItem;
   previewHeight: number;
-  videoModule: ExpoVideoModule;
+  previewVideoBadgeText: string;
 }) {
+  const [hasStarted, setHasStarted] = React.useState(false);
   const videoSource = item.localUri ?? item.uri;
-  const player = videoModule.useVideoPlayer(videoSource, createdPlayer => {
+  const player = useVideoPlayer(videoSource, createdPlayer => {
     createdPlayer.loop = false;
-    createdPlayer.play?.();
   });
-  const VideoView = videoModule.VideoView;
 
   React.useEffect(() => {
-    player.play?.();
     return () => {
-      player.pause?.();
+      safelyCallVideoPlayer(() => player.pause?.());
     };
   }, [player]);
 
+  const handlePlay = React.useCallback(() => {
+    setHasStarted(true);
+    safelyCallVideoPlayer(() => player.play?.());
+  }, [player]);
+
   return (
-    <VideoView
-      player={player}
-      style={[styles.previewImage, { height: previewHeight }]}
-      allowsFullscreen
-      allowsPictureInPicture
-      nativeControls
-      contentFit="contain"
-    />
+    <View style={[styles.previewVideoContainer, { height: previewHeight }]}>
+      <VideoView
+        player={player}
+        style={styles.previewVideo}
+        fullscreenOptions={{ enable: true }}
+        allowsPictureInPicture
+        nativeControls={hasStarted}
+        contentFit="contain"
+      />
+
+      {!hasStarted ? (
+        <>
+          <Pressable onPress={handlePlay} style={styles.previewVideoPlayOverlay}>
+            <View style={styles.previewVideoPlayButton}>
+              <Icon name="play-arrow" size={42} color="#ffffff" />
+            </View>
+          </Pressable>
+
+          <View pointerEvents="none" style={styles.previewVideoBadge}>
+            <Icon name="play-arrow" size={18} color="#ffffff" />
+            <AppText size="sm" weight="medium" style={{ color: '#ffffff' }}>
+              {formatPhotoAlbumText(previewVideoBadgeText, {
+                duration: formatDuration(item.duration),
+              }).trim()}
+            </AppText>
+          </View>
+        </>
+      ) : null}
+    </View>
   );
 }
 
@@ -896,18 +900,12 @@ export function PhotoAlbumGrid({
               initialScrollIndex={previewIndex}
               renderItem={({ item }) => (
                 <View style={[styles.previewPage, { height: previewContentHeight }]}>
-                  <PreviewMedia item={item} previewHeight={previewContentHeight - 20} />
-
-                  {item.mediaType === 'video' ? (
-                    <View pointerEvents="none" style={styles.previewVideoBadge}>
-                      <Icon name="play-arrow" size={18} color="#ffffff" />
-                      <AppText size="sm" weight="medium" style={{ color: '#ffffff' }}>
-                        {formatPhotoAlbumText(resolvedUiConfig.texts.previewVideoBadgeText, {
-                          duration: formatDuration(item.duration),
-                        }).trim()}
-                      </AppText>
-                    </View>
-                  ) : null}
+                  <PreviewMedia
+                    item={item}
+                    previewHeight={previewContentHeight - 20}
+                    active={item.id === previewItem?.id}
+                    previewVideoBadgeText={resolvedUiConfig.texts.previewVideoBadgeText}
+                  />
                 </View>
               )}
               keyExtractor={item => `preview-${item.id}`}
@@ -984,6 +982,17 @@ function formatDuration(duration?: number | null): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function safelyCallVideoPlayer(call: () => unknown) {
+  try {
+    const result = call();
+    if (result && typeof (result as Promise<unknown>).catch === 'function') {
+      void (result as Promise<unknown>).catch(() => {});
+    }
+  } catch {
+    // expo-video may already have released the shared object during modal teardown.
+  }
 }
 
 const styles = StyleSheet.create({
@@ -1158,6 +1167,28 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT - 140,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  previewVideoContainer: {
+    width: SCREEN_WIDTH,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewVideo: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT - 160,
+  },
+  previewVideoPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewVideoPlayButton: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   previewImage: {
     width: SCREEN_WIDTH,
