@@ -4,7 +4,6 @@ import { StyleSheet, Text } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
 import { act, create } from 'react-test-renderer';
 import { AppInput, AppTextInput } from '../../form/AppInput';
-import { AppView } from '../../primitives/AppView';
 import { renderWithTheme } from './test-utils';
 
 function flattenStyle(style: any): Record<string, any> {
@@ -16,6 +15,9 @@ function flattenStyle(style: any): Record<string, any> {
 }
 
 describe('AppInput', () => {
+  const findInputContainer = (renderer: ReturnType<typeof create>) =>
+    renderer.root.findAllByProps({ testID: 'input-container' })[0];
+
   it('应该兼容导出 AppTextInput', () => {
     const { getByTestId } = renderWithTheme(<AppTextInput testID="text-input" value="" />);
 
@@ -85,6 +87,49 @@ describe('AppInput', () => {
     });
   });
 
+  it('点击输入容器时应该主动聚焦内部 TextInput', () => {
+    const focus = vi.fn();
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <AppInput
+          testID="input"
+          value=""
+          bg="transparent"
+          containerStyle={{ borderWidth: 0 }}
+          style={{ height: 48, fontSize: 20 }}
+        />,
+        {
+          createNodeMock: element => (element.type === 'TextInput' ? { focus } : null),
+        } as any
+      );
+    });
+
+    act(() => {
+      findInputContainer(renderer!).props.onPress?.({ nativeEvent: {} });
+    });
+
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it('禁用状态下点击输入容器不应该聚焦内部 TextInput', () => {
+    const focus = vi.fn();
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(<AppInput testID="input" value="" disabled />, {
+        createNodeMock: element => (element.type === 'TextInput' ? { focus } : null),
+      } as any);
+    });
+
+    act(() => {
+      findInputContainer(renderer!).props.onPress?.({ nativeEvent: {} });
+    });
+
+    expect(focus).not.toHaveBeenCalled();
+  });
+
   it('内置布局不依赖 className 注入', () => {
     const { getByTestId } = renderWithTheme(<AppInput testID="input" value="" />);
 
@@ -124,18 +169,14 @@ describe('AppInput', () => {
       );
     });
 
-    const containerBeforeFocus = renderer!.root
-      .findAllByType(AppView)
-      .find(view => view.props.testID === 'input-container');
+    const containerBeforeFocus = findInputContainer(renderer!);
     const beforeFocusStyle = flattenStyle(containerBeforeFocus?.props.style);
 
     act(() => {
       renderer!.root.findByType('TextInput').props.onFocus?.({ nativeEvent: {} });
     });
 
-    const container = renderer!.root
-      .findAllByType(AppView)
-      .find(view => view.props.testID === 'input-container');
+    const container = findInputContainer(renderer!);
     const containerStyle = flattenStyle(container?.props.style);
 
     expect(beforeFocusStyle.borderWidth).toBe(2);
@@ -156,9 +197,7 @@ describe('AppInput', () => {
     });
 
     const getContainerStyle = () => {
-      const container = renderer!.root
-        .findAllByType(AppView)
-        .find(view => view.props.testID === 'input-container');
+      const container = findInputContainer(renderer!);
 
       return flattenStyle(container?.props.style);
     };
@@ -191,9 +230,7 @@ describe('AppInput', () => {
       renderer!.root.findByType('TextInput').props.onFocus?.({ nativeEvent: {} });
     });
 
-    const container = renderer!.root
-      .findAllByType(AppView)
-      .find(view => view.props.testID === 'input-container');
+    const container = findInputContainer(renderer!);
     const containerStyle = flattenStyle(container?.props.style);
 
     expect(containerStyle.borderColor).toBe('#ef4444');

@@ -1,9 +1,10 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import React from 'react';
+import { Text } from 'react-native';
 import { fireEvent } from '@testing-library/react-native';
 import { DatePicker } from '../../form/DatePicker';
 import { renderWithTheme } from './test-utils';
-import { resolveInteractiveStyle } from '../style-utils';
+import { flattenStyle, resolveInteractiveStyle } from '../style-utils';
 import { act, create } from 'react-test-renderer';
 import { ThemeProvider, createTheme } from '@/theme';
 import { Picker } from '../../form/Picker';
@@ -99,6 +100,45 @@ describe('DatePicker', () => {
       borderRadius: 9999,
       backgroundColor: '#f38b32',
     });
+  });
+
+  it('日期触发器文本应该使用稳定的原生文本布局', () => {
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <DatePicker value={new Date(2024, 1, 3)} format="yyyy年MM月dd日" />
+        </ThemeProvider>
+      );
+    });
+
+    const triggerText = renderer!.root
+      .findAllByType(Text)
+      .find(node => node.props.children === '2024年02月03日');
+
+    expect(flattenStyle(triggerText?.props.style)).toMatchObject({
+      color: '#1f2937',
+      flex: 1,
+      flexShrink: 1,
+      lineHeight: 20,
+      minWidth: 0,
+    });
+  });
+
+  it('应该透传触发器文本样式给内部 Picker', () => {
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <DatePicker value={new Date(2024, 1, 3)} triggerTextStyle={{ lineHeight: 22 }} />
+        </ThemeProvider>
+      );
+    });
+
+    const picker = renderer!.root.findByType(Picker);
+    expect(picker.props.triggerTextStyle).toMatchObject({ lineHeight: 22 });
   });
 
   it('应该透传自定义底部弹层动画配置给内部 Picker', () => {

@@ -1,4 +1,12 @@
-import { forwardRef, useMemo, useState, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  type ForwardedRef,
+  type ReactNode,
+} from 'react';
 import {
   TextInput,
   TextInputProps,
@@ -198,6 +206,17 @@ function splitInputStyles(style?: StyleProp<TextStyle>) {
   };
 }
 
+function assignTextInputRef(ref: ForwardedRef<TextInput>, value: TextInput | null) {
+  if (typeof ref === 'function') {
+    ref(value);
+    return;
+  }
+
+  if (ref) {
+    ref.current = value;
+  }
+}
+
 /**
  * AppInput - 输入框组件，支持浅色/深色主题
  */
@@ -258,6 +277,7 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
   ) => {
     const colors = useThemeColors();
     const { theme, isDark } = useOptionalTheme();
+    const inputRef = useRef<TextInput | null>(null);
     const [isFocused, setIsFocused] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(passwordVisibleDefault);
     const resolvedStyles = useMemo(() => splitInputStyles(style), [style]);
@@ -361,6 +381,17 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
     const passwordToggleIcon = isPasswordVisible
       ? (passwordToggleIcons?.visible ?? defaultPasswordIcon)
       : (passwordToggleIcons?.hidden ?? defaultPasswordIcon);
+    const setInputRef = useCallback(
+      (node: TextInput | null) => {
+        inputRef.current = node;
+        assignTextInputRef(ref, node);
+      },
+      [ref]
+    );
+    const focusInput = useCallback(() => {
+      if (disabled) return;
+      inputRef.current?.focus?.();
+    }, [disabled]);
 
     return (
       <AppView
@@ -381,7 +412,7 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
             {label}
           </AppText>
         )}
-        <AppView
+        <AppPressable
           testID={props.testID ? `${props.testID}-container` : undefined}
           row
           items={isTextarea ? 'start' : 'center'}
@@ -392,6 +423,10 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
           maxW={maxW}
           maxH={isTextarea ? (maxH ?? textareaMaxHeight) : maxH}
           rounded={rounded ?? preset.rounded}
+          onPress={focusInput}
+          disabled={disabled}
+          accessible={false}
+          motionPreset="none"
           style={[
             styles.inputContainer,
             variantStyle,
@@ -410,7 +445,7 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
         >
           {leftIcon && <View style={styles.icon}>{leftIcon}</View>}
           <TextInput
-            ref={ref}
+            ref={setInputRef}
             className=""
             style={[
               styles.input,
@@ -468,7 +503,7 @@ export const AppInput = forwardRef<TextInput, AppInputProps>(
           ) : (
             rightIcon && <View style={styles.icon}>{rightIcon}</View>
           )}
-        </AppView>
+        </AppPressable>
         {error && (
           <AppText size="xs" style={{ color: errorColor }}>
             {error}

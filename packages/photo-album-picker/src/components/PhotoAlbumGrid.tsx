@@ -73,24 +73,36 @@ function PreviewVideo({
     };
   }, [player]);
 
+  React.useEffect(() => {
+    if (!hasStarted) return;
+    safelyCallVideoPlayer(() => player.play?.());
+  }, [hasStarted, player]);
+
   const handlePlay = React.useCallback(() => {
     setHasStarted(true);
-    safelyCallVideoPlayer(() => player.play?.());
-  }, [player]);
+  }, []);
 
   return (
     <View style={[styles.previewVideoContainer, { height: previewHeight }]}>
-      <VideoView
-        player={player}
-        style={styles.previewVideo}
-        fullscreenOptions={{ enable: true }}
-        allowsPictureInPicture
-        nativeControls={hasStarted}
-        contentFit="contain"
-      />
-
-      {!hasStarted ? (
+      {hasStarted ? (
+        <VideoView
+          player={player}
+          style={styles.previewVideo}
+          fullscreenOptions={{ enable: true }}
+          allowsPictureInPicture
+          nativeControls
+          contentFit="contain"
+        />
+      ) : (
         <>
+          <Image
+            source={{ uri: item.uri }}
+            style={[styles.previewImage, { height: previewHeight }]}
+            contentFit="contain"
+            cachePolicy="memory-disk"
+            transition={0}
+          />
+
           <Pressable onPress={handlePlay} style={styles.previewVideoPlayOverlay}>
             <View style={styles.previewVideoPlayButton}>
               <Icon name="play-arrow" size={42} color="#ffffff" />
@@ -106,7 +118,7 @@ function PreviewVideo({
             </AppText>
           </View>
         </>
-      ) : null}
+      )}
     </View>
   );
 }

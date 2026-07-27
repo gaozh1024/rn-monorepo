@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
+  type StyleProp,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type TextStyle,
 } from 'react-native';
 import {
   useMotionConfig,
@@ -27,9 +29,7 @@ import {
 import { useOptionalTheme } from '@/theme';
 import { resolveNamedColor, resolveSurfaceColor } from '../utils/theme-color';
 
-// Give React Native a short window to emit `onMomentumScrollBegin` before snapping
-// a drag that ended without momentum.
-const SCROLL_END_DRAG_MOMENTUM_DELAY_MS = 32;
+const WHEEL_SCROLL_SETTLE_DELAY_MS = 100;
 
 export type PickerValue = string | number;
 
@@ -85,6 +85,7 @@ export interface PickerProps
   cancelText?: string;
   confirmText?: string;
   triggerIconName?: string;
+  triggerTextStyle?: StyleProp<TextStyle>;
   renderDisplayText?: (selectedOptions: Array<PickerOption | undefined>) => string;
   renderFooter?: (context: PickerRenderFooterContext) => React.ReactNode;
   tempValue?: PickerValue[];
@@ -133,9 +134,9 @@ function WheelPickerColumn({
   visibleRows,
 }: WheelPickerColumnProps) {
   const scrollRef = useRef<ScrollView | null>(null);
-  const isMomentumScrollingRef = useRef(false);
-  const pendingDragEndOffsetYRef = useRef<number | null>(null);
-  const dragEndFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isUserInteractingRef = useRef(false);
+  const latestOffsetYRef = useRef(0);
+  const scrollSettleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const paddingRows = Math.floor(visibleRows / 2);
   const selectedIndex = Math.max(
     0,
@@ -195,55 +196,53 @@ function WheelPickerColumn({
     [rowHeight, selectNearestEnabled]
   );
 
-  const clearDragEndFallback = useCallback(() => {
-    if (dragEndFallbackTimerRef.current !== null) {
-      clearTimeout(dragEndFallbackTimerRef.current);
-      dragEndFallbackTimerRef.current = null;
+  const clearScrollSettleTimer = useCallback(() => {
+    if (scrollSettleTimerRef.current !== null) {
+      clearTimeout(scrollSettleTimerRef.current);
+      scrollSettleTimerRef.current = null;
     }
   }, []);
 
-  const handleMomentumScrollBegin = useCallback(() => {
-    isMomentumScrollingRef.current = true;
-    pendingDragEndOffsetYRef.current = null;
-    clearDragEndFallback();
-  }, [clearDragEndFallback]);
+  const scheduleScrollSettle = useCallback(
+    (offsetY: number) => {
+      latestOffsetYRef.current = offsetY;
+      isUserInteractingRef.current = true;
+      clearScrollSettleTimer();
 
-  const handleMomentumScrollEnd = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offsetY = event.nativeEvent.contentOffset?.y ?? 0;
-
-      isMomentumScrollingRef.current = false;
-      pendingDragEndOffsetYRef.current = null;
-      clearDragEndFallback();
-      snapToNearestEnabledOffset(offsetY);
+      scrollSettleTimerRef.current = setTimeout(() => {
+        scrollSettleTimerRef.current = null;
+        snapToNearestEnabledOffset(latestOffsetYRef.current);
+        isUserInteractingRef.current = false;
+      }, WHEEL_SCROLL_SETTLE_DELAY_MS);
     },
-    [clearDragEndFallback, snapToNearestEnabledOffset]
+    [clearScrollSettleTimer, snapToNearestEnabledOffset]
+  );
+
+  const handleScrollBeginDrag = useCallback(() => {
+    isUserInteractingRef.current = true;
+    clearScrollSettleTimer();
+  }, [clearScrollSettleTimer]);
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scheduleScrollSettle(event.nativeEvent.contentOffset?.y ?? 0);
+    },
+    [scheduleScrollSettle]
   );
 
   const handleScrollEndDrag = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offsetY = event.nativeEvent.contentOffset?.y ?? 0;
-
-      pendingDragEndOffsetYRef.current = offsetY;
-      clearDragEndFallback();
-      dragEndFallbackTimerRef.current = setTimeout(() => {
-        const pendingOffsetY = pendingDragEndOffsetYRef.current;
-
-        dragEndFallbackTimerRef.current = null;
-        if (pendingOffsetY === null || isMomentumScrollingRef.current) return;
-
-        pendingDragEndOffsetYRef.current = null;
-        snapToNearestEnabledOffset(pendingOffsetY);
-      }, SCROLL_END_DRAG_MOMENTUM_DELAY_MS);
+      scheduleScrollSettle(event.nativeEvent.contentOffset?.y ?? 0);
     },
-    [clearDragEndFallback, snapToNearestEnabledOffset]
+    [scheduleScrollSettle]
   );
 
   useEffect(() => {
+    if (isUserInteractingRef.current) return;
     scrollToIndex(selectedIndex, false);
   }, [scrollToIndex, selectedIndex]);
 
-  useEffect(() => clearDragEndFallback, [clearDragEndFallback]);
+  useEffect(() => clearScrollSettleTimer, [clearScrollSettleTimer]);
 
   return (
     <AppView
@@ -290,9 +289,10 @@ function WheelPickerColumn({
           showsVerticalScrollIndicator={false}
           snapToInterval={rowHeight}
           decelerationRate="fast"
-          onMomentumScrollBegin={handleMomentumScrollBegin}
-          onMomentumScrollEnd={handleMomentumScrollEnd}
+          onScrollBeginDrag={handleScrollBeginDrag}
+          onScroll={handleScroll}
           onScrollEndDrag={handleScrollEndDrag}
+          scrollEventThrottle={16}
           contentContainerStyle={{ paddingVertical: rowHeight * paddingRows }}
         >
           {column.options.map((option, index) => {
@@ -402,6 +402,7 @@ export function Picker({
   cancelText = '取消',
   confirmText = '确定',
   triggerIconName = 'keyboard-arrow-down',
+  triggerTextStyle,
   renderDisplayText,
   renderFooter,
   tempValue,
@@ -436,6 +437,11 @@ export function Picker({
     () => (isControlledTemp ? normalizeValues(columns, tempValue) : internalTempValues),
     [columns, internalTempValues, isControlledTemp, tempValue]
   );
+  const latestTempValuesRef = useRef(tempValues);
+
+  useEffect(() => {
+    latestTempValuesRef.current = tempValues;
+  }, [tempValues]);
 
   useEffect(() => {
     if (!isControlledTemp) {
@@ -462,6 +468,7 @@ export function Picker({
   const setTempValues = useCallback(
     (nextValues: PickerValue[]) => {
       const normalized = normalizeValues(columns, nextValues);
+      latestTempValuesRef.current = normalized;
       if (isControlledTemp) {
         onTempChange?.(normalized);
         return;
@@ -484,6 +491,7 @@ export function Picker({
   const openModal = useCallback(() => {
     const normalized = normalizeValues(columns, tempValue ?? value ?? defaultTempValue);
 
+    latestTempValuesRef.current = normalized;
     if (!isControlledTemp) {
       setInternalTempValues(normalized);
     }
@@ -493,9 +501,9 @@ export function Picker({
   }, [columns, defaultTempValue, isControlledTemp, onOpen, onTempChange, tempValue, value]);
 
   const handleConfirm = useCallback(() => {
-    onChange?.(tempValues);
+    onChange?.(latestTempValuesRef.current);
     setVisible(false);
-  }, [onChange, tempValues]);
+  }, [onChange]);
 
   return (
     <AppView
@@ -524,13 +532,18 @@ export function Picker({
         motionReduceMotion={motionReduceMotion}
       >
         <AppText
-          className="flex-1"
-          style={{ color: value && value.length > 0 ? colors.text : colors.textMuted }}
+          style={[
+            styles.triggerText,
+            { color: value && value.length > 0 ? colors.text : colors.textMuted },
+            triggerTextStyle,
+          ]}
           numberOfLines={1}
         >
           {displayText}
         </AppText>
-        <Icon name={triggerIconName} size="md" color={colors.icon} />
+        <AppView style={styles.triggerIcon}>
+          <Icon name={triggerIconName} size="md" color={colors.icon} />
+        </AppView>
       </AppPressable>
 
       <BottomSheetModal
@@ -618,6 +631,16 @@ export function Picker({
 const styles = StyleSheet.create({
   trigger: {
     borderWidth: 0.5,
+  },
+  triggerText: {
+    flex: 1,
+    flexShrink: 1,
+    lineHeight: 20,
+    minWidth: 0,
+  },
+  triggerIcon: {
+    flexShrink: 0,
+    marginLeft: 8,
   },
   header: {
     borderBottomWidth: 0.5,

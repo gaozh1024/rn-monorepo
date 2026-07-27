@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { StyleProp, TextStyle } from 'react-native';
 import { useMotionConfig, type PressMotionProps, type SheetMotionProps } from '@/ui/motion';
 import { AppPressable, AppText, AppView } from '@/ui/primitives';
 import { formatDate } from '@/utils';
@@ -47,6 +48,8 @@ export interface DatePickerProps
   maxDate?: Date;
   /** 自定义样式 */
   className?: string;
+  /** 触发器文本样式 */
+  triggerTextStyle?: StyleProp<TextStyle>;
   /** 弹窗取消按钮文案 */
   cancelText?: string;
   /** 弹窗确认按钮文案 */
@@ -109,6 +112,7 @@ export function DatePicker({
   minDate,
   maxDate,
   className,
+  triggerTextStyle,
   cancelText = '取消',
   confirmText = '确定',
   pickerTitle = '选择日期',
@@ -266,6 +270,7 @@ export function DatePicker({
       placeholder={placeholder}
       disabled={disabled}
       className={className}
+      triggerTextStyle={triggerTextStyle}
       bg={bg}
       surface={surface}
       motionPreset={resolvedMotionPreset}
