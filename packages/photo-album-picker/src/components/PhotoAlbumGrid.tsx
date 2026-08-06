@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePhotoAlbum } from '../hooks/usePhotoAlbum';
 import type { PhotoAlbumGridProps, PhotoAlbumItem, PhotoAlbumMediaType } from '../types';
 import { mediaPickerColors } from '../constants';
+import { commitPreviewSelection } from '../utils/commitPreviewSelection';
 import { formatPhotoAlbumText, resolvePhotoAlbumUiConfig } from '../utils/photoAlbumFlow';
 
 function PreviewMedia({
@@ -87,7 +88,7 @@ function PreviewVideo({
       {hasStarted ? (
         <VideoView
           player={player}
-          style={styles.previewVideo}
+          style={[styles.previewVideo, { height: previewHeight }]}
           fullscreenOptions={{ enable: true }}
           allowsPictureInPicture
           nativeControls
@@ -495,11 +496,11 @@ export function PhotoAlbumGrid({
 
     const selected = getSelectedPhotos();
     if (!allowsMultipleSelection || selected.length === 0) {
-      onComplete?.([previewItem]);
+      commitPreviewSelection(setPreviewIndex, onComplete, [previewItem]);
       return;
     }
 
-    onComplete?.(selected);
+    commitPreviewSelection(setPreviewIndex, onComplete, selected);
   }, [allowsMultipleSelection, getSelectedPhotos, onComplete, previewItem]);
 
   const closePreview = useCallback(() => {
@@ -510,10 +511,7 @@ export function PhotoAlbumGrid({
     if (!previewItem) return;
 
     if (!allowsMultipleSelection) {
-      setPreviewIndex(null);
-      requestAnimationFrame(() => {
-        onComplete?.([previewItem]);
-      });
+      commitPreviewSelection(setPreviewIndex, onComplete, [previewItem]);
       return;
     }
 
@@ -909,6 +907,7 @@ export function PhotoAlbumGrid({
               data={photos}
               horizontal
               pagingEnabled
+              style={{ height: previewContentHeight }}
               initialScrollIndex={previewIndex}
               renderItem={({ item }) => (
                 <View style={[styles.previewPage, { height: previewContentHeight }]}>
@@ -1187,7 +1186,6 @@ const styles = StyleSheet.create({
   },
   previewVideo: {
     width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT - 160,
   },
   previewVideoPlayOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1218,6 +1216,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   previewFooter: {
+    position: 'relative',
+    zIndex: 2,
+    elevation: 2,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,

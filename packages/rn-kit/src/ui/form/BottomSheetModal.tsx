@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Modal, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { AppPressable, AppView } from '@/ui/primitives';
 import type { SheetMotionProps } from '../motion';
 import { useSheetMotion } from '../motion/hooks/useSheetMotion';
@@ -62,6 +62,17 @@ export function BottomSheetModal({
     onRequestClose,
   });
 
+  const animatedShadowStyle = useAnimatedStyle(() => {
+    const progress = sheetMotion.progress?.value ?? (sheetMotion.mounted ? 1 : 0);
+    const shadowOpacity = 0.12 * progress;
+    const elevation = 12 * progress;
+
+    return {
+      shadowOpacity,
+      elevation,
+    };
+  }, [sheetMotion.mounted, sheetMotion.progress]);
+
   return (
     <Modal
       visible={sheetMotion.mounted}
@@ -86,28 +97,38 @@ export function BottomSheetModal({
         <Animated.View
           className={contentClassName}
           style={[
-            styles.sheet,
+            styles.sheetShadow,
             {
-              backgroundColor: surfaceColor,
               maxHeight,
             },
+            animatedShadowStyle,
             sheetMotion.sheetStyle,
-            contentStyle,
           ]}
         >
-          {showHandle && (
-            <GestureDetector gesture={sheetMotion.gesture}>
-              <AppView
-                testID={handleTestID}
-                center
-                className="pt-2 pb-1"
-                {...sheetMotion.panHandlers}
-              >
-                <AppView style={styles.handle} />
-              </AppView>
-            </GestureDetector>
-          )}
-          {children}
+          <AppView
+            style={[
+              styles.sheetSurface,
+              {
+                backgroundColor: surfaceColor,
+                maxHeight,
+              },
+              contentStyle,
+            ]}
+          >
+            {showHandle && (
+              <GestureDetector gesture={sheetMotion.gesture}>
+                <AppView
+                  testID={handleTestID}
+                  center
+                  className="pt-2 pb-1"
+                  {...sheetMotion.panHandlers}
+                >
+                  <AppView style={styles.handle} />
+                </AppView>
+              </GestureDetector>
+            )}
+            {children}
+          </AppView>
         </Animated.View>
       </AppView>
     </Modal>
@@ -121,14 +142,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(156,163,175,0.7)',
   },
-  sheet: {
+  sheetShadow: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    overflow: 'hidden',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 12,
+  },
+  sheetSurface: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
   },
 });

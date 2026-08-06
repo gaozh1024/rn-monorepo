@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { act, create } from 'react-test-renderer';
+import { TouchableOpacity } from 'react-native';
 import { AlertModal } from '../alert/component';
-import { AppPressable } from '@/ui';
+import { flattenStyle } from '@/ui/__tests__/style-utils';
 
 describe('AlertModal', () => {
   it('应该使用内部动画而不是 Modal 默认动画', () => {
@@ -27,7 +28,7 @@ describe('AlertModal', () => {
     expect(modal.props.animationType).toBe('none');
   });
 
-  it('应该用内联快捷参数提供按钮点击区域和居中布局', () => {
+  it('应该提供稳定的双按钮可见布局', () => {
     let renderer: ReturnType<typeof create>;
 
     act(() => {
@@ -36,15 +37,23 @@ describe('AlertModal', () => {
       );
     });
 
-    const buttons = renderer!.root.findAllByType(AppPressable);
+    const buttons = renderer!.root.findAllByType(TouchableOpacity);
 
     expect(buttons).toHaveLength(2);
     for (const button of buttons) {
-      expect(button.props.flex).toBe(true);
-      expect(button.props.py).toBe(12);
-      expect(button.props.items).toBe('center');
-      expect(button.props.justify).toBe('center');
-      expect(button.props.rounded).toBe('lg');
+      expect(flattenStyle(button.props.style)).toMatchObject({
+        height: 46,
+        borderRadius: 23,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexBasis: 0,
+        flexGrow: 1,
+        flexShrink: 1,
+        minWidth: 0,
+      });
     }
+
+    expect(flattenStyle(buttons[0].props.style).marginRight).toBe(12);
+    expect(flattenStyle(buttons[1].props.style).backgroundColor).toBeTruthy();
   });
 });

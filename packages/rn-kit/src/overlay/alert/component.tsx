@@ -4,8 +4,8 @@
  */
 
 import { PresenceSurface } from '@/ui/motion/components/PresenceSurface';
-import { Modal, StyleSheet } from 'react-native';
-import { AppView, AppText, AppPressable } from '@/ui';
+import { Modal, StyleSheet, TouchableOpacity } from 'react-native';
+import { AppView, AppText } from '@/ui';
 import { useThemeColors } from '@/theme';
 import { useMotionConfig, usePresenceMotion } from '@/ui/motion';
 import type { AlertOptions } from './types';
@@ -54,38 +54,64 @@ export function AlertModal({
     <Modal transparent visible={presence.mounted} animationType="none">
       <AppView style={styles.container}>
         <PresenceSurface style={[styles.overlay, presence.overlayAnimatedStyle]} />
-        <PresenceSurface style={[styles.alertBox, presence.animatedStyle]}>
-          {title && <AppText className="text-lg font-semibold text-center mb-2">{title}</AppText>}
-          {message && <AppText className="text-gray-600 text-center mb-4">{message}</AppText>}
-          <AppView row gap={3} className="mt-2">
+        <PresenceSurface
+          style={[
+            styles.alertBox,
+            { backgroundColor: colors.surfaceContainerLowest },
+            presence.animatedStyle,
+          ]}
+        >
+          {title && (
+            <AppText
+              className="text-center"
+              style={{ fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 8 }}
+            >
+              {title}
+            </AppText>
+          )}
+          {message && (
+            <AppText
+              className="text-center"
+              style={{
+                fontSize: 14,
+                lineHeight: 21,
+                color: colors.textSecondary,
+                marginBottom: 20,
+              }}
+            >
+              {message}
+            </AppText>
+          )}
+          <AppView row style={styles.buttonRow}>
             {showCancel && (
-              <AppPressable
+              <TouchableOpacity
                 onPress={onCancel}
-                flex
-                py={12}
-                items="center"
-                justify="center"
-                rounded="lg"
-                style={{ backgroundColor: '#f3f4f6' }}
+                activeOpacity={0.72}
+                style={[
+                  styles.button,
+                  styles.buttonFlex,
+                  styles.cancelButton,
+                  {
+                    backgroundColor: colors.surfaceContainerLow,
+                    borderColor: colors.divider,
+                    borderWidth: StyleSheet.hairlineWidth,
+                  },
+                ]}
               >
-                <AppText style={{ color: '#374151', textAlign: 'center' }}>
+                <AppText style={{ fontSize: 15, fontWeight: '500', color: colors.text }}>
                   {cancelText || '取消'}
                 </AppText>
-              </AppPressable>
+              </TouchableOpacity>
             )}
-            <AppPressable
+            <TouchableOpacity
               onPress={onConfirm}
-              flex
-              py={12}
-              items="center"
-              justify="center"
-              rounded="lg"
-              style={{ backgroundColor: colors.primary }}
+              activeOpacity={0.85}
+              style={[styles.button, styles.buttonFlex, { backgroundColor: colors.primary }]}
             >
-              <AppText style={{ color: '#ffffff', textAlign: 'center' }}>
+              <AppText style={{ fontSize: 15, fontWeight: '600', color: '#ffffff' }}>
                 {confirmText || '确定'}
               </AppText>
-            </AppPressable>
+            </TouchableOpacity>
           </AppView>
         </PresenceSurface>
       </AppView>
@@ -104,15 +130,36 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   alertBox: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 20,
     margin: 32,
-    minWidth: 280,
+    width: 320,
+    maxWidth: '100%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    width: '100%',
+  },
+  button: {
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonFlex: {
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  cancelButton: {
+    marginRight: 12,
   },
 });
