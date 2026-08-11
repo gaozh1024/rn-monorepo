@@ -1,7 +1,0 @@
-android/.gradle
-android/build
-android/.cxx
-android/local.properties
-ios/build
-ios/Pods
-*.tgz

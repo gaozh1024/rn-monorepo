@@ -14,6 +14,7 @@ type AlertModalProps = AlertOptions & {
   visible: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  onExited?: () => void;
 };
 
 /**
@@ -34,6 +35,7 @@ export function AlertModal({
   motionReduceMotion,
   onConfirm,
   onCancel,
+  onExited,
 }: AlertModalProps) {
   const motionConfig = useMotionConfig();
   const colors = useThemeColors();
@@ -46,6 +48,7 @@ export function AlertModal({
     distance: motionDistance,
     reduceMotion: motionReduceMotion,
     unmountOnExit: true,
+    onExited,
   });
 
   if (!presence.mounted) return null;

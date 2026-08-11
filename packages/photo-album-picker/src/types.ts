@@ -8,6 +8,7 @@ export interface MediaPickerRouteNames {
 
 export type PhotoAlbumMediaType = 'photo' | 'video';
 export type PhotoAlbumOpenMediaType = 'photo' | 'video' | 'all';
+export type PhotoAlbumPermissionOpenSettingsMode = 'confirm' | 'direct' | 'disabled';
 
 export interface PhotoAlbumCropOptions {
   /** 裁剪比例，例如 [1, 1] / [4, 3] */
@@ -29,6 +30,16 @@ export interface PhotoAlbumUiTexts {
   permissionDescription?: string;
   /** 权限按钮文案 */
   permissionAllowButton?: string;
+  /** 权限不可再次询问时的按钮文案 */
+  permissionOpenSettingsButton?: string;
+  /** 跳转系统设置确认框标题 */
+  permissionSettingsAlertTitle?: string;
+  /** 跳转系统设置确认框内容 */
+  permissionSettingsAlertMessage?: string;
+  /** 跳转系统设置确认框取消按钮文案 */
+  permissionSettingsAlertCancelButton?: string;
+  /** 跳转系统设置确认框确认按钮文案 */
+  permissionSettingsAlertConfirmButton?: string;
   /** 重试按钮文案 */
   retryButton?: string;
   /** 取消按钮文案 */
@@ -78,6 +89,22 @@ export interface PhotoAlbumUiTexts {
 export interface PhotoAlbumUiTheme {
   /** 权限页“允许访问”按钮背景色 */
   permissionButtonBackgroundColor?: string;
+  /** 权限页“允许访问”按钮文字颜色 */
+  permissionButtonTextColor?: string;
+  /** 权限页“去设置”按钮背景色 */
+  permissionSettingsButtonBackgroundColor?: string;
+  /** 权限页“去设置”按钮文字颜色 */
+  permissionSettingsButtonTextColor?: string;
+}
+
+export interface PhotoAlbumPermissionConfig {
+  /**
+   * 当系统不再允许直接弹出权限申请框时的处理方式：
+   * - confirm: 弹出确认框后打开系统设置
+   * - direct: 直接打开系统设置
+   * - disabled: 不自动打开设置，仅回调 onPermissionDenied
+   */
+  openSettingsMode?: PhotoAlbumPermissionOpenSettingsMode;
 }
 
 export interface PhotoAlbumUiConfig {
@@ -85,6 +112,8 @@ export interface PhotoAlbumUiConfig {
   texts?: PhotoAlbumUiTexts;
   /** 样式配置 */
   theme?: PhotoAlbumUiTheme;
+  /** 权限行为配置 */
+  permission?: PhotoAlbumPermissionConfig;
 }
 
 export interface PhotoAlbumOpenOptions {

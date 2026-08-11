@@ -28,7 +28,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   );
 
   const hide = useCallback(() => {
-    setAlert(null);
+    setAlert(current => (current ? { ...current, visible: false } : current));
   }, []);
 
   const handleConfirm = useCallback(() => {
@@ -40,6 +40,10 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
     alert?.onCancel?.();
     hide();
   }, [alert, hide]);
+
+  const handleExited = useCallback(() => {
+    setAlert(current => (current?.visible ? current : null));
+  }, []);
 
   const contextValue = useMemo<AlertContextType>(
     () => ({ alert: showAlert, confirm }),
@@ -64,6 +68,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
         motionReduceMotion={alert?.motionReduceMotion}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
+        onExited={handleExited}
       />
     </AlertContext.Provider>
   );

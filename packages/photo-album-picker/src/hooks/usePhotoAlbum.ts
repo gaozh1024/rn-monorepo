@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Alert, AppState, Linking } from 'react-native';
+import type { AppStateStatus } from 'react-native';
 import {
   requestPermissionsAsync,
   getPermissionsAsync,
@@ -8,7 +10,11 @@ import {
   MediaTypeValue,
   SortByValue,
 } from 'expo-media-library';
-import type { PhotoAlbumItem, PhotoAlbumUiTexts } from '../types';
+import type { PhotoAlbumItem, PhotoAlbumPermissionConfig, PhotoAlbumUiTexts } from '../types';
+import {
+  DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG,
+  DEFAULT_PHOTO_ALBUM_UI_TEXTS,
+} from '../utils/photoAlbumFlow';
 
 const MAX_CURSOR_STALL_RETRIES = 2;
 const MAX_PAGE_SIZE_MULTIPLIER = 4;
@@ -26,6 +32,7 @@ interface FetchPageResult {
 }
 
 type AssetInfoRecord = Partial<PhotoAlbumItem> & Record<string, unknown>;
+type MediaLibraryPermissionResponse = Awaited<ReturnType<typeof getPermissionsAsync>>;
 
 export interface PhotoAlbumPaginationDebugInfo {
   totalCount: number;
@@ -49,10 +56,9 @@ export interface UsePhotoAlbumOptions {
   /** 排序字段 */
   sortBy?: SortByValue[];
   /** UI 文案配置 */
-  uiTexts?: Pick<
-    PhotoAlbumUiTexts,
-    'permissionRequestError' | 'permissionCheckError' | 'loadPhotosError' | 'loadMorePhotosError'
-  >;
+  uiTexts?: Partial<PhotoAlbumUiTexts>;
+  /** 权限行为配置 */
+  permission?: PhotoAlbumPermissionConfig;
 }
 
 export interface UsePhotoAlbumReturn {
@@ -68,6 +74,8 @@ export interface UsePhotoAlbumReturn {
   hasMore: boolean;
   /** 权限状态 */
   permissionStatus: PermissionStatus | null;
+  /** 系统是否还允许再次弹出权限申请框 */
+  permissionCanAskAgain: boolean | null;
   /** 错误信息 */
   error: Error | null;
   /** 请求权限 */
@@ -110,6 +118,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     mediaType = DEFAULT_MEDIA_TYPES,
     sortBy = DEFAULT_SORT_BY,
     uiTexts,
+    permission,
   } = options;
 
   const [photos, setPhotos] = useState<PhotoAlbumItem[]>([]);
@@ -117,6 +126,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus | null>(null);
+  const [permissionCanAskAgain, setPermissionCanAskAgain] = useState<boolean | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [selectedIds, setSelectedIdsState] = useState<string[]>([]);
   const [paginationDebugInfo, setPaginationDebugInfo] = useState<PhotoAlbumPaginationDebugInfo>({
@@ -136,6 +146,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
   const hasMoreRef = useRef(true);
   const isFetchingRef = useRef(false);
   const mountedRef = useRef(true);
+  const openedSettingsRef = useRef(false);
   const pageCountRef = useRef(0);
   const stallCountRef = useRef(0);
   const photoIdsRef = useRef<Set<string>>(new Set());
@@ -156,37 +167,107 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     return merged;
   }, []);
 
+  const applyPermissionResponse = useCallback((response: MediaLibraryPermissionResponse) => {
+    if (!mountedRef.current) return;
+
+    setPermissionStatus(response.status);
+    setPermissionCanAskAgain(response.canAskAgain ?? null);
+  }, []);
+
+  const getUiText = useCallback(
+    <Key extends keyof PhotoAlbumUiTexts>(key: Key): Required<PhotoAlbumUiTexts>[Key] => {
+      return uiTexts?.[key] ?? DEFAULT_PHOTO_ALBUM_UI_TEXTS[key];
+    },
+    [uiTexts]
+  );
+
+  const openPermissionSettings = useCallback(async () => {
+    try {
+      openedSettingsRef.current = true;
+      await Linking.openSettings();
+    } catch (err) {
+      openedSettingsRef.current = false;
+      setError(err instanceof Error ? err : new Error(getUiText('permissionRequestError')));
+    }
+  }, [getUiText]);
+
+  const handleBlockedPermission = useCallback(async () => {
+    const openSettingsMode =
+      permission?.openSettingsMode ?? DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG.openSettingsMode;
+
+    if (openSettingsMode === 'disabled') return;
+
+    if (openSettingsMode === 'direct') {
+      await openPermissionSettings();
+      return;
+    }
+
+    Alert.alert(
+      getUiText('permissionSettingsAlertTitle'),
+      getUiText('permissionSettingsAlertMessage'),
+      [
+        {
+          text: getUiText('permissionSettingsAlertCancelButton'),
+          style: 'cancel',
+        },
+        {
+          text: getUiText('permissionSettingsAlertConfirmButton'),
+          onPress: () => {
+            void openPermissionSettings();
+          },
+        },
+      ]
+    );
+  }, [getUiText, openPermissionSettings, permission?.openSettingsMode]);
+
   /**
    * 请求相册权限
    */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const { status } = await requestPermissionsAsync();
-      setPermissionStatus(status);
-      return status === 'granted';
+      const currentPermission = await getPermissionsAsync();
+      applyPermissionResponse(currentPermission);
+
+      if (currentPermission.status === 'granted') return true;
+
+      if (currentPermission.canAskAgain === false) {
+        await handleBlockedPermission();
+        return false;
+      }
+
+      const nextPermission = await requestPermissionsAsync();
+      applyPermissionResponse(nextPermission);
+
+      if (nextPermission.status === 'granted') return true;
+
+      if (nextPermission.canAskAgain === false) {
+        await handleBlockedPermission();
+      }
+
+      return false;
     } catch (err) {
       setError(
         err instanceof Error ? err : new Error(uiTexts?.permissionRequestError ?? '请求权限失败')
       );
       return false;
     }
-  }, [uiTexts?.permissionRequestError]);
+  }, [applyPermissionResponse, handleBlockedPermission, uiTexts?.permissionRequestError]);
 
   /**
    * 检查权限状态
    */
   const checkPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const { status } = await getPermissionsAsync();
-      setPermissionStatus(status);
-      return status === 'granted';
+      const currentPermission = await getPermissionsAsync();
+      applyPermissionResponse(currentPermission);
+      return currentPermission.status === 'granted';
     } catch (err) {
       setError(
         err instanceof Error ? err : new Error(uiTexts?.permissionCheckError ?? '检查权限失败')
       );
       return false;
     }
-  }, [uiTexts?.permissionCheckError]);
+  }, [applyPermissionResponse, uiTexts?.permissionCheckError]);
 
   /**
    * 加载照片
@@ -436,6 +517,27 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     await loadInitial();
   }, [loadInitial]);
 
+  useEffect(() => {
+    const handleAppStateChange = async (state: AppStateStatus) => {
+      if (state !== 'active' || !openedSettingsRef.current) return;
+
+      openedSettingsRef.current = false;
+      const hasPermission = await checkPermission();
+
+      if (hasPermission) {
+        await refresh();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', state => {
+      void handleAppStateChange(state);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [checkPermission, refresh]);
+
   /**
    * 切换选中状态
    */
@@ -496,6 +598,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     loadingMore,
     hasMore,
     permissionStatus,
+    permissionCanAskAgain,
     error,
     requestPermission,
     loadMore,

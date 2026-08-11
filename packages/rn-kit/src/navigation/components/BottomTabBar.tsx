@@ -192,6 +192,7 @@ export function BottomTabBar({
   state,
   descriptors,
   navigation,
+  insets,
   showLabel = true,
   activeTintColor,
   inactiveTintColor,
@@ -216,7 +217,7 @@ export function BottomTabBar({
 }: CustomBottomTabBarProps) {
   const motionConfig = useMotionConfig();
   const colors = useThemeColors();
-  const metrics = useBottomTabBarMetrics({ height });
+  const metrics = useBottomTabBarMetrics({ height, safeAreaBottom: insets?.bottom });
   const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'soft';
   const flattenedStyle = flattenTabBarStyle(style);
   const safeStyle = withoutTabBarHeight(flattenedStyle);

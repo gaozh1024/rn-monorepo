@@ -4,6 +4,7 @@ import type {
   PhotoAlbumMediaType,
   PhotoAlbumOpenMediaType,
   PhotoAlbumOpenOptions,
+  PhotoAlbumPermissionConfig,
   PhotoAlbumUiConfig,
   PhotoAlbumUiTexts,
   PhotoAlbumUiTheme,
@@ -21,6 +22,11 @@ export const DEFAULT_PHOTO_ALBUM_UI_TEXTS: Required<PhotoAlbumUiTexts> = {
   permissionTitle: '需要访问相册权限',
   permissionDescription: '请在设置中允许访问您的照片',
   permissionAllowButton: '允许访问',
+  permissionOpenSettingsButton: '去设置开启',
+  permissionSettingsAlertTitle: '需要开启相册权限',
+  permissionSettingsAlertMessage: '请前往系统设置允许访问照片，授权后返回应用即可继续选择。',
+  permissionSettingsAlertCancelButton: '取消',
+  permissionSettingsAlertConfirmButton: '去设置',
   retryButton: '重试',
   cancelButton: '取消',
   previewButton: '预览',
@@ -46,11 +52,19 @@ export const DEFAULT_PHOTO_ALBUM_UI_TEXTS: Required<PhotoAlbumUiTexts> = {
 };
 export const DEFAULT_PHOTO_ALBUM_UI_THEME: Required<PhotoAlbumUiTheme> = {
   permissionButtonBackgroundColor: mediaPickerColors.primary[500],
+  permissionButtonTextColor: '#ffffff',
+  permissionSettingsButtonBackgroundColor: mediaPickerColors.primary[500],
+  permissionSettingsButtonTextColor: '#ffffff',
+};
+
+export const DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG: Required<PhotoAlbumPermissionConfig> = {
+  openSettingsMode: 'confirm',
 };
 
 export interface ResolvedPhotoAlbumUiConfig {
   texts: Required<PhotoAlbumUiTexts>;
   theme: Required<PhotoAlbumUiTheme>;
+  permission: Required<PhotoAlbumPermissionConfig>;
 }
 
 export function resolvePhotoAlbumUiConfig(
@@ -64,6 +78,10 @@ export function resolvePhotoAlbumUiConfig(
     theme: {
       ...DEFAULT_PHOTO_ALBUM_UI_THEME,
       ...uiConfig?.theme,
+    },
+    permission: {
+      ...DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG,
+      ...uiConfig?.permission,
     },
   };
 }

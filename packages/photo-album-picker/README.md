@@ -274,9 +274,9 @@ function ChatToolbar() {
 
 同时你也要在导航里注册同名页面。
 
-### 5. 自定义权限按钮颜色和多语言文案
+### 5. 自定义权限按钮、设置提示和多语言文案
 
-默认文案是中文。你可以通过 `options.uiConfig` 统一覆盖整个相册流程里的文案，并单独修改权限页“允许访问”按钮的背景色。
+默认文案是中文。你可以通过 `options.uiConfig` 统一覆盖整个相册流程里的文案，分别修改“允许访问”和“去设置开启”按钮的文字与颜色，并配置系统不再允许弹出权限框时的处理方式。
 
 ```tsx
 <PhotoAlbumButton
@@ -285,8 +285,14 @@ function ChatToolbar() {
     maxSelection: 9,
     mediaType: 'all',
     uiConfig: {
+      permission: {
+        openSettingsMode: 'confirm',
+      },
       theme: {
         permissionButtonBackgroundColor: '#16a34a',
+        permissionButtonTextColor: '#ffffff',
+        permissionSettingsButtonBackgroundColor: '#2563eb',
+        permissionSettingsButtonTextColor: '#ffffff',
       },
       texts: {
         buttonText: 'Choose Media',
@@ -294,6 +300,12 @@ function ChatToolbar() {
         permissionTitle: 'Photo access required',
         permissionDescription: 'Allow photo access in system settings',
         permissionAllowButton: 'Allow Access',
+        permissionOpenSettingsButton: 'Open Settings',
+        permissionSettingsAlertTitle: 'Enable Photo Access',
+        permissionSettingsAlertMessage:
+          'Please allow photo access in system settings, then return to continue.',
+        permissionSettingsAlertCancelButton: 'Not Now',
+        permissionSettingsAlertConfirmButton: 'Open Settings',
         retryButton: 'Retry',
         cancelButton: 'Cancel',
         previewButton: 'Preview',
@@ -324,6 +336,11 @@ function ChatToolbar() {
 - `permissionTitle`
 - `permissionDescription`
 - `permissionAllowButton`
+- `permissionOpenSettingsButton`
+- `permissionSettingsAlertTitle`
+- `permissionSettingsAlertMessage`
+- `permissionSettingsAlertCancelButton`
+- `permissionSettingsAlertConfirmButton`
 - `retryButton`
 - `cancelButton`
 - `previewButton`
@@ -346,6 +363,19 @@ function ChatToolbar() {
 - `permissionCheckError`
 - `loadPhotosError`
 - `loadMorePhotosError`
+
+支持的 `theme` 字段：
+
+- `permissionButtonBackgroundColor`
+- `permissionButtonTextColor`
+- `permissionSettingsButtonBackgroundColor`
+- `permissionSettingsButtonTextColor`
+
+支持的 `permission` 字段：
+
+- `openSettingsMode`: `'confirm' | 'direct' | 'disabled'`
+
+`openSettingsMode` 默认为 `confirm`。当 Android 或 iOS 返回 `canAskAgain=false` 时，组件会先弹出确认框再打开系统设置；`direct` 会直接打开系统设置；`disabled` 不自动打开设置，仅触发 `onPermissionDenied`。
 
 模板变量说明：
 

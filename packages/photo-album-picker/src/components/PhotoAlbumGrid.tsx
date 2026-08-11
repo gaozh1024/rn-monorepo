@@ -47,7 +47,8 @@ function PreviewMedia({
       source={{ uri: item.uri }}
       style={[styles.previewImage, { height: previewHeight }]}
       contentFit="contain"
-      cachePolicy="memory-disk"
+      cachePolicy="disk"
+      recyclingKey={`preview-${item.id}`}
       transition={0}
     />
   );
@@ -100,7 +101,8 @@ function PreviewVideo({
             source={{ uri: item.uri }}
             style={[styles.previewImage, { height: previewHeight }]}
             contentFit="contain"
-            cachePolicy="memory-disk"
+            cachePolicy="disk"
+            recyclingKey={`preview-video-${item.id}`}
             transition={0}
           />
 
@@ -132,6 +134,12 @@ const MEDIA_TYPE_MAP: Record<PhotoAlbumMediaType, 'photo' | 'video'> = {
   video: 'video',
 };
 const DEFAULT_MEDIA_TYPES: PhotoAlbumMediaType[] = ['photo', 'video'];
+const GRID_INITIAL_PAGE_ROWS = 18;
+const GRID_LOAD_MORE_ROWS = 10;
+const GRID_DRAW_DISTANCE_ROWS = 6;
+const PREVIEW_PREFETCH_BEFORE = 1;
+const PREVIEW_PREFETCH_AFTER = 2;
+const PREVIEW_PREFETCH_LIMIT = PREVIEW_PREFETCH_BEFORE + PREVIEW_PREFETCH_AFTER + 1;
 
 function PhotoAlbumGridPlaceholder({
   itemSize,
@@ -213,7 +221,8 @@ const PhotoGridItem = React.memo(function PhotoGridItem({
         style={styles.photoImage}
         contentFit="cover"
         transition={0}
-        cachePolicy="memory-disk"
+        cachePolicy="disk"
+        recyclingKey={`grid-${item.id}`}
       />
 
       <Pressable onPress={() => onPress(item, index)} style={StyleSheet.absoluteFill} />
@@ -294,8 +303,8 @@ export function PhotoAlbumGrid({
   const mediaTypeFilter = useMemo(() => mediaTypes.map(type => MEDIA_TYPE_MAP[type]), [mediaTypes]);
   const albumOptions = useMemo(
     () => ({
-      initialLoadCount: numColumns * 50,
-      loadMoreCount: numColumns * 30,
+      initialLoadCount: numColumns * GRID_INITIAL_PAGE_ROWS,
+      loadMoreCount: numColumns * GRID_LOAD_MORE_ROWS,
       mediaType: mediaTypeFilter,
     }),
     [mediaTypeFilter, numColumns]
@@ -308,6 +317,7 @@ export function PhotoAlbumGrid({
     loadingMore,
     hasMore,
     permissionStatus,
+    permissionCanAskAgain,
     error,
     requestPermission,
     loadMore,
@@ -317,6 +327,7 @@ export function PhotoAlbumGrid({
     selectedCount,
   } = usePhotoAlbum({
     ...albumOptions,
+    permission: resolvedUiConfig.permission,
     uiTexts: resolvedUiConfig.texts,
   });
 
@@ -385,28 +396,24 @@ export function PhotoAlbumGrid({
 
   const prefetchItems = useCallback((items: PhotoAlbumItem[]) => {
     const uris = items
+      .slice(0, PREVIEW_PREFETCH_LIMIT)
       .map(item => item.uri)
       .filter((uri): uri is string => Boolean(uri) && !prefetchedUrisRef.current.has(uri));
 
     if (uris.length === 0) return;
 
     uris.forEach(uri => prefetchedUrisRef.current.add(uri));
-    void Image.prefetch(uris, 'memory-disk').catch(() => {
+    void Image.prefetch(uris, 'disk').catch(() => {
       uris.forEach(uri => prefetchedUrisRef.current.delete(uri));
     });
   }, []);
 
-  React.useEffect(() => {
-    if (photos.length === 0) return;
-    prefetchItems(photos.slice(0, Math.min(photos.length, 80)));
-  }, [photos, prefetchItems]);
-
   const prefetchAroundIndex = useCallback(
-    (centerIndex: number, before: number, after: number) => {
+    (centerIndex: number) => {
       if (centerIndex < 0 || photos.length === 0) return;
 
-      const start = Math.max(0, centerIndex - before);
-      const end = Math.min(photos.length, centerIndex + after);
+      const start = Math.max(0, centerIndex - PREVIEW_PREFETCH_BEFORE);
+      const end = Math.min(photos.length, centerIndex + PREVIEW_PREFETCH_AFTER + 1);
       prefetchItems(photos.slice(start, end));
     },
     [photos, prefetchItems]
@@ -421,7 +428,6 @@ export function PhotoAlbumGrid({
       if (indexes.length === 0) return;
 
       const maxIndex = Math.max(...indexes);
-      prefetchAroundIndex(maxIndex, 8, 80);
       if (
         hasMore &&
         !initialLoading &&
@@ -471,7 +477,7 @@ export function PhotoAlbumGrid({
   const openPreviewAtIndex = useCallback(
     (index: number) => {
       setPreviewIndex(index);
-      prefetchAroundIndex(index, 2, 12);
+      prefetchAroundIndex(index);
     },
     [prefetchAroundIndex]
   );
@@ -529,7 +535,7 @@ export function PhotoAlbumGrid({
 
   React.useEffect(() => {
     if (previewIndex === null || !previewItem) return;
-    prefetchAroundIndex(previewIndex, 2, 12);
+    prefetchAroundIndex(previewIndex);
   }, [previewIndex, previewItem, prefetchAroundIndex]);
 
   React.useEffect(() => {
@@ -549,7 +555,7 @@ export function PhotoAlbumGrid({
       if (nextIndex < 0 || nextIndex >= photos.length || nextIndex === previewIndex) return;
 
       setPreviewIndex(nextIndex);
-      prefetchAroundIndex(nextIndex, 2, 12);
+      prefetchAroundIndex(nextIndex);
     },
     [photos.length, prefetchAroundIndex, previewIndex]
   );
@@ -746,6 +752,17 @@ export function PhotoAlbumGrid({
   }
 
   if (permissionStatus !== 'granted') {
+    const shouldOpenSettings = permissionCanAskAgain === false;
+    const permissionButtonText = shouldOpenSettings
+      ? resolvedUiConfig.texts.permissionOpenSettingsButton
+      : resolvedUiConfig.texts.permissionAllowButton;
+    const permissionButtonBackgroundColor = shouldOpenSettings
+      ? resolvedUiConfig.theme.permissionSettingsButtonBackgroundColor
+      : resolvedUiConfig.theme.permissionButtonBackgroundColor;
+    const permissionButtonTextColor = shouldOpenSettings
+      ? resolvedUiConfig.theme.permissionSettingsButtonTextColor
+      : resolvedUiConfig.theme.permissionButtonTextColor;
+
     return (
       <Center style={styles.permissionContainer}>
         <Icon
@@ -777,19 +794,19 @@ export function PhotoAlbumGrid({
             const granted = await requestPermission();
             if (granted) {
               await refresh();
-            } else {
+            } else if (!shouldOpenSettings) {
               onPermissionDenied?.();
             }
           }}
           style={[
             styles.permissionButton,
             {
-              backgroundColor: resolvedUiConfig.theme.permissionButtonBackgroundColor,
+              backgroundColor: permissionButtonBackgroundColor,
             },
           ]}
         >
-          <AppText size="md" weight="semibold" style={{ color: '#ffffff' }}>
-            {resolvedUiConfig.texts.permissionAllowButton}
+          <AppText size="md" weight="semibold" style={{ color: permissionButtonTextColor }}>
+            {permissionButtonText}
           </AppText>
         </AppPressable>
       </Center>
@@ -840,7 +857,7 @@ export function PhotoAlbumGrid({
         scrollEventThrottle={16}
         onViewableItemsChanged={handleGridViewableItemsChanged}
         ListFooterComponent={renderFooter}
-        drawDistance={itemSize * 18}
+        drawDistance={itemSize * GRID_DRAW_DISTANCE_ROWS}
         removeClippedSubviews
         extraData={selectedIndexMap}
         viewabilityConfig={{

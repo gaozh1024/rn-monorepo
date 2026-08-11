@@ -144,6 +144,7 @@ describe('导航器模块', () => {
     expect(navigatorProps.screenOptions.tabBarStyle).toEqual({
       borderTopWidth: 0,
       backgroundColor: '#ffffff',
+      height: 72,
     });
   });
 

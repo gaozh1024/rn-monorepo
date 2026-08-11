@@ -71,6 +71,23 @@ describe('Picker', () => {
       );
     });
 
+    const getTextPressable = (text: string) => {
+      const nodes = renderer!.root.findAllByProps({ children: text });
+      for (const candidate of nodes) {
+        let node: any = candidate;
+        while (node?.props && !node.props.onPress) {
+          node = node.parent;
+        }
+        if (node?.props?.onPress) return node;
+      }
+      throw new Error(`No pressable ancestor found for ${text}`);
+    };
+
+    act(() => {
+      getTextPressable('请选择').props.onPress();
+    });
+    onTempChange.mockClear();
+
     const getScrollView = () => renderer!.root.findByType(ScrollView);
 
     return {

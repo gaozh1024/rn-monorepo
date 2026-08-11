@@ -169,6 +169,24 @@ describe('BottomTabBar', () => {
     );
   });
 
+  it('应该优先使用 React Navigation 传入的底部安全区', () => {
+    const { getAllByTestId } = render(
+      <ThemeProvider light={theme}>
+        <BottomTabBar
+          {...createProps()}
+          height={82}
+          insets={{ top: 0, right: 0, bottom: 24, left: 0 }}
+        />
+      </ThemeProvider>
+    );
+
+    const containerStyle = flattenStyle(getAllByTestId('bottom-tab-bar')[0].props.style);
+    const safeAreaStyle = flattenStyle(getAllByTestId('bottom-tab-bar-safe-area')[0].props.style);
+
+    expect(containerStyle.height).toBe(106);
+    expect(safeAreaStyle.height).toBe(24);
+  });
+
   it('默认高度应该使用框架常量并计入底部安全区', () => {
     const { getAllByTestId } = render(
       <ThemeProvider light={theme}>

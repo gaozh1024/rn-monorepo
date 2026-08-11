@@ -3,6 +3,7 @@ import {
   createCroppedPhotoAlbumItem,
   DEFAULT_PHOTO_ALBUM_MEDIA_TYPES,
   DEFAULT_PHOTO_ALBUM_OPEN_OPTIONS,
+  DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG,
   DEFAULT_PHOTO_ALBUM_UI_TEXTS,
   DEFAULT_PHOTO_ALBUM_UI_THEME,
   formatPhotoAlbumText,
@@ -132,6 +133,10 @@ describe('photoAlbumFlow', () => {
             },
             theme: {
               permissionButtonBackgroundColor: '#ff4d4f',
+              permissionSettingsButtonBackgroundColor: '#2563eb',
+            },
+            permission: {
+              openSettingsMode: 'direct',
             },
           },
         })
@@ -145,6 +150,10 @@ describe('photoAlbumFlow', () => {
           },
           theme: {
             permissionButtonBackgroundColor: '#ff4d4f',
+            permissionSettingsButtonBackgroundColor: '#2563eb',
+          },
+          permission: {
+            openSettingsMode: 'direct',
           },
         },
       });
@@ -156,18 +165,24 @@ describe('photoAlbumFlow', () => {
       expect(resolvePhotoAlbumUiConfig()).toEqual({
         texts: DEFAULT_PHOTO_ALBUM_UI_TEXTS,
         theme: DEFAULT_PHOTO_ALBUM_UI_THEME,
+        permission: DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG,
       });
     });
 
-    it('merges custom texts and theme over defaults', () => {
+    it('merges custom texts, theme and permission config over defaults', () => {
       expect(
         resolvePhotoAlbumUiConfig({
           texts: {
             albumTitle: 'Album',
             completeButton: 'Done',
+            permissionOpenSettingsButton: 'Open Settings',
           },
           theme: {
             permissionButtonBackgroundColor: '#1677ff',
+            permissionSettingsButtonBackgroundColor: '#f97316',
+          },
+          permission: {
+            openSettingsMode: 'disabled',
           },
         })
       ).toEqual({
@@ -175,10 +190,16 @@ describe('photoAlbumFlow', () => {
           ...DEFAULT_PHOTO_ALBUM_UI_TEXTS,
           albumTitle: 'Album',
           completeButton: 'Done',
+          permissionOpenSettingsButton: 'Open Settings',
         },
         theme: {
           ...DEFAULT_PHOTO_ALBUM_UI_THEME,
           permissionButtonBackgroundColor: '#1677ff',
+          permissionSettingsButtonBackgroundColor: '#f97316',
+        },
+        permission: {
+          ...DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG,
+          openSettingsMode: 'disabled',
         },
       });
     });

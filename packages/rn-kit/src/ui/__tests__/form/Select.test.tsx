@@ -124,6 +124,22 @@ describe('Select', () => {
       );
     });
 
+    const getTextPressable = (text: string) => {
+      const nodes = renderer!.root.findAllByProps({ children: text });
+      for (const candidate of nodes) {
+        let node: any = candidate;
+        while (node?.props && !node.props.onPress) {
+          node = node.parent;
+        }
+        if (node?.props?.onPress) return node;
+      }
+      throw new Error(`No pressable ancestor found for ${text}`);
+    };
+
+    act(() => {
+      getTextPressable('打开选择器').props.onPress();
+    });
+
     const modal = renderer!.root.find(
       node => typeof node.type === 'string' && node.type === 'Modal'
     );

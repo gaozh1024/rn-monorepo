@@ -9,6 +9,7 @@ export interface BottomTabBarMetrics {
 
 export interface UseBottomTabBarMetricsOptions {
   height?: number;
+  safeAreaBottom?: number;
 }
 
 export function useBottomTabBarMetrics(
@@ -16,7 +17,7 @@ export function useBottomTabBarMetrics(
 ): BottomTabBarMetrics {
   const insets = useAppSafeAreaInsets();
   const contentHeight = options.height ?? DEFAULT_BOTTOM_TAB_BAR_HEIGHT;
-  const safeAreaBottom = insets.bottom;
+  const safeAreaBottom = options.safeAreaBottom ?? insets.bottom;
 
   return {
     contentHeight,

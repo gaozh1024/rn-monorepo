@@ -8,6 +8,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BottomTabBar } from '../components/BottomTabBar';
+import { useBottomTabBarMetrics } from '../hooks/useBottomTabBarMetrics';
 import type { TabParamList, TabNavigatorProps, TabRouteConfig } from '../types';
 import { flattenTabBarStyle, withoutTabBarHeight } from '../utils/tab-bar-style';
 
@@ -54,6 +55,8 @@ export function TabNavigator({
   screenOptions,
   children,
 }: TabNavigatorProps) {
+  const tabBarMetrics = useBottomTabBarMetrics({ height: tabBarOptions?.height });
+
   // 合并标签栏选项到屏幕选项
   const mergedScreenOptions = React.useMemo(() => {
     const options: any = { ...defaultScreenOptions, ...screenOptions };
@@ -88,8 +91,16 @@ export function TabNavigator({
       }
     }
 
+    if (!tabBar) {
+      const resolvedTabBarStyle = withoutTabBarHeight(flattenTabBarStyle(options.tabBarStyle));
+      options.tabBarStyle = {
+        ...(resolvedTabBarStyle ?? {}),
+        height: tabBarMetrics.totalHeight,
+      };
+    }
+
     return options;
-  }, [tabBarOptions, screenOptions]);
+  }, [tabBar, tabBarMetrics.totalHeight, tabBarOptions, screenOptions]);
 
   const resolvedTabBar = React.useMemo(() => {
     if (tabBar) return tabBar;
