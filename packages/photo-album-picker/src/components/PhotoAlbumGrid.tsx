@@ -21,6 +21,29 @@ import { mediaPickerColors } from '../constants';
 import { commitPreviewSelection } from '../utils/commitPreviewSelection';
 import { formatPhotoAlbumText, resolvePhotoAlbumUiConfig } from '../utils/photoAlbumFlow';
 
+function PreviewImage({
+  item,
+  previewHeight,
+  recyclingKey,
+}: {
+  item: PhotoAlbumItem;
+  previewHeight: number;
+  recyclingKey: string;
+}) {
+  return (
+    <Image
+      source={{ uri: item.uri }}
+      style={[styles.previewImage, { height: previewHeight }]}
+      contentFit="contain"
+      cachePolicy="none"
+      allowDownscaling
+      decodeFormat="rgb"
+      recyclingKey={recyclingKey}
+      transition={0}
+    />
+  );
+}
+
 function PreviewMedia({
   item,
   previewHeight,
@@ -43,13 +66,30 @@ function PreviewMedia({
   }
 
   return (
-    <Image
-      source={{ uri: item.uri }}
-      style={[styles.previewImage, { height: previewHeight }]}
+    <PreviewImage item={item} previewHeight={previewHeight} recyclingKey={`preview-${item.id}`} />
+  );
+}
+
+function ActivePreviewVideo({ source, previewHeight }: { source: string; previewHeight: number }) {
+  const player = useVideoPlayer(source, createdPlayer => {
+    createdPlayer.loop = false;
+  });
+
+  React.useEffect(() => {
+    safelyCallVideoPlayer(() => player.play?.());
+    return () => {
+      safelyCallVideoPlayer(() => player.pause?.());
+    };
+  }, [player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={[styles.previewVideo, { height: previewHeight }]}
+      fullscreenOptions={{ enable: true }}
+      allowsPictureInPicture
+      nativeControls
       contentFit="contain"
-      cachePolicy="disk"
-      recyclingKey={`preview-${item.id}`}
-      transition={0}
     />
   );
 }
@@ -65,20 +105,6 @@ function PreviewVideo({
 }) {
   const [hasStarted, setHasStarted] = React.useState(false);
   const videoSource = item.localUri ?? item.uri;
-  const player = useVideoPlayer(videoSource, createdPlayer => {
-    createdPlayer.loop = false;
-  });
-
-  React.useEffect(() => {
-    return () => {
-      safelyCallVideoPlayer(() => player.pause?.());
-    };
-  }, [player]);
-
-  React.useEffect(() => {
-    if (!hasStarted) return;
-    safelyCallVideoPlayer(() => player.play?.());
-  }, [hasStarted, player]);
 
   const handlePlay = React.useCallback(() => {
     setHasStarted(true);
@@ -87,23 +113,13 @@ function PreviewVideo({
   return (
     <View style={[styles.previewVideoContainer, { height: previewHeight }]}>
       {hasStarted ? (
-        <VideoView
-          player={player}
-          style={[styles.previewVideo, { height: previewHeight }]}
-          fullscreenOptions={{ enable: true }}
-          allowsPictureInPicture
-          nativeControls
-          contentFit="contain"
-        />
+        <ActivePreviewVideo source={videoSource} previewHeight={previewHeight} />
       ) : (
         <>
-          <Image
-            source={{ uri: item.uri }}
-            style={[styles.previewImage, { height: previewHeight }]}
-            contentFit="contain"
-            cachePolicy="disk"
+          <PreviewImage
+            item={item}
+            previewHeight={previewHeight}
             recyclingKey={`preview-video-${item.id}`}
-            transition={0}
           />
 
           <Pressable onPress={handlePlay} style={styles.previewVideoPlayOverlay}>
@@ -137,9 +153,6 @@ const DEFAULT_MEDIA_TYPES: PhotoAlbumMediaType[] = ['photo', 'video'];
 const GRID_INITIAL_PAGE_ROWS = 18;
 const GRID_LOAD_MORE_ROWS = 10;
 const GRID_DRAW_DISTANCE_ROWS = 6;
-const PREVIEW_PREFETCH_BEFORE = 1;
-const PREVIEW_PREFETCH_AFTER = 2;
-const PREVIEW_PREFETCH_LIMIT = PREVIEW_PREFETCH_BEFORE + PREVIEW_PREFETCH_AFTER + 1;
 
 function PhotoAlbumGridPlaceholder({
   itemSize,
@@ -298,7 +311,6 @@ export function PhotoAlbumGrid({
   const insets = useSafeAreaInsets();
   const resolvedUiConfig = useMemo(() => resolvePhotoAlbumUiConfig(uiConfig), [uiConfig]);
   const [previewIndex, setPreviewIndex] = React.useState<number | null>(null);
-  const prefetchedUrisRef = React.useRef<Set<string>>(new Set());
   const previewListRef = React.useRef<FlatList<PhotoAlbumItem>>(null);
   const mediaTypeFilter = useMemo(() => mediaTypes.map(type => MEDIA_TYPE_MAP[type]), [mediaTypes]);
   const albumOptions = useMemo(
@@ -394,31 +406,6 @@ export function PhotoAlbumGrid({
     return Math.max(7, Math.ceil(estimatedAvailableHeight / (itemSize + spacing)) + 1);
   }, [itemSize, spacing, toolbarBottomInset]);
 
-  const prefetchItems = useCallback((items: PhotoAlbumItem[]) => {
-    const uris = items
-      .slice(0, PREVIEW_PREFETCH_LIMIT)
-      .map(item => item.uri)
-      .filter((uri): uri is string => Boolean(uri) && !prefetchedUrisRef.current.has(uri));
-
-    if (uris.length === 0) return;
-
-    uris.forEach(uri => prefetchedUrisRef.current.add(uri));
-    void Image.prefetch(uris, 'disk').catch(() => {
-      uris.forEach(uri => prefetchedUrisRef.current.delete(uri));
-    });
-  }, []);
-
-  const prefetchAroundIndex = useCallback(
-    (centerIndex: number) => {
-      if (centerIndex < 0 || photos.length === 0) return;
-
-      const start = Math.max(0, centerIndex - PREVIEW_PREFETCH_BEFORE);
-      const end = Math.min(photos.length, centerIndex + PREVIEW_PREFETCH_AFTER + 1);
-      prefetchItems(photos.slice(start, end));
-    },
-    [photos, prefetchItems]
-  );
-
   const handleGridViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken<PhotoAlbumItem>[] }) => {
       const indexes = viewableItems
@@ -437,7 +424,7 @@ export function PhotoAlbumGrid({
         void loadMore();
       }
     },
-    [hasMore, initialLoading, loadingMore, loadMore, numColumns, photos.length, prefetchAroundIndex]
+    [hasMore, initialLoading, loadingMore, loadMore, numColumns, photos.length]
   );
 
   /**
@@ -474,13 +461,9 @@ export function PhotoAlbumGrid({
   /**
    * 处理照片点击：进入预览
    */
-  const openPreviewAtIndex = useCallback(
-    (index: number) => {
-      setPreviewIndex(index);
-      prefetchAroundIndex(index);
-    },
-    [prefetchAroundIndex]
-  );
+  const openPreviewAtIndex = useCallback((index: number) => {
+    setPreviewIndex(index);
+  }, []);
 
   const handlePhotoPress = useCallback(
     (_item: PhotoAlbumItem, index: number) => {
@@ -534,11 +517,6 @@ export function PhotoAlbumGrid({
   }, [openPreviewAtIndex, photos, selectedPhotos]);
 
   React.useEffect(() => {
-    if (previewIndex === null || !previewItem) return;
-    prefetchAroundIndex(previewIndex);
-  }, [previewIndex, previewItem, prefetchAroundIndex]);
-
-  React.useEffect(() => {
     if (previewIndex === null) return;
 
     requestAnimationFrame(() => {
@@ -555,9 +533,8 @@ export function PhotoAlbumGrid({
       if (nextIndex < 0 || nextIndex >= photos.length || nextIndex === previewIndex) return;
 
       setPreviewIndex(nextIndex);
-      prefetchAroundIndex(nextIndex);
     },
-    [photos.length, prefetchAroundIndex, previewIndex]
+    [photos.length, previewIndex]
   );
 
   const handleEndReached = useCallback(() => {
@@ -952,9 +929,10 @@ export function PhotoAlbumGrid({
                 });
               }}
               showsHorizontalScrollIndicator={false}
-              removeClippedSubviews
-              windowSize={3}
-              initialNumToRender={3}
+              removeClippedSubviews={false}
+              windowSize={2}
+              initialNumToRender={1}
+              maxToRenderPerBatch={2}
             />
           ) : null}
 
