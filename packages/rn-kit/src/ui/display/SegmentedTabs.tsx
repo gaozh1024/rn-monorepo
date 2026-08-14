@@ -263,8 +263,8 @@ function MotionSegmentedTabsIndicator({
 
   return (
     <Animated.View
+      cssInterop={false}
       testID={testID}
-      className={cn(indicatorClassName)}
       pointerEvents="none"
       style={[
         styles.indicator,
@@ -278,7 +278,15 @@ function MotionSegmentedTabsIndicator({
         animatedIndicatorStyle,
         indicatorStyle,
       ]}
-    />
+    >
+      {indicatorClassName ? (
+        <AppView
+          className={cn(indicatorClassName)}
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFillObject, roundedStyle]}
+        />
+      ) : null}
+    </Animated.View>
   );
 }
 

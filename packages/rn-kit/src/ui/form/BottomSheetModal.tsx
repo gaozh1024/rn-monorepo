@@ -84,7 +84,12 @@ function BottomSheetModalContent({
         />
 
         {closeOnBackdropPress && (
-          <AppPressable testID={backdropTestID} className="flex-1" onPress={onRequestClose} />
+          <AppPressable
+            testID={backdropTestID}
+            className="flex-1"
+            motionPreset="none"
+            onPress={onRequestClose}
+          />
         )}
 
         <Animated.View

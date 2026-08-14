@@ -2,6 +2,7 @@ import * as React from 'react';
 import Animated from 'react-native-reanimated';
 import {
   Pressable,
+  StyleSheet,
   type PressableProps,
   type PressableStateCallbackType,
   type StyleProp,
@@ -9,7 +10,7 @@ import {
 } from 'react-native';
 import { useOptionalTheme } from '@/theme';
 import { cn } from '@/utils';
-import type { MotionAnimatedViewStyle, PressMotionPreset, PressMotionProps } from '../motion';
+import type { PressMotionPreset, PressMotionProps } from '../motion';
 import { useMotionConfig } from '../motion/context';
 import { usePressMotion } from '../motion/hooks/usePressMotion';
 import { resolveNamedColor, resolveSurfaceColor } from '../utils/theme-color';
@@ -29,14 +30,71 @@ export interface AppPressableProps extends PressableProps, CommonLayoutProps, Pr
   pressedClassName?: string;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-type AppPressableResolvedStyleItem = StyleProp<ViewStyle> | MotionAnimatedViewStyle | undefined;
+type AppPressableResolvedStyleItem = StyleProp<ViewStyle> | undefined;
 type AppPressableResolvedStyle = AppPressableResolvedStyleItem[];
 
 type ResolvedAppPressableProps = AppPressableProps & {
   resolvedMotionPreset: PressMotionPreset;
 };
+
+const motionWrapperStyleKeys = [
+  'alignSelf',
+  'aspectRatio',
+  'bottom',
+  'display',
+  'end',
+  'flex',
+  'flexBasis',
+  'flexGrow',
+  'flexShrink',
+  'height',
+  'left',
+  'margin',
+  'marginBottom',
+  'marginEnd',
+  'marginHorizontal',
+  'marginLeft',
+  'marginRight',
+  'marginStart',
+  'marginTop',
+  'marginVertical',
+  'maxHeight',
+  'maxWidth',
+  'minHeight',
+  'minWidth',
+  'position',
+  'right',
+  'start',
+  'top',
+  'width',
+  'zIndex',
+] as const satisfies ReadonlyArray<keyof ViewStyle>;
+
+function pickMotionWrapperStyle(style: StyleProp<ViewStyle>) {
+  const flattenStyle = (input: any): ViewStyle => {
+    if (!input) return {};
+    if (Array.isArray(input)) {
+      return input.reduce<ViewStyle>((acc, item) => ({ ...acc, ...flattenStyle(item) }), {});
+    }
+    if (typeof input === 'number') {
+      return (StyleSheet.flatten(input) as ViewStyle | undefined) ?? {};
+    }
+    return input;
+  };
+
+  const flattened = flattenStyle(style);
+
+  const wrapperStyle: ViewStyle = {};
+
+  for (const key of motionWrapperStyleKeys) {
+    const value = flattened[key];
+    if (value !== undefined) {
+      (wrapperStyle as any)[key] = value;
+    }
+  }
+
+  return Object.keys(wrapperStyle).length > 0 ? wrapperStyle : undefined;
+}
 
 type ResolvedAppPressableStyleOptions = Pick<
   AppPressableProps,
@@ -76,7 +134,6 @@ type ResolvedAppPressableStyleOptions = Pick<
   | 'wrap'
 > & {
   isPressed: boolean;
-  motionAnimatedStyle?: MotionAnimatedViewStyle;
 };
 
 function useResolvedAppPressableStyle({
@@ -115,7 +172,6 @@ function useResolvedAppPressableStyle({
   pressedClassName,
   isPressed,
   style,
-  motionAnimatedStyle,
 }: ResolvedAppPressableStyleOptions) {
   const { theme, isDark } = useOptionalTheme();
   const resolvedBgColor =
@@ -165,7 +221,6 @@ function useResolvedAppPressableStyle({
         maxH,
       }),
       resolveRoundedStyle(rounded),
-      motionAnimatedStyle,
     ],
     [
       between,
@@ -183,7 +238,6 @@ function useResolvedAppPressableStyle({
       minW,
       ml,
       mr,
-      motionAnimatedStyle,
       mt,
       mx,
       my,
@@ -217,7 +271,7 @@ function useResolvedAppPressableStyle({
 }
 
 type AppPressableParts = {
-  styleOptions: Omit<ResolvedAppPressableStyleOptions, 'isPressed' | 'motionAnimatedStyle'>;
+  styleOptions: Omit<ResolvedAppPressableStyleOptions, 'isPressed'>;
   motionDuration?: number;
   motionReduceMotion?: boolean;
   resolvedMotionPreset: PressMotionPreset;
@@ -367,27 +421,33 @@ function MotionAppPressable(props: ResolvedAppPressableProps) {
   const resolved = useResolvedAppPressableStyle({
     ...styleOptions,
     isPressed,
-    motionAnimatedStyle: pressMotion.animatedStyle,
   });
+  const motionWrapperStyle = React.useMemo(
+    () =>
+      typeof resolved.style === 'function' ? undefined : pickMotionWrapperStyle(resolved.style),
+    [resolved.style]
+  );
 
   return (
-    <AnimatedPressable
-      className={resolved.className}
-      style={resolved.style}
-      onPressIn={e => {
-        setIsPressed(true);
-        pressMotion.onPressIn();
-        onPressIn?.(e);
-      }}
-      onPressOut={e => {
-        setIsPressed(false);
-        pressMotion.onPressOut();
-        onPressOut?.(e);
-      }}
-      {...pressableProps}
-    >
-      {children}
-    </AnimatedPressable>
+    <Animated.View cssInterop={false} style={[motionWrapperStyle, pressMotion.animatedStyle]}>
+      <Pressable
+        className={resolved.className}
+        style={resolved.style as PressableProps['style']}
+        onPressIn={e => {
+          setIsPressed(true);
+          pressMotion.onPressIn();
+          onPressIn?.(e);
+        }}
+        onPressOut={e => {
+          setIsPressed(false);
+          pressMotion.onPressOut();
+          onPressOut?.(e);
+        }}
+        {...pressableProps}
+      >
+        {children}
+      </Pressable>
+    </Animated.View>
   );
 }
 

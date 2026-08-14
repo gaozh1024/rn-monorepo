@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { Platform } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
-import { act } from 'react-test-renderer';
+import { act, create } from 'react-test-renderer';
 import { withSpring, withTiming } from 'react-native-reanimated';
 import { ThemeProvider, createTheme } from '@/theme';
 import { SegmentedTabs } from '../../display/SegmentedTabs';
@@ -78,6 +78,36 @@ describe('SegmentedTabs', () => {
 
     expect(withTiming).toHaveBeenCalledWith(203, { duration: 180 });
     expect(withTiming).toHaveBeenCalledWith(94, { duration: 180 });
+  });
+
+  it('原生 animated 滑块应关闭 cssInterop，避免 animated style 被 NativeWind 转发到普通组件', () => {
+    (Platform as any).OS = 'ios';
+
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <SegmentedTabs
+            testID="tabs"
+            options={options}
+            value="all"
+            indicatorClassName="bg-orange-500"
+          />
+        </ThemeProvider>
+      );
+    });
+
+    const indicator = renderer!.root
+      .findAll(node => node.props.cssInterop === false)
+      .find(node => node.props.testID === 'tabs-indicator');
+    expect(indicator).toBeTruthy();
+
+    const classNameLayer = indicator!.findByProps({ className: 'bg-orange-500' });
+
+    expect(indicator!.props.cssInterop).toBe(false);
+    expect(indicator!.props.className).toBeUndefined();
+    expect(classNameLayer).toBeTruthy();
   });
 
   it('传入 spring 预设时应该使用 spring 动画', () => {

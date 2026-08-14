@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
+import { act, create } from 'react-test-renderer';
 import { render } from '@testing-library/react-native';
 import { MotionConfigProvider } from '../../motion/context';
 import { AppPressable } from '../../primitives/AppPressable';
+import { flattenStyle } from '../style-utils';
 
 const usePressMotionMock = vi.hoisted(() => vi.fn());
 
@@ -83,5 +85,44 @@ describe('AppPressable motion props', () => {
         preset: 'soft',
       })
     );
+  });
+
+  it('motion 样式应隔离在关闭 cssInterop 的 Animated.View 上', () => {
+    const animatedStyle = {
+      opacity: 0.8,
+      transform: [{ scale: 0.98 }],
+    };
+
+    usePressMotionMock.mockReturnValueOnce({
+      pressed: { interpolate: vi.fn() },
+      animatedStyle,
+      onPressIn: vi.fn(),
+      onPressOut: vi.fn(),
+    });
+
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <AppPressable
+          testID="pressable"
+          flex
+          className="flex-row px-4"
+          style={{ height: 40 }}
+          motionPreset="soft"
+        >
+          按钮
+        </AppPressable>
+      );
+    });
+
+    const animatedView = renderer!.root.findByType('Animated.View');
+    const pressable = renderer!.root.findByType('Pressable');
+
+    expect(animatedView.props.cssInterop).toBe(false);
+    expect(flattenStyle(animatedView.props.style)).toMatchObject({ flex: 1, opacity: 0.8 });
+    expect(pressable.props.className).toContain('flex-row');
+    expect(pressable.props.style).not.toContain(animatedStyle);
+    expect(flattenStyle(pressable.props.style)).toMatchObject({ flex: 1, height: 40 });
   });
 });
