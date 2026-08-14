@@ -430,7 +430,7 @@ export function Picker({
   );
   const resolvedBgColor =
     resolveSurfaceColor(surface, theme, isDark) ?? resolveNamedColor(bg, theme, isDark);
-  const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'soft';
+  const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'none';
 
   const isControlledTemp = tempValue !== undefined;
   const tempValues = useMemo(

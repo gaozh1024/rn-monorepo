@@ -69,6 +69,30 @@ describe('form press motion props', () => {
     });
   });
 
+  it('Picker 默认不启用触发器按压动画', () => {
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <Picker
+            placeholder="打开地区选择"
+            columns={[
+              {
+                key: 'province',
+                options: [{ label: '广东省', value: 'gd' }],
+              },
+            ]}
+          />
+        </ThemeProvider>
+      );
+    });
+
+    const trigger = renderer!.root.findAllByType(AppPressable)[0];
+
+    expect(trigger.props.motionPreset).toBe('none');
+  });
+
   it('DatePicker 应该透传按压动画配置给内部 Picker', () => {
     let renderer: ReturnType<typeof create>;
 
@@ -87,5 +111,21 @@ describe('form press motion props', () => {
       motionDuration: 280,
       motionReduceMotion: true,
     });
+  });
+
+  it('DatePicker 默认不启用内部 Picker 按压动画', () => {
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <DatePicker />
+        </ThemeProvider>
+      );
+    });
+
+    const picker = renderer!.root.findByType(Picker);
+
+    expect(picker.props.motionPreset).toBe('none');
   });
 });

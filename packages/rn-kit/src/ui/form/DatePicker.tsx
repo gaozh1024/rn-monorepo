@@ -138,7 +138,7 @@ export function DatePicker({
   const motionConfig = useMotionConfig();
   const colors = useFormThemeColors();
   const [tempDate, setTempDate] = useState<Date>(value || new Date());
-  const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'soft';
+  const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'none';
 
   useEffect(() => {
     if (value) setTempDate(value);

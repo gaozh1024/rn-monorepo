@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import React from 'react';
+import { act, create } from 'react-test-renderer';
 import { fireEvent } from '@testing-library/react-native';
+import { ThemeProvider } from '@/theme';
 import { QuickActionGrid } from '../../display/QuickActionGrid';
 import { AppView } from '../../primitives';
-import { renderWithTheme } from '../form/test-utils';
+import { renderWithTheme, theme } from '../form/test-utils';
 import { flattenStyle } from '../style-utils';
 
 describe('QuickActionGrid', () => {
@@ -49,8 +51,8 @@ describe('QuickActionGrid', () => {
     expect(getByText('2')).toBeTruthy();
   });
 
-  it('默认应该使用四列等宽布局', () => {
-    const { getByTestId } = renderWithTheme(<QuickActionGrid items={items} />);
+  it('motion 关闭时应该使用四列等宽布局', () => {
+    const { getByTestId } = renderWithTheme(<QuickActionGrid items={items} motionPreset="none" />);
 
     const firstItemStyle = flattenStyle(getByTestId('quick-action-grid-item-notice').props.style);
     expect(firstItemStyle.width).toBe('25%');
@@ -58,13 +60,35 @@ describe('QuickActionGrid', () => {
 
   it('应该支持配置列数和圆角', () => {
     const { getByTestId } = renderWithTheme(
-      <QuickActionGrid items={items.slice(0, 3)} columns={3} rounded="2xl" />
+      <QuickActionGrid items={items.slice(0, 3)} columns={3} rounded="2xl" motionPreset="none" />
     );
 
     const gridStyle = flattenStyle(getByTestId('quick-action-grid').props.style);
     const firstItemStyle = flattenStyle(getByTestId('quick-action-grid-item-notice').props.style);
     expect(gridStyle.borderRadius).toBe(24);
     expect(firstItemStyle.width).toBe('33.333333333333336%');
+  });
+
+  it('默认 motion 模式下不应该在内层按钮重复列宽', () => {
+    const interactiveItems = items.map(item => ({
+      ...item,
+      onPress: vi.fn(),
+    }));
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <QuickActionGrid items={interactiveItems} />
+        </ThemeProvider>
+      );
+    });
+
+    const animatedWrapper = renderer!.root.findAllByType('Animated.View')[0];
+    const pressable = renderer!.root.findAllByType('Pressable')[0];
+
+    expect(flattenStyle(animatedWrapper.props.style).width).toBe('25%');
+    expect(flattenStyle(pressable.props.style).width).toBeUndefined();
   });
 
   it('应该支持整块点击', () => {

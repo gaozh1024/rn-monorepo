@@ -120,9 +120,51 @@ describe('AppPressable motion props', () => {
     const pressable = renderer!.root.findByType('Pressable');
 
     expect(animatedView.props.cssInterop).toBe(false);
-    expect(flattenStyle(animatedView.props.style)).toMatchObject({ flex: 1, opacity: 0.8 });
+    expect(flattenStyle(animatedView.props.style)).toMatchObject({
+      flex: 1,
+      height: 40,
+      opacity: 0.8,
+    });
     expect(pressable.props.className).toContain('flex-row');
     expect(pressable.props.style).not.toContain(animatedStyle);
-    expect(flattenStyle(pressable.props.style)).toMatchObject({ flex: 1, height: 40 });
+    expect(flattenStyle(pressable.props.style)).toMatchObject({
+      alignSelf: 'stretch',
+      flexGrow: 1,
+    });
+    expect(flattenStyle(pressable.props.style).flex).toBeUndefined();
+    expect(flattenStyle(pressable.props.style).height).toBeUndefined();
+  });
+
+  it('motion 模式不应该在内层 Pressable 重复百分比宽度', () => {
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <AppPressable
+          center
+          testID="pressable"
+          style={{ width: '25%', minHeight: 70, paddingHorizontal: 4 }}
+          motionPreset="soft"
+        >
+          通知
+        </AppPressable>
+      );
+    });
+
+    const animatedView = renderer!.root.findByType('Animated.View');
+    const pressable = renderer!.root.findByType('Pressable');
+    const wrapperStyle = flattenStyle(animatedView.props.style);
+    const pressableStyle = flattenStyle(pressable.props.style);
+
+    expect(wrapperStyle).toMatchObject({ width: '25%', minHeight: 70 });
+    expect(pressableStyle.width).toBeUndefined();
+    expect(pressableStyle.minHeight).toBeUndefined();
+    expect(pressableStyle).toMatchObject({
+      alignItems: 'center',
+      alignSelf: 'stretch',
+      flexGrow: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 4,
+    });
   });
 });

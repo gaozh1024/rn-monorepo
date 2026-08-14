@@ -37,6 +37,11 @@ type ResolvedAppPressableProps = AppPressableProps & {
   resolvedMotionPreset: PressMotionPreset;
 };
 
+type MotionStyleParts = {
+  pressableStyle: PressableProps['style'];
+  wrapperStyle?: ViewStyle;
+};
+
 const motionWrapperStyleKeys = [
   'alignSelf',
   'aspectRatio',
@@ -70,30 +75,34 @@ const motionWrapperStyleKeys = [
   'zIndex',
 ] as const satisfies ReadonlyArray<keyof ViewStyle>;
 
-function pickMotionWrapperStyle(style: StyleProp<ViewStyle>) {
-  const flattenStyle = (input: any): ViewStyle => {
-    if (!input) return {};
-    if (Array.isArray(input)) {
-      return input.reduce<ViewStyle>((acc, item) => ({ ...acc, ...flattenStyle(item) }), {});
-    }
-    if (typeof input === 'number') {
-      return (StyleSheet.flatten(input) as ViewStyle | undefined) ?? {};
-    }
-    return input;
-  };
+function flattenViewStyle(input: any): ViewStyle {
+  if (!input) return {};
+  if (Array.isArray(input)) {
+    return input.reduce<ViewStyle>((acc, item) => ({ ...acc, ...flattenViewStyle(item) }), {});
+  }
+  if (typeof input === 'number') {
+    return (StyleSheet.flatten(input) as ViewStyle | undefined) ?? {};
+  }
+  return input;
+}
 
-  const flattened = flattenStyle(style);
-
+function splitMotionWrapperStyle(style: StyleProp<ViewStyle>) {
+  const flattened = flattenViewStyle(style);
   const wrapperStyle: ViewStyle = {};
+  const pressableStyle: ViewStyle = { ...flattened };
 
   for (const key of motionWrapperStyleKeys) {
     const value = flattened[key];
     if (value !== undefined) {
       (wrapperStyle as any)[key] = value;
+      delete (pressableStyle as any)[key];
     }
   }
 
-  return Object.keys(wrapperStyle).length > 0 ? wrapperStyle : undefined;
+  return {
+    pressableStyle: Object.keys(pressableStyle).length > 0 ? pressableStyle : undefined,
+    wrapperStyle: Object.keys(wrapperStyle).length > 0 ? wrapperStyle : undefined,
+  };
 }
 
 type ResolvedAppPressableStyleOptions = Pick<
@@ -422,17 +431,31 @@ function MotionAppPressable(props: ResolvedAppPressableProps) {
     ...styleOptions,
     isPressed,
   });
-  const motionWrapperStyle = React.useMemo(
-    () =>
-      typeof resolved.style === 'function' ? undefined : pickMotionWrapperStyle(resolved.style),
-    [resolved.style]
-  );
+  const motionStyleParts = React.useMemo<MotionStyleParts>(() => {
+    const resolvedStyle = resolved.style;
+
+    if (typeof resolvedStyle === 'function') {
+      return {
+        pressableStyle: state => [styles.motionPressable, resolvedStyle(state)],
+      };
+    }
+
+    const { pressableStyle, wrapperStyle } = splitMotionWrapperStyle(resolvedStyle);
+
+    return {
+      pressableStyle: [styles.motionPressable, pressableStyle] as PressableProps['style'],
+      wrapperStyle,
+    };
+  }, [resolved.style]);
 
   return (
-    <Animated.View cssInterop={false} style={[motionWrapperStyle, pressMotion.animatedStyle]}>
+    <Animated.View
+      cssInterop={false}
+      style={[motionStyleParts.wrapperStyle, pressMotion.animatedStyle]}
+    >
       <Pressable
         className={resolved.className}
-        style={resolved.style as PressableProps['style']}
+        style={motionStyleParts.pressableStyle}
         onPressIn={e => {
           setIsPressed(true);
           pressMotion.onPressIn();
@@ -462,3 +485,10 @@ export function AppPressable(props: AppPressableProps) {
 
   return <MotionAppPressable {...resolvedProps} />;
 }
+
+const styles = StyleSheet.create({
+  motionPressable: {
+    alignSelf: 'stretch',
+    flexGrow: 1,
+  },
+});
