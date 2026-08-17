@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  Animated,
   Platform,
   StyleSheet,
   View,
@@ -7,17 +8,11 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
 import { useThemeColors } from '@/theme';
 import { cn } from '@/utils';
 import { AppPressable, AppText, AppView } from '@/ui/primitives';
 import { motionDurations } from '../motion/tokens';
-import type { MotionAnimatedViewStyle, MotionSpringPreset } from '../motion';
+import type { MotionSpringPreset } from '../motion';
 import { useReducedMotion } from '../motion/hooks/useReducedMotion';
 import { resolveDuration, resolveSpringConfig } from '../motion/utils';
 import {
@@ -235,38 +230,60 @@ function MotionSegmentedTabsIndicator({
     reduceMotion,
     durationScale
   );
-  const translateX = useSharedValue(targetX);
-  const indicatorWidth = useSharedValue(targetWidth);
-
-  const animateValue = React.useCallback(
-    (nextValue: number) => {
-      if (duration === 0) return nextValue;
-      if (motionSpringPreset) return withSpring(nextValue, resolveSpringConfig(motionSpringPreset));
-      return withTiming(nextValue, { duration });
-    },
-    [duration, motionSpringPreset]
-  );
+  const translateX = React.useRef(new Animated.Value(targetX)).current;
+  const indicatorWidth = React.useRef(new Animated.Value(targetWidth)).current;
 
   React.useEffect(() => {
-    translateX.value = animateValue(targetX);
-    indicatorWidth.value = animateValue(targetWidth);
-  }, [animateValue, indicatorWidth, targetWidth, targetX, translateX]);
+    if (duration === 0) {
+      translateX.setValue(targetX);
+      indicatorWidth.setValue(targetWidth);
+      return;
+    }
 
-  const animatedIndicatorStyle = useAnimatedStyle(
-    () =>
-      ({
-        width: indicatorWidth.value,
-        transform: [{ translateX: translateX.value }],
-      }) satisfies MotionAnimatedViewStyle,
-    []
-  );
+    const animationConfig = motionSpringPreset
+      ? resolveSpringConfig(motionSpringPreset)
+      : undefined;
+    const animations = motionSpringPreset
+      ? [
+          Animated.spring(translateX, {
+            ...animationConfig,
+            toValue: targetX,
+            useNativeDriver: false,
+          }),
+          Animated.spring(indicatorWidth, {
+            ...animationConfig,
+            toValue: targetWidth,
+            useNativeDriver: false,
+          }),
+        ]
+      : [
+          Animated.timing(translateX, {
+            toValue: targetX,
+            duration,
+            useNativeDriver: false,
+          }),
+          Animated.timing(indicatorWidth, {
+            toValue: targetWidth,
+            duration,
+            useNativeDriver: false,
+          }),
+        ];
 
-  return (
-    <Animated.View
-      cssInterop={false}
-      testID={testID}
-      pointerEvents="none"
-      style={[
+    const animation = Animated.parallel(animations);
+    animation.start();
+
+    return () => {
+      animation.stop?.();
+    };
+  }, [duration, indicatorWidth, motionSpringPreset, targetWidth, targetX, translateX]);
+
+  return React.createElement(
+    Animated.View,
+    {
+      cssInterop: false,
+      pointerEvents: 'none',
+      testID,
+      style: [
         styles.indicator,
         roundedStyle,
         getIndicatorBaseStyle({
@@ -275,18 +292,20 @@ function MotionSegmentedTabsIndicator({
           resolvedIndicatorColor,
           visible,
         }),
-        animatedIndicatorStyle,
+        {
+          width: indicatorWidth,
+          transform: [{ translateX }],
+        },
         indicatorStyle,
-      ]}
-    >
-      {indicatorClassName ? (
-        <AppView
-          className={cn(indicatorClassName)}
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFillObject, roundedStyle]}
-        />
-      ) : null}
-    </Animated.View>
+      ] as StyleProp<ViewStyle>,
+    },
+    indicatorClassName ? (
+      <AppView
+        className={cn(indicatorClassName)}
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFillObject, roundedStyle]}
+      />
+    ) : null
   );
 }
 

@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import Animated from 'react-native-reanimated';
 import {
   FlatList,
   ListRenderItem,
@@ -16,6 +15,7 @@ import { Center } from '@/ui/layout';
 import { SkeletonAvatar, SkeletonText } from '@/ui/feedback';
 import { cn } from '@/utils';
 import { StaggerItem } from '@/ui/motion';
+import { createReanimatedView } from '@/ui/motion/components/ReanimatedView';
 import { KeyboardDismissPressable } from '../primitives/KeyboardDismissPressable';
 import {
   resolveMotionLayoutProps,
@@ -246,11 +246,7 @@ function AppListMotionItem({
   exiting?: MotionEntryExitAnimation;
   layout?: MotionLayoutAnimation;
 }) {
-  return (
-    <Animated.View entering={entering} exiting={exiting} layout={layout}>
-      {children}
-    </Animated.View>
-  );
+  return createReanimatedView({ entering, exiting, layout }, children);
 }
 
 export function AppList<T = any>({

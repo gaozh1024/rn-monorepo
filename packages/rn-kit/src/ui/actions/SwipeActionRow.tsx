@@ -18,7 +18,8 @@ import {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Animated, useReducedMotion } from '@/ui/motion';
+import { useReducedMotion } from '@/ui/motion';
+import { createReanimatedView } from '@/ui/motion/components/ReanimatedView';
 
 const DEFAULT_ACTION_WIDTH = 76;
 const DEFAULT_THRESHOLD = 48;
@@ -281,7 +282,8 @@ export function SwipeActionRow({
       </View>
 
       <GestureDetector gesture={gesture}>
-        <Animated.View style={[styles.content, animatedStyle, contentStyle]}>
+        {createReanimatedView(
+          { style: [styles.content, animatedStyle, contentStyle] },
           <Pressable
             disabled={!onPress && !(isOpen && closeOnPress)}
             onPress={handleContentPress}
@@ -289,7 +291,7 @@ export function SwipeActionRow({
           >
             {children}
           </Pressable>
-        </Animated.View>
+        )}
       </GestureDetector>
     </View>
   );

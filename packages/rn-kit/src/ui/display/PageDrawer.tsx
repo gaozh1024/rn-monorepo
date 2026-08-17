@@ -1,9 +1,9 @@
 import React from 'react';
 import { BackHandler, Modal, StyleSheet } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
 import { useThemeColors } from '@/theme';
 import { useMotionConfig, type PressMotionProps, type SheetMotionProps } from '@/ui/motion';
+import { createReanimatedView } from '@/ui/motion/components/ReanimatedView';
 import { AppPressable, AppScrollView, AppText, AppView } from '@/ui/primitives';
 import { useSheetMotion } from '../motion/hooks/useSheetMotion';
 import { Icon } from './Icon';
@@ -88,7 +88,8 @@ export function PageDrawer({
 
   const drawerContent = (
     <GestureDetector gesture={sheetMotion.gesture}>
-      <Animated.View style={sheetMotion.sheetStyle}>
+      {createReanimatedView(
+        { style: sheetMotion.sheetStyle },
         <AppView
           testID={contentTestID}
           className="h-full"
@@ -150,7 +151,7 @@ export function PageDrawer({
             </AppView>
           )}
         </AppView>
-      </Animated.View>
+      )}
     </GestureDetector>
   );
 
@@ -168,14 +169,14 @@ export function PageDrawer({
         style={{ backgroundColor: 'transparent' }}
         justify={placement === 'right' ? 'end' : 'start'}
       >
-        <Animated.View
-          pointerEvents="none"
-          style={[
+        {createReanimatedView({
+          pointerEvents: 'none',
+          style: [
             StyleSheet.absoluteFillObject,
             { backgroundColor: 'rgba(0,0,0,0.5)' },
             sheetMotion.overlayStyle,
-          ]}
-        />
+          ],
+        })}
 
         {placement === 'left' && drawerContent}
 

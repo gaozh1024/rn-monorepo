@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
 import { AppPressable, AppView } from '@/ui/primitives';
 import { useThemeColors } from '@/theme';
 import { cn } from '@/utils';
 import { motionDurations } from '../motion/tokens';
 import type { ToggleMotionProps } from '../motion';
+import { createReanimatedView } from '../motion/components/ReanimatedView';
 import { useToggleMotion } from '../motion/hooks/useToggleMotion';
 import { useReducedMotion } from '../motion/hooks/useReducedMotion';
 import { resolveDuration } from '../motion/utils';
@@ -88,15 +88,13 @@ function MotionSwitchThumb({
     trackPadding: config.padding,
   });
 
-  return (
-    <Animated.View
-      style={[
-        styles.thumb,
-        getSwitchThumbStyle(config, thumbBackgroundColor),
-        toggleMotion.thumbStyle,
-      ]}
-    />
-  );
+  return createReanimatedView({
+    style: [
+      styles.thumb,
+      getSwitchThumbStyle(config, thumbBackgroundColor),
+      toggleMotion.thumbStyle,
+    ],
+  });
 }
 
 export function Switch({

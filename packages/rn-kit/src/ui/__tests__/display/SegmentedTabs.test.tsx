@@ -1,9 +1,8 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { Platform } from 'react-native';
+import { Animated, Platform } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { act, create } from 'react-test-renderer';
-import { withSpring, withTiming } from 'react-native-reanimated';
 import { ThemeProvider, createTheme } from '@/theme';
 import { SegmentedTabs } from '../../display/SegmentedTabs';
 
@@ -34,8 +33,8 @@ describe('SegmentedTabs', () => {
 
   beforeEach(() => {
     (Platform as any).OS = originalPlatformOS;
-    vi.mocked(withTiming).mockClear();
-    vi.mocked(withSpring).mockClear();
+    vi.mocked(Animated.timing).mockClear();
+    vi.mocked(Animated.spring).mockClear();
   });
 
   it('应该渲染选项并在非受控模式点击切换', () => {
@@ -76,8 +75,14 @@ describe('SegmentedTabs', () => {
       </ThemeProvider>
     );
 
-    expect(withTiming).toHaveBeenCalledWith(203, { duration: 180 });
-    expect(withTiming).toHaveBeenCalledWith(94, { duration: 180 });
+    expect(Animated.timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ toValue: 203, duration: 180, useNativeDriver: false })
+    );
+    expect(Animated.timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ toValue: 94, duration: 180, useNativeDriver: false })
+    );
   });
 
   it('原生 animated 滑块应关闭 cssInterop，避免 animated style 被 NativeWind 转发到普通组件', () => {
@@ -134,7 +139,16 @@ describe('SegmentedTabs', () => {
       </ThemeProvider>
     );
 
-    expect(withSpring).toHaveBeenCalledWith(103, { damping: 22, stiffness: 180, mass: 1 });
+    expect(Animated.spring).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        toValue: 103,
+        damping: 22,
+        stiffness: 180,
+        mass: 1,
+        useNativeDriver: false,
+      })
+    );
   });
 
   it('animated=false 时应该使用普通滑块并跳过 timing/spring 动画', () => {
@@ -162,8 +176,8 @@ describe('SegmentedTabs', () => {
         }),
       ])
     );
-    expect(withTiming).not.toHaveBeenCalled();
-    expect(withSpring).not.toHaveBeenCalled();
+    expect(Animated.timing).not.toHaveBeenCalled();
+    expect(Animated.spring).not.toHaveBeenCalled();
   });
 
   it('Web + animated=true 时应该使用 CSS 过渡滑块并保持可见', () => {
@@ -203,8 +217,8 @@ describe('SegmentedTabs', () => {
         }),
       ])
     );
-    expect(withTiming).not.toHaveBeenCalled();
-    expect(withSpring).not.toHaveBeenCalled();
+    expect(Animated.timing).not.toHaveBeenCalled();
+    expect(Animated.spring).not.toHaveBeenCalled();
   });
 
   it('应该支持禁用选项', () => {

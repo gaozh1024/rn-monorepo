@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, type LayoutChangeEvent } from 'react-native';
-import Animated, {
+import {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { AppView, type AppViewProps } from '@/ui/primitives';
+import { createReanimatedView } from './ReanimatedView';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { motionDurations } from '../tokens';
 import type { MotionAnimatedViewStyle, MotionSpringPreset } from '../types';
@@ -155,12 +156,11 @@ export function CollapseView({
 
   if (!mounted) return null;
 
-  return (
-    <Animated.View testID={testID} style={[styles.container, animatedStyle]}>
-      <AppView {...rest} testID={contentTestID} onLayout={handleContentLayout}>
-        {children}
-      </AppView>
-    </Animated.View>
+  return createReanimatedView(
+    { testID, style: [styles.container, animatedStyle] },
+    <AppView {...rest} testID={contentTestID} onLayout={handleContentLayout}>
+      {children}
+    </AppView>
   );
 }
 

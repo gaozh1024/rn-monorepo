@@ -418,6 +418,15 @@ const Animated = {
       start: vi.fn(function start(cb?: any) {
         cb?.();
       }),
+      stop: vi.fn(),
+    };
+  }),
+  spring: vi.fn(function spring() {
+    return {
+      start: vi.fn(function start(cb?: any) {
+        cb?.();
+      }),
+      stop: vi.fn(),
     };
   }),
   parallel: vi.fn(function parallel(animations: any[]) {
@@ -425,6 +434,9 @@ const Animated = {
       start: vi.fn(function start(cb?: any) {
         animations.forEach(anim => anim.start?.());
         cb?.({ finished: true });
+      }),
+      stop: vi.fn(function stop() {
+        animations.forEach(anim => anim.stop?.());
       }),
     };
   }),
@@ -481,7 +493,10 @@ const Reanimated = {
   Text: createNativeComponent('Animated.Text'),
   ScrollView: createNativeComponent('Animated.ScrollView'),
   createAnimatedComponent: vi.fn(function createAnimatedComponent(Component: any) {
-    return Component;
+    const displayName = Component?.displayName ?? Component?.name ?? 'View';
+    const nativeName = String(displayName).replace(/^Animated\./, '');
+
+    return createNativeComponent(`Animated.${nativeName}`);
   }),
 };
 

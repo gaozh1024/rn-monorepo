@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, PanResponder } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import type { LogEntry, LogLevel } from '@/core/logger';
 import { formatLogTime, serializeLogEntries, stringifyLogData } from '@/core/logger';
 import { useThemeColors } from '@/theme';
 import { AppPressable, AppScrollView, AppText, AppView } from '@/ui';
+import { createReanimatedView } from '@/ui/motion/components/ReanimatedView';
 import type { LoggerExportPayload } from './types';
 
 interface LogOverlayProps {
@@ -426,19 +427,20 @@ export function LogOverlay({
         </AppView>
       )}
 
-      <Animated.View
-        testID="logger-overlay-toggle-wrapper"
-        pointerEvents="box-none"
-        style={[
-          {
-            position: 'absolute',
-            right: TOGGLE_BUTTON_RIGHT_GAP,
-            bottom: TOGGLE_BUTTON_BOTTOM_GAP,
-          },
-          buttonAnimatedStyle,
-        ]}
-        {...buttonPanResponder.panHandlers}
-      >
+      {createReanimatedView(
+        {
+          testID: 'logger-overlay-toggle-wrapper',
+          pointerEvents: 'box-none',
+          style: [
+            {
+              position: 'absolute',
+              right: TOGGLE_BUTTON_RIGHT_GAP,
+              bottom: TOGGLE_BUTTON_BOTTOM_GAP,
+            },
+            buttonAnimatedStyle,
+          ],
+          ...buttonPanResponder.panHandlers,
+        },
         <AppPressable
           testID="logger-overlay-toggle"
           onPress={() => setExpanded(value => !value)}
@@ -477,7 +479,7 @@ export function LogOverlay({
             </AppView>
           </AppView>
         </AppPressable>
-      </Animated.View>
+      )}
     </AppView>
   );
 }

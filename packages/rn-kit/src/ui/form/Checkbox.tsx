@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
 import { AppView, AppText, AppPressable } from '@/ui/primitives';
 import { Icon } from '@/ui/display';
 import { useThemeColors } from '@/theme';
 import { cn } from '@/utils';
 import type { ToggleMotionProps } from '../motion';
+import { createReanimatedView } from '../motion/components/ReanimatedView';
 import { useToggleMotion } from '../motion/hooks/useToggleMotion';
 import { useReducedMotion } from '../motion/hooks/useReducedMotion';
 import { motionDurations } from '../motion/tokens';
@@ -102,14 +102,13 @@ function MotionCheckboxIndicator({
 
   if (!checked) return null;
 
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[styles.iconContainer, toggleMotion.indicatorStyle]}
-      testID={`${testID}-icon`}
-    >
-      <Icon name="check" size={14} color="white" style={styles.icon} />
-    </Animated.View>
+  return createReanimatedView(
+    {
+      pointerEvents: 'none',
+      style: [styles.iconContainer, toggleMotion.indicatorStyle],
+      testID: `${testID}-icon`,
+    },
+    <Icon name="check" size={14} color="white" style={styles.icon} />
   );
 }
 

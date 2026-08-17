@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { fireEvent } from '@testing-library/react-native';
 import { act, create } from 'react-test-renderer';
@@ -7,8 +7,33 @@ import { AppText } from '@/ui/primitives';
 import { ThemeProvider } from '@/theme';
 import { renderWithTheme } from './test-utils';
 import { theme } from './test-utils';
+import { flattenStyle } from '../style-utils';
+
+const useSafeAreaInsetsMock = vi.hoisted(() =>
+  vi.fn(() => ({ top: 0, bottom: 0, left: 0, right: 0 }))
+);
+
+vi.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: useSafeAreaInsetsMock,
+}));
+
+function findSheetSurface(renderer: ReturnType<typeof create>) {
+  return renderer.root.findAllByType('View').find(node => {
+    const style = flattenStyle(node.props.style);
+
+    return (
+      style.borderTopLeftRadius === 24 &&
+      style.borderTopRightRadius === 24 &&
+      style.overflow === 'hidden'
+    );
+  });
+}
 
 describe('BottomSheetModal', () => {
+  beforeEach(() => {
+    useSafeAreaInsetsMock.mockReturnValue({ top: 0, bottom: 0, left: 0, right: 0 });
+  });
+
   it('不可见且未挂载时不应该渲染弹层内容树', () => {
     const { queryByText, queryByTestId } = renderWithTheme(
       <BottomSheetModal
@@ -57,6 +82,34 @@ describe('BottomSheetModal', () => {
     expect(sheet.props.cssInterop).toBe(false);
     expect(sheet.props.className).toBeUndefined();
     expect(surface?.props.className).toContain('max-h-[70%]');
+  });
+
+  it('应该将底部安全区合并为内容容器内边距', () => {
+    useSafeAreaInsetsMock.mockReturnValue({ top: 0, bottom: 24, left: 0, right: 0 });
+
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <BottomSheetModal
+            visible
+            onRequestClose={vi.fn()}
+            overlayColor="rgba(0,0,0,0.5)"
+            surfaceColor="#ffffff"
+            contentStyle={{ paddingBottom: 12 }}
+          >
+            <AppText>内容</AppText>
+          </BottomSheetModal>
+        </ThemeProvider>
+      );
+    });
+
+    const surface = findSheetSurface(renderer!);
+    const surfaceStyle = flattenStyle(surface?.props.style);
+
+    expect(surfaceStyle.paddingBottom).toBe(36);
+    expect(surfaceStyle.marginBottom).toBeUndefined();
   });
 
   it('应该支持点击遮罩关闭', () => {

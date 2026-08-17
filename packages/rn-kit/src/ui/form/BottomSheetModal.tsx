@@ -1,13 +1,32 @@
 import type { ReactNode } from 'react';
 import { Modal, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useAnimatedStyle } from 'react-native-reanimated';
 import { AppPressable, AppView } from '@/ui/primitives';
+import { createReanimatedView } from '@/ui/motion/components/ReanimatedView';
 import type { SheetMotionProps } from '../motion';
 import type { UseSheetMotionReturn } from '../motion/hooks/useSheetMotion';
 import { useSheetMotion } from '../motion/hooks/useSheetMotion';
 
 const SHEET_CLOSED_OFFSET = 240;
+
+function getNumericPaddingBottom(style: StyleProp<ViewStyle>) {
+  const flattened = StyleSheet.flatten(style);
+
+  if (!flattened) return 0;
+
+  const paddingBottom =
+    typeof flattened.paddingBottom === 'number'
+      ? flattened.paddingBottom
+      : typeof flattened.paddingVertical === 'number'
+        ? flattened.paddingVertical
+        : typeof flattened.padding === 'number'
+          ? flattened.padding
+          : 0;
+
+  return paddingBottom;
+}
 
 export interface BottomSheetModalProps extends SheetMotionProps {
   visible: boolean;
@@ -54,55 +73,61 @@ function BottomSheetModalContent({
   backdropTestID,
   handleTestID,
 }: BottomSheetModalContentProps) {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = getNumericPaddingBottom(contentStyle) + Math.max(insets.bottom, 0);
+  const { mounted, progress } = sheetMotion;
   const animatedShadowStyle = useAnimatedStyle(() => {
-    const progress = sheetMotion.progress?.value ?? (sheetMotion.mounted ? 1 : 0);
-    const shadowOpacity = 0.12 * progress;
-    const elevation = 12 * progress;
+    const animatedProgress = progress?.value ?? (mounted ? 1 : 0);
+    const shadowOpacity = 0.12 * animatedProgress;
+    const elevation = 12 * animatedProgress;
 
     return {
       shadowOpacity,
       elevation,
     };
-  }, [sheetMotion.mounted, sheetMotion.progress]);
+  }, [mounted, progress]);
 
   return (
     <Modal
       visible={sheetMotion.mounted}
       transparent
       animationType="none"
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onRequestClose}
     >
-      <AppView flex justify="end">
-        <Animated.View
-          cssInterop={false}
-          pointerEvents="none"
-          style={[
+      <AppView flex style={styles.modalRoot}>
+        {createReanimatedView({
+          cssInterop: false,
+          pointerEvents: 'none',
+          style: [
             StyleSheet.absoluteFillObject,
             { backgroundColor: overlayColor },
             sheetMotion.overlayStyle,
-          ]}
-        />
+          ],
+        })}
 
         {closeOnBackdropPress && (
           <AppPressable
             testID={backdropTestID}
-            className="flex-1"
+            style={StyleSheet.absoluteFillObject}
             motionPreset="none"
             onPress={onRequestClose}
           />
         )}
 
-        <Animated.View
-          cssInterop={false}
-          style={[
-            styles.sheetShadow,
-            {
-              maxHeight,
-            },
-            animatedShadowStyle,
-            sheetMotion.sheetStyle,
-          ]}
-        >
+        {createReanimatedView(
+          {
+            cssInterop: false,
+            style: [
+              styles.sheetShadow,
+              {
+                maxHeight,
+              },
+              animatedShadowStyle,
+              sheetMotion.sheetStyle,
+            ],
+          },
           <AppView
             className={contentClassName}
             style={[
@@ -112,6 +137,7 @@ function BottomSheetModalContent({
                 maxHeight,
               },
               contentStyle,
+              { paddingBottom: bottomPadding },
             ]}
           >
             {showHandle && (
@@ -128,7 +154,7 @@ function BottomSheetModalContent({
             )}
             {children}
           </AppView>
-        </Animated.View>
+        )}
       </AppView>
     </Modal>
   );
@@ -202,7 +228,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(156,163,175,0.7)',
   },
+  modalRoot: {
+    flex: 1,
+  },
   sheetShadow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: '#000000',

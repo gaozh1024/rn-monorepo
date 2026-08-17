@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
 import { AppView, AppText, AppPressable } from '@/ui/primitives';
 import { useThemeColors } from '@/theme';
 import { cn } from '@/utils';
 import type { ToggleMotionProps } from '../motion';
+import { createReanimatedView } from '../motion/components/ReanimatedView';
 import { useToggleMotion } from '../motion/hooks/useToggleMotion';
 import { useReducedMotion } from '../motion/hooks/useReducedMotion';
 import { motionDurations } from '../motion/tokens';
@@ -98,12 +98,10 @@ function MotionRadioIndicator({
 
   if (!checked) return null;
 
-  return (
-    <Animated.View
-      className="rounded-full"
-      style={[styles.inner, { backgroundColor: color }, toggleMotion.indicatorStyle]}
-    />
-  );
+  return createReanimatedView({
+    className: 'rounded-full',
+    style: [styles.inner, { backgroundColor: color }, toggleMotion.indicatorStyle],
+  });
 }
 
 export function Radio({

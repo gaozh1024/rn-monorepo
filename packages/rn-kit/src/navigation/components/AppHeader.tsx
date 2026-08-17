@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { type StyleProp, type ViewStyle, StyleSheet } from 'react-native';
-import Animated from 'react-native-reanimated';
 import { useThemeColors } from '@/theme';
 import { AppView, AppText, AppPressable, Icon, useMotionConfig } from '@/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppFocusedStatusBar } from '@/overlay';
 import type { PressMotionProps, UseCollapsibleHeaderMotionReturn } from '@/ui/motion';
+import { createReanimatedView } from '@/ui/motion/components/ReanimatedView';
 
 export interface RightIcon {
   icon: string;
@@ -81,20 +81,21 @@ export function AppHeader({
           style,
         ]}
       >
-        <Animated.View
-          testID={testID ? `${testID}-background` : undefined}
-          pointerEvents="none"
-          style={[
+        {createReanimatedView({
+          testID: testID ? `${testID}-background` : undefined,
+          pointerEvents: 'none',
+          style: [
             StyleSheet.absoluteFillObject,
             { backgroundColor },
             collapsibleMotion?.backgroundStyle,
-          ]}
-        />
+          ],
+        })}
 
-        <Animated.View
-          testID={testID ? `${testID}-nav` : undefined}
-          style={[styles.container, collapsibleMotion?.headerStyle]}
-        >
+        {createReanimatedView(
+          {
+            testID: testID ? `${testID}-nav` : undefined,
+            style: [styles.container, collapsibleMotion?.headerStyle],
+          },
           <AppView row items="center" px={4} style={styles.fill}>
             <AppView style={[styles.sideContainer, styles.leftContainer]}>
               {leftIcon && (
@@ -111,11 +112,12 @@ export function AppHeader({
             </AppView>
 
             <AppView style={styles.centerContainer}>
-              <Animated.View
-                testID={testID ? `${testID}-title-wrap` : undefined}
-                style={titleAnimatedStyle}
-              >
-                {titleNode ?? (
+              {createReanimatedView(
+                {
+                  testID: testID ? `${testID}-title-wrap` : undefined,
+                  style: titleAnimatedStyle,
+                },
+                titleNode ?? (
                   <>
                     {title && (
                       <AppText
@@ -139,8 +141,8 @@ export function AppHeader({
                       </AppText>
                     )}
                   </>
-                )}
-              </Animated.View>
+                )
+              )}
             </AppView>
 
             <AppView row items="center" style={[styles.sideContainer, styles.rightContainer]}>
@@ -167,7 +169,7 @@ export function AppHeader({
               ))}
             </AppView>
           </AppView>
-        </Animated.View>
+        )}
       </AppView>
     </>
   );

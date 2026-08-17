@@ -1,9 +1,9 @@
-import Animated from 'react-native-reanimated';
 import { Platform, type StyleProp, type ViewStyle } from 'react-native';
 import { AppView } from '@/ui/primitives';
 import { useTheme } from '@/theme';
 import { cn } from '@/utils';
 import type { ProgressMotionProps } from '../motion';
+import { createReanimatedView } from '../motion/components/ReanimatedView';
 import { useProgressMotion } from '../motion/hooks/useProgressMotion';
 import { useReducedMotion } from '../motion/hooks/useReducedMotion';
 import { motionDurations } from '../motion/tokens';
@@ -126,12 +126,10 @@ function MotionProgressBar({
     reduceMotion: motionReduceMotion,
   });
 
-  return (
-    <Animated.View
-      className={cn(roundedClassName, sizeMap[size], colorMap[color], barClassName)}
-      style={[resolvedRounded, progressMotion.barStyle]}
-    />
-  );
+  return createReanimatedView({
+    className: cn(roundedClassName, sizeMap[size], colorMap[color], barClassName),
+    style: [resolvedRounded, progressMotion.barStyle],
+  });
 }
 
 export function Progress({

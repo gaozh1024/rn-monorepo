@@ -1,5 +1,4 @@
 import * as React from 'react';
-import Animated from 'react-native-reanimated';
 import {
   Pressable,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 import { useOptionalTheme } from '@/theme';
 import { cn } from '@/utils';
 import type { PressMotionPreset, PressMotionProps } from '../motion';
+import { createReanimatedView } from '../motion/components/ReanimatedView';
 import { useMotionConfig } from '../motion/context';
 import { usePressMotion } from '../motion/hooks/usePressMotion';
 import { resolveNamedColor, resolveSurfaceColor } from '../utils/theme-color';
@@ -448,29 +448,28 @@ function MotionAppPressable(props: ResolvedAppPressableProps) {
     };
   }, [resolved.style]);
 
-  return (
-    <Animated.View
-      cssInterop={false}
-      style={[motionStyleParts.wrapperStyle, pressMotion.animatedStyle]}
+  return createReanimatedView(
+    {
+      cssInterop: false,
+      style: [motionStyleParts.wrapperStyle, pressMotion.animatedStyle],
+    },
+    <Pressable
+      className={resolved.className}
+      style={motionStyleParts.pressableStyle}
+      onPressIn={e => {
+        setIsPressed(true);
+        pressMotion.onPressIn();
+        onPressIn?.(e);
+      }}
+      onPressOut={e => {
+        setIsPressed(false);
+        pressMotion.onPressOut();
+        onPressOut?.(e);
+      }}
+      {...pressableProps}
     >
-      <Pressable
-        className={resolved.className}
-        style={motionStyleParts.pressableStyle}
-        onPressIn={e => {
-          setIsPressed(true);
-          pressMotion.onPressIn();
-          onPressIn?.(e);
-        }}
-        onPressOut={e => {
-          setIsPressed(false);
-          pressMotion.onPressOut();
-          onPressOut?.(e);
-        }}
-        {...pressableProps}
-      >
-        {children}
-      </Pressable>
-    </Animated.View>
+      {children}
+    </Pressable>
   );
 }
 
