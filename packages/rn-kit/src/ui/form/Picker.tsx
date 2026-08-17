@@ -121,6 +121,11 @@ interface WheelPickerColumnProps {
   visibleRows: number;
 }
 
+export interface WheelPickerColumnHandle {
+  /** 立即结算未完成的滚动吸附，把当前滚动位置写入选中值 */
+  flushPendingSelection: () => void;
+}
+
 function WheelPickerColumn({
   colors,
   column,
@@ -132,7 +137,10 @@ function WheelPickerColumn({
   selectedValue,
   showDivider = false,
   visibleRows,
-}: WheelPickerColumnProps) {
+  registerHandle,
+}: WheelPickerColumnProps & {
+  registerHandle?: (handle: WheelPickerColumnHandle | null) => void;
+}) {
   const scrollRef = useRef<ScrollView | null>(null);
   const isUserInteractingRef = useRef(false);
   const latestOffsetYRef = useRef(0);
@@ -217,6 +225,19 @@ function WheelPickerColumn({
     },
     [clearScrollSettleTimer, snapToNearestEnabledOffset]
   );
+
+  // 确认前调用：立即结算未完成的滚动吸附，避免使用到旧的选中值
+  const flushPendingSelection = useCallback(() => {
+    if (scrollSettleTimerRef.current === null) return;
+    clearScrollSettleTimer();
+    snapToNearestEnabledOffset(latestOffsetYRef.current);
+    isUserInteractingRef.current = false;
+  }, [clearScrollSettleTimer, snapToNearestEnabledOffset]);
+
+  useEffect(() => {
+    registerHandle?.({ flushPendingSelection });
+    return () => registerHandle?.(null);
+  }, [flushPendingSelection, registerHandle]);
 
   const handleScrollBeginDrag = useCallback(() => {
     isUserInteractingRef.current = true;
@@ -438,6 +459,7 @@ export function Picker({
     [columns, internalTempValues, isControlledTemp, tempValue]
   );
   const latestTempValuesRef = useRef(tempValues);
+  const columnHandlesRef = useRef<Array<WheelPickerColumnHandle | null>>([]);
 
   useEffect(() => {
     latestTempValuesRef.current = tempValues;
@@ -481,11 +503,19 @@ export function Picker({
 
   const updateColumnValue = useCallback(
     (columnIndex: number, nextValue: PickerValue) => {
-      const nextValues = [...tempValues];
+      // 以最新的临时值为基准，避免连续结算多列时相互覆盖
+      const nextValues = [...latestTempValuesRef.current];
       nextValues[columnIndex] = nextValue;
       setTempValues(nextValues);
     },
-    [setTempValues, tempValues]
+    [setTempValues]
+  );
+
+  const registerColumnHandle = useCallback(
+    (columnIndex: number) => (handle: WheelPickerColumnHandle | null) => {
+      columnHandlesRef.current[columnIndex] = handle;
+    },
+    []
   );
 
   const openModal = useCallback(() => {
@@ -501,6 +531,8 @@ export function Picker({
   }, [columns, defaultTempValue, isControlledTemp, onOpen, onTempChange, tempValue, value]);
 
   const handleConfirm = useCallback(() => {
+    // 确认前先把各列未完成的滚动吸附结算掉，确保使用当前滚动位置的值
+    columnHandlesRef.current.forEach(handle => handle?.flushPendingSelection());
     onChange?.(latestTempValuesRef.current);
     setVisible(false);
   }, [onChange]);
@@ -606,6 +638,7 @@ export function Picker({
                 motionDuration={motionDuration}
                 motionReduceMotion={motionReduceMotion}
                 onChange={nextValue => updateColumnValue(index, nextValue)}
+                registerHandle={registerColumnHandle(index)}
                 rowHeight={rowHeight}
                 selectedValue={tempValues[index]}
                 showDivider={index < columns.length - 1}

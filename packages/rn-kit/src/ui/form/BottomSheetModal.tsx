@@ -134,7 +134,6 @@ function BottomSheetModalContent({
               styles.sheetSurface,
               {
                 backgroundColor: surfaceColor,
-                maxHeight,
               },
               contentStyle,
               { paddingBottom: bottomPadding },

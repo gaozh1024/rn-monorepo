@@ -70,6 +70,8 @@ export interface DatePickerProps
   minDateText?: string;
   /** 快捷按钮“最晚”文案 */
   maxDateText?: string;
+  /** 是否显示“最早/最晚”快捷按钮（不影响 minDate/maxDate 的范围限制） */
+  showRangeQuickActions?: boolean;
   /** 背景颜色 */
   bg?: string;
   /** 语义化背景 */
@@ -123,6 +125,7 @@ export function DatePicker({
   todayText = '今天',
   minDateText = '最早',
   maxDateText = '最晚',
+  showRangeQuickActions = true,
   bg,
   surface,
   motionPreset,
@@ -238,11 +241,13 @@ export function DatePicker({
   const quickActions = useMemo(() => {
     const actions: Array<{ label: string; date: Date }> = [{ label: todayText, date: new Date() }];
 
-    if (minDate) actions.push({ label: minDateText, date: minDate });
-    if (maxDate) actions.push({ label: maxDateText, date: maxDate });
+    if (showRangeQuickActions) {
+      if (minDate) actions.push({ label: minDateText, date: minDate });
+      if (maxDate) actions.push({ label: maxDateText, date: maxDate });
+    }
 
     return actions;
-  }, [maxDate, maxDateText, minDate, minDateText, todayText]);
+  }, [maxDate, maxDateText, minDate, minDateText, showRangeQuickActions, todayText]);
 
   return (
     <Picker

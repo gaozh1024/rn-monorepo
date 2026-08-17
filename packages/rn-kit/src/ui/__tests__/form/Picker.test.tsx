@@ -383,6 +383,65 @@ describe('Picker', () => {
     expect(onTempChange).toHaveBeenLastCalledWith(['third']);
   });
 
+  it('滚动吸附定时器未触发时点击确定应该使用当前滚动位置', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    const onTempChange = vi.fn();
+    let renderer: ReturnType<typeof create>;
+
+    act(() => {
+      renderer = create(
+        <ThemeProvider light={theme}>
+          <Picker
+            placeholder="请选择"
+            value={['first']}
+            tempValue={['first']}
+            onChange={onChange}
+            onTempChange={onTempChange}
+            rowHeight={40}
+            columns={[
+              {
+                key: 'wheel',
+                options: [
+                  { label: '第一项', value: 'first' },
+                  { label: '第二项', value: 'second' },
+                  { label: '第三项', value: 'third' },
+                ],
+              },
+            ]}
+          />
+        </ThemeProvider>
+      );
+    });
+
+    const getTextPressable = (text: string) => {
+      const nodes = renderer!.root.findAllByProps({ children: text });
+      for (const candidate of nodes) {
+        let node: any = candidate;
+        while (node?.props && !node.props.onPress) {
+          node = node.parent;
+        }
+        if (node?.props?.onPress) return node;
+      }
+      throw new Error(`No pressable ancestor found for ${text}`);
+    };
+
+    act(() => {
+      getTextPressable('第一项').props.onPress();
+    });
+    const scrollView = renderer!.root.findByType(ScrollView);
+
+    // 滚动结束后立刻点确定，不等待 100ms 吸附定时器
+    act(() => {
+      scrollView.props.onScrollEndDrag(createScrollEvent(80));
+    });
+    act(() => {
+      getTextPressable('确定').props.onPress();
+    });
+
+    expect(onChange).toHaveBeenLastCalledWith(['third']);
+  });
+
   it('受控临时值确认时应该使用最后一次滚动选择', () => {
     vi.useFakeTimers();
     const onChange = vi.fn();
