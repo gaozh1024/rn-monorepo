@@ -42,6 +42,7 @@
     "templates/*",
     "apps/*/*"
   ],
+  "packageManager": "pnpm@10.32.1",
   "pnpm": {
     "overrides": {
       "react": "19.2.0",

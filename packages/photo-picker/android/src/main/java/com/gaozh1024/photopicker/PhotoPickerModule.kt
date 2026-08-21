@@ -16,8 +16,11 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
 import java.security.MessageDigest
+import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 
 class PhotoPickerModule : Module() {
@@ -91,6 +94,7 @@ class PhotoPickerModule : Module() {
 
     val dimensions = readDimensions(resolver, sourceUri, mimeType)
     val durationMs = readDuration(resolver, sourceUri, mimeType)
+    val capturedAt = readCapturedAt(resolver, sourceUri)
     val mediaType = if (mimeType.startsWith("video/")) "video" else "photo"
     val fileUri = Uri.fromFile(destination).toString()
 
@@ -108,8 +112,44 @@ class PhotoPickerModule : Module() {
       "height" to dimensions.second,
       "duration" to (durationMs?.toDouble()?.div(1000.0)),
       "durationMs" to durationMs,
+      "metadata" to capturedAt?.let { mapOf("capturedAt" to it) },
       "source" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) "android-photo-picker" else "android-open-document",
     )
+  }
+
+  private fun readCapturedAt(resolver: ContentResolver, uri: Uri): String? {
+    return try {
+      resolver.query(
+        uri,
+        // MediaStore uses the legacy `datetaken` column name. Some picker
+        // providers do not expose it; the query is intentionally best-effort
+        // and the server can still enrich image EXIF metadata after upload.
+        arrayOf("datetaken", "date_modified"),
+        null,
+        null,
+        null,
+      )?.use { cursor ->
+        if (!cursor.moveToFirst()) return@use null
+        val dateTakenIndex = cursor.getColumnIndex("datetaken")
+        val dateModifiedIndex = cursor.getColumnIndex("date_modified")
+        val dateTaken = if (dateTakenIndex >= 0 && !cursor.isNull(dateTakenIndex)) cursor.getLong(dateTakenIndex) else 0L
+        val dateModifiedSeconds = if (dateModifiedIndex >= 0 && !cursor.isNull(dateModifiedIndex)) cursor.getLong(dateModifiedIndex) else 0L
+        val timestampMs = when {
+          dateTaken > 0L -> dateTaken
+          dateModifiedSeconds > 0L -> dateModifiedSeconds * 1000L
+          else -> 0L
+        }
+        if (timestampMs > 0L) formatRFC3339(timestampMs) else null
+      }
+    } catch (_: Exception) {
+      null
+    }
+  }
+
+  private fun formatRFC3339(timestampMs: Long): String {
+    return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+      timeZone = TimeZone.getTimeZone("UTC")
+    }.format(Date(timestampMs))
   }
 
   private fun queryDisplayName(resolver: ContentResolver, uri: Uri): String? {

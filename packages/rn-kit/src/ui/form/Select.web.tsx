@@ -117,7 +117,7 @@ export function Select({
   const { theme, isDark } = useOptionalTheme();
   const [visible, setVisible] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'soft';
+  const resolvedMotionPreset = motionPreset ?? motionConfig.defaultPressPreset ?? 'none';
   const resolvedBgColor =
     resolveSurfaceColor(surface, theme, isDark) ?? resolveNamedColor(bg, theme, isDark);
 
