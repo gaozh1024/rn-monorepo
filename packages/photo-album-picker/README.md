@@ -276,7 +276,7 @@ function ChatToolbar() {
 
 ### 5. 自定义权限按钮、设置提示和多语言文案
 
-默认文案是中文。你可以通过 `options.uiConfig` 统一覆盖整个相册流程里的文案，分别修改“允许访问”和“去设置开启”按钮的文字与颜色，并配置系统不再允许弹出权限框时的处理方式。
+默认文案是中文。你可以通过 `options.uiConfig` 统一覆盖整个相册流程里的文案和操作颜色。多选相册页的“完成”按钮位于标题栏右上角；底部工具栏保留选中数量和“预览”操作。
 
 ```tsx
 <PhotoAlbumButton
@@ -293,6 +293,15 @@ function ChatToolbar() {
         permissionButtonTextColor: '#ffffff',
         permissionSettingsButtonBackgroundColor: '#2563eb',
         permissionSettingsButtonTextColor: '#ffffff',
+        completeButtonBackgroundColor: '#16a34a',
+        completeButtonTextColor: '#ffffff',
+        completeButtonDisabledBackgroundColor: '#d1d5db',
+        completeButtonDisabledTextColor: '#9ca3af',
+        cancelButtonTextColor: '#475569',
+        previewButtonTextColor: '#2563eb',
+        selectedCountTextColor: '#334155',
+        previewSelectedCountTextColor: 'rgba(255,255,255,0.85)',
+        backButtonTextColor: '#ffffff',
       },
       texts: {
         buttonText: 'Choose Media',
@@ -370,6 +379,15 @@ function ChatToolbar() {
 - `permissionButtonTextColor`
 - `permissionSettingsButtonBackgroundColor`
 - `permissionSettingsButtonTextColor`
+- `cancelButtonTextColor`
+- `previewButtonTextColor`
+- `selectedCountTextColor`
+- `previewSelectedCountTextColor`
+- `backButtonTextColor`
+- `completeButtonBackgroundColor`
+- `completeButtonTextColor`
+- `completeButtonDisabledBackgroundColor`
+- `completeButtonDisabledTextColor`
 
 支持的 `permission` 字段：
 

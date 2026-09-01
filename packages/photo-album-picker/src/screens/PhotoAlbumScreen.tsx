@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, StyleSheet } from 'react-native';
-import { AppHeader, AppScreen, useTheme } from '@gaozh1024/rn-kit';
+import { AppHeader, AppPressable, AppScreen, AppText, useTheme } from '@gaozh1024/rn-kit';
 import { mediaPickerColors, MEDIA_PICKER_ROUTES } from '../constants';
 import { PhotoAlbumGrid } from '../components/PhotoAlbumGrid';
 import type {
@@ -80,6 +80,7 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
   );
 
   const onComplete = React.useMemo(() => getPhotoAlbumCompleteCallback(callbackId), [callbackId]);
+  const [selectedPhotos, setSelectedPhotos] = React.useState<PhotoAlbumItem[]>([]);
 
   /**
    * 处理选择完成
@@ -161,6 +162,34 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
       <AppHeader
         title={uiConfig.texts.albumTitle}
         onLeftPress={handleCancel}
+        rightNode={
+          <AppPressable
+            onPress={() => handleComplete(selectedPhotos)}
+            disabled={selectedPhotos.length === 0}
+            style={[
+              styles.completeHeaderAction,
+              {
+                backgroundColor:
+                  selectedPhotos.length === 0
+                    ? uiConfig.theme.completeButtonDisabledBackgroundColor
+                    : uiConfig.theme.completeButtonBackgroundColor,
+              },
+            ]}
+          >
+            <AppText
+              size="md"
+              weight="semibold"
+              style={{
+                color:
+                  selectedPhotos.length === 0
+                    ? uiConfig.theme.completeButtonDisabledTextColor
+                    : uiConfig.theme.completeButtonTextColor,
+              }}
+            >
+              {uiConfig.texts.completeButton}
+            </AppText>
+          </AppPressable>
+        }
         style={[
           styles.header,
           {
@@ -180,6 +209,9 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
         uiConfig={uiConfig}
         onComplete={handleComplete}
         onCancel={handleCancel}
+        onSelectionChange={setSelectedPhotos}
+        showToolbarComplete={false}
+        showToolbarCancel={false}
         onPermissionDenied={() => {
           // 可以在这里显示提示或跳转设置
           console.log('权限被拒绝');
@@ -192,5 +224,14 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
 const styles = StyleSheet.create({
   header: {
     borderBottomWidth: 1,
+  },
+  completeHeaderAction: {
+    minWidth: 52,
+    minHeight: 36,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

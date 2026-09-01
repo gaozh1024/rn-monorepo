@@ -30,6 +30,12 @@ function createPhoto(overrides: Partial<PhotoAlbumItem> = {}): PhotoAlbumItem {
 
 describe('photoAlbumFlow', () => {
   describe('resolveMediaTypes', () => {
+    it('keeps each resolved media type array stable across renders', () => {
+      expect(resolveMediaTypes('photo')).toBe(resolveMediaTypes('photo'));
+      expect(resolveMediaTypes('video')).toBe(resolveMediaTypes('video'));
+      expect(resolveMediaTypes('all')).toBe(resolveMediaTypes('all'));
+    });
+
     it('returns photo-only media type', () => {
       expect(resolveMediaTypes('photo')).toEqual(['photo']);
     });
@@ -180,6 +186,8 @@ describe('photoAlbumFlow', () => {
           theme: {
             permissionButtonBackgroundColor: '#1677ff',
             permissionSettingsButtonBackgroundColor: '#f97316',
+            completeButtonBackgroundColor: '#111827',
+            completeButtonTextColor: '#fef3c7',
           },
           permission: {
             openSettingsMode: 'disabled',
@@ -196,6 +204,8 @@ describe('photoAlbumFlow', () => {
           ...DEFAULT_PHOTO_ALBUM_UI_THEME,
           permissionButtonBackgroundColor: '#1677ff',
           permissionSettingsButtonBackgroundColor: '#f97316',
+          completeButtonBackgroundColor: '#111827',
+          completeButtonTextColor: '#fef3c7',
         },
         permission: {
           ...DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG,

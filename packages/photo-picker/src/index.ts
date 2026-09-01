@@ -1,7 +1,7 @@
 export { MEDIA_PICKER_ROUTES, mediaPickerColors } from './constants';
 export { PhotoAlbumScreen } from './screens/PhotoAlbumScreen';
 export { PhotoCropScreen } from './screens/PhotoCropScreen';
-export { pickMedia, releaseMedia, clearPickerCache } from './native';
+export { clearPickerCache, isPhotoPickerNativeError, pickMedia, releaseMedia } from './native';
 export {
   clearPhotoAlbumCompleteCallback,
   getPhotoAlbumCompleteCallback,
@@ -26,7 +26,10 @@ export type {
   PhotoAlbumUiTheme,
   PhotoCropScreenProps,
   PhotoPickerOptions,
+  PhotoPickerNativeError,
+  PhotoPickerNativeErrorCode,
   PhotoPickerResult,
+  PickerBackend,
   PickerMetadata,
   PickerSource,
 } from './types';

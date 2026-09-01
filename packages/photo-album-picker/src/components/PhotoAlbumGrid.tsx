@@ -298,6 +298,8 @@ export function PhotoAlbumGrid({
   numColumns = 4,
   spacing = 2,
   showSelectedCount = true,
+  showToolbarComplete = true,
+  showToolbarCancel = true,
   uiConfig,
   onComplete,
   onCancel,
@@ -633,18 +635,17 @@ export function PhotoAlbumGrid({
         ]}
       >
         <View style={styles.toolbarMainRow}>
-          <View style={styles.toolbarLeft}>
-            <AppPressable onPress={onCancel} style={styles.toolbarButton}>
-              <AppText
-                size="md"
-                style={{
-                  color: isDark ? mediaPickerColors.slate[300] : mediaPickerColors.slate[600],
-                }}
-              >
-                {resolvedUiConfig.texts.cancelButton}
-              </AppText>
-            </AppPressable>
-          </View>
+          {showToolbarCancel ? (
+            <View style={styles.toolbarLeft}>
+              <AppPressable onPress={onCancel} style={styles.toolbarButton}>
+                <AppText size="md" style={{ color: resolvedUiConfig.theme.cancelButtonTextColor }}>
+                  {resolvedUiConfig.texts.cancelButton}
+                </AppText>
+              </AppPressable>
+            </View>
+          ) : (
+            <View style={styles.toolbarSpacer} />
+          )}
 
           <View style={styles.toolbarRight}>
             <View style={styles.toolbarActions}>
@@ -656,42 +657,52 @@ export function PhotoAlbumGrid({
                 <AppText
                   size="md"
                   style={{
-                    color: disabled ? mediaPickerColors.slate[400] : mediaPickerColors.primary[500],
+                    color: disabled
+                      ? resolvedUiConfig.theme.completeButtonDisabledTextColor
+                      : resolvedUiConfig.theme.previewButtonTextColor,
                   }}
                 >
                   {resolvedUiConfig.texts.previewButton}
                 </AppText>
               </AppPressable>
 
-              <AppPressable
-                onPress={handleComplete}
-                disabled={disabled}
-                style={[
-                  styles.completeButton,
-                  {
-                    backgroundColor: disabled
-                      ? isDark
-                        ? mediaPickerColors.slate[600]
-                        : mediaPickerColors.slate[300]
-                      : mediaPickerColors.primary[500],
-                  },
-                ]}
-              >
-                <AppText
-                  size="md"
-                  weight="semibold"
-                  style={{ color: disabled ? mediaPickerColors.slate[400] : '#ffffff' }}
+              {showToolbarComplete && (
+                <AppPressable
+                  onPress={handleComplete}
+                  disabled={disabled}
+                  style={[
+                    styles.completeButton,
+                    {
+                      backgroundColor: disabled
+                        ? resolvedUiConfig.theme.completeButtonDisabledBackgroundColor
+                        : resolvedUiConfig.theme.completeButtonBackgroundColor,
+                    },
+                  ]}
                 >
-                  {resolvedUiConfig.texts.completeButton}
-                </AppText>
-              </AppPressable>
+                  <AppText
+                    size="md"
+                    weight="semibold"
+                    style={{
+                      color: disabled
+                        ? resolvedUiConfig.theme.completeButtonDisabledTextColor
+                        : resolvedUiConfig.theme.completeButtonTextColor,
+                    }}
+                  >
+                    {resolvedUiConfig.texts.completeButton}
+                  </AppText>
+                </AppPressable>
+              )}
             </View>
           </View>
         </View>
 
         <View pointerEvents="none" style={styles.toolbarCenterOverlay}>
           {selectedCount > 0 && (
-            <AppText size="md" weight="medium">
+            <AppText
+              size="md"
+              weight="medium"
+              style={{ color: resolvedUiConfig.theme.selectedCountTextColor }}
+            >
               {toolbarSelectedCountText}
             </AppText>
           )}
@@ -707,6 +718,15 @@ export function PhotoAlbumGrid({
     resolvedUiConfig.texts.cancelButton,
     resolvedUiConfig.texts.completeButton,
     resolvedUiConfig.texts.previewButton,
+    resolvedUiConfig.theme.cancelButtonTextColor,
+    resolvedUiConfig.theme.completeButtonBackgroundColor,
+    resolvedUiConfig.theme.completeButtonDisabledBackgroundColor,
+    resolvedUiConfig.theme.completeButtonDisabledTextColor,
+    resolvedUiConfig.theme.completeButtonTextColor,
+    resolvedUiConfig.theme.previewButtonTextColor,
+    resolvedUiConfig.theme.selectedCountTextColor,
+    showToolbarCancel,
+    showToolbarComplete,
     toolbarBottomInset,
     toolbarSelectedCountText,
   ]);
@@ -945,13 +965,13 @@ export function PhotoAlbumGrid({
               },
             ]}
           >
-            <AppText size="sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
+            <AppText size="sm" style={{ color: resolvedUiConfig.theme.selectedCountTextColor }}>
               {previewSelectedCountText}
             </AppText>
 
             <View style={styles.toolbarActions}>
               <AppPressable onPress={closePreview} style={styles.toolbarButton}>
-                <AppText size="md" style={{ color: '#ffffff' }}>
+                <AppText size="md" style={{ color: resolvedUiConfig.theme.backButtonTextColor }}>
                   {resolvedUiConfig.texts.backButton}
                 </AppText>
               </AppPressable>
@@ -961,11 +981,15 @@ export function PhotoAlbumGrid({
                 style={[
                   styles.completeButton,
                   {
-                    backgroundColor: mediaPickerColors.primary[500],
+                    backgroundColor: resolvedUiConfig.theme.completeButtonBackgroundColor,
                   },
                 ]}
               >
-                <AppText size="md" weight="semibold" style={{ color: '#ffffff' }}>
+                <AppText
+                  size="md"
+                  weight="semibold"
+                  style={{ color: resolvedUiConfig.theme.completeButtonTextColor }}
+                >
                   {resolvedUiConfig.texts.completeButton}
                 </AppText>
               </AppPressable>
@@ -1093,6 +1117,9 @@ const styles = StyleSheet.create({
     minWidth: 72,
     alignItems: 'flex-start',
     zIndex: 1,
+  },
+  toolbarSpacer: {
+    minWidth: 72,
   },
   toolbarRight: {
     zIndex: 1,

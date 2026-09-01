@@ -176,6 +176,16 @@ describe('AppHeader', () => {
     expect(icons[1]?.props.color).toBe('#aabbcc');
   });
 
+  it('应支持渲染右侧自定义节点', () => {
+    const { getByTestId } = render(
+      <ThemeProvider light={theme}>
+        <AppHeader title="标题" rightNode={<View testID="header-action" />} />
+      </ThemeProvider>
+    );
+
+    expect(getByTestId('header-action')).toBeTruthy();
+  });
+
   it('应支持使用自定义标题节点替换默认标题区', () => {
     const { getByTestId, queryByText } = render(
       <ThemeProvider light={theme}>

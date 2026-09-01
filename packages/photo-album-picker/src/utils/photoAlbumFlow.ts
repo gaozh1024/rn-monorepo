@@ -12,6 +12,10 @@ import type {
 import { mediaPickerColors } from '../constants';
 
 export const DEFAULT_PHOTO_ALBUM_MEDIA_TYPES: PhotoAlbumMediaType[] = ['photo', 'video'];
+// Keep single-type results stable across renders so hook dependencies do not
+// treat a parent re-render as a media-filter change.
+const PHOTO_ONLY_MEDIA_TYPES: PhotoAlbumMediaType[] = ['photo'];
+const VIDEO_ONLY_MEDIA_TYPES: PhotoAlbumMediaType[] = ['video'];
 export const DEFAULT_PHOTO_ALBUM_OPEN_OPTIONS: PhotoAlbumOpenOptions = {
   maxSelection: 9,
   mediaType: 'all',
@@ -55,6 +59,15 @@ export const DEFAULT_PHOTO_ALBUM_UI_THEME: Required<PhotoAlbumUiTheme> = {
   permissionButtonTextColor: '#ffffff',
   permissionSettingsButtonBackgroundColor: mediaPickerColors.primary[500],
   permissionSettingsButtonTextColor: '#ffffff',
+  cancelButtonTextColor: mediaPickerColors.slate[600],
+  previewButtonTextColor: mediaPickerColors.primary[500],
+  selectedCountTextColor: mediaPickerColors.slate[700],
+  previewSelectedCountTextColor: 'rgba(255,255,255,0.85)',
+  backButtonTextColor: '#ffffff',
+  completeButtonBackgroundColor: mediaPickerColors.primary[500],
+  completeButtonTextColor: '#ffffff',
+  completeButtonDisabledBackgroundColor: mediaPickerColors.slate[300],
+  completeButtonDisabledTextColor: mediaPickerColors.slate[400],
 };
 
 export const DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG: Required<PhotoAlbumPermissionConfig> = {
@@ -94,8 +107,8 @@ export function formatPhotoAlbumText(
 }
 
 export function resolveMediaTypes(mediaType: PhotoAlbumOpenMediaType): PhotoAlbumMediaType[] {
-  if (mediaType === 'photo') return ['photo'];
-  if (mediaType === 'video') return ['video'];
+  if (mediaType === 'photo') return PHOTO_ONLY_MEDIA_TYPES;
+  if (mediaType === 'video') return VIDEO_ONLY_MEDIA_TYPES;
   return DEFAULT_PHOTO_ALBUM_MEDIA_TYPES;
 }
 

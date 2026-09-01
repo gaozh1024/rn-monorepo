@@ -546,11 +546,13 @@ export function Picker({
       ]}
     >
       <AppPressable
-        className={cn(
-          'flex-row items-center justify-between px-4 py-3 rounded-lg',
-          disabled ? 'opacity-60' : '',
-          className
-        )}
+        row
+        items="center"
+        justify="between"
+        px={16}
+        py={12}
+        rounded={rounded ?? 'lg'}
+        className={cn(disabled ? 'opacity-60' : '', className)}
         style={[
           styles.trigger,
           resolveSizingStyle({ h, minW, minH, maxW, maxH }),

@@ -24,6 +24,8 @@ export interface AppHeaderProps extends PressMotionProps {
   onLeftPress?: () => void;
   rightIcons?: RightIcon[];
   rightIconColor?: string;
+  /** 右侧自定义内容，适合文字操作按钮或业务组件 */
+  rightNode?: ReactNode;
   transparent?: boolean;
   blur?: boolean;
   safeArea?: boolean;
@@ -46,6 +48,7 @@ export function AppHeader({
   onLeftPress,
   rightIcons = [],
   rightIconColor,
+  rightNode,
   transparent = false,
   safeArea = true,
   style,
@@ -167,6 +170,7 @@ export function AppHeader({
                   </AppView>
                 </AppPressable>
               ))}
+              {rightNode}
             </AppView>
           </AppView>
         )}

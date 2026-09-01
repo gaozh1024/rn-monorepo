@@ -268,6 +268,31 @@ describe('Picker', () => {
     });
   });
 
+  it('原生触发器应使用显式横向布局，避免文字和图标上下堆叠', () => {
+    const { getByText } = renderWithTheme(
+      <Picker
+        placeholder="打开地区选择"
+        columns={[{ key: 'province', options: [{ label: '广东省', value: 'gd' }] }]}
+      />
+    );
+
+    let trigger: any = getByText('打开地区选择');
+    while (trigger?.props && !trigger.props.onPress) {
+      trigger = trigger.parent;
+    }
+
+    expect(resolveInteractiveStyle(trigger.props.style)).toMatchObject({
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingLeft: 16,
+      paddingRight: 16,
+      paddingTop: 12,
+      paddingBottom: 12,
+      borderRadius: 12,
+    });
+  });
+
   it('应该支持覆盖触发器文本样式', () => {
     let renderer: ReturnType<typeof create>;
 

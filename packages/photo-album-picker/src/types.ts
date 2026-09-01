@@ -95,6 +95,24 @@ export interface PhotoAlbumUiTheme {
   permissionSettingsButtonBackgroundColor?: string;
   /** 权限页“去设置”按钮文字颜色 */
   permissionSettingsButtonTextColor?: string;
+  /** 底部工具栏取消文字颜色 */
+  cancelButtonTextColor?: string;
+  /** 底部工具栏预览文字颜色 */
+  previewButtonTextColor?: string;
+  /** 底部工具栏选中数量文字颜色 */
+  selectedCountTextColor?: string;
+  /** 预览页选中数量文字颜色 */
+  previewSelectedCountTextColor?: string;
+  /** 预览页返回文字颜色 */
+  backButtonTextColor?: string;
+  /** 完成按钮背景色 */
+  completeButtonBackgroundColor?: string;
+  /** 完成按钮文字颜色 */
+  completeButtonTextColor?: string;
+  /** 完成按钮禁用背景色 */
+  completeButtonDisabledBackgroundColor?: string;
+  /** 完成按钮禁用文字颜色 */
+  completeButtonDisabledTextColor?: string;
 }
 
 export interface PhotoAlbumPermissionConfig {
@@ -280,6 +298,10 @@ export interface PhotoAlbumGridProps extends PhotoAlbumOptions {
   renderSelectedOverlay?: (item: PhotoAlbumItem, index: number) => React.ReactNode;
   /** 自定义渲染底部工具栏 */
   renderToolbar?: (selectedCount: number, onComplete: () => void) => React.ReactNode;
+  /** 是否在底部工具栏显示完成按钮，默认 true */
+  showToolbarComplete?: boolean;
+  /** 是否在底部工具栏显示取消按钮，默认 true */
+  showToolbarCancel?: boolean;
 }
 
 export interface PhotoAlbumButtonProps {

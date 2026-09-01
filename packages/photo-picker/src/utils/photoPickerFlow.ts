@@ -38,7 +38,10 @@ export function normalizeOpenOptions(
   options?: PhotoAlbumOpenOptions
 ): Required<Pick<PhotoAlbumOpenOptions, 'maxSelection' | 'mediaType' | 'allowsMultipleSelection'>> &
   PhotoAlbumOpenOptions {
-  const maxSelection = Math.max(1, Math.min(100, Math.floor(options?.maxSelection ?? 9)));
+  const requestedMaxSelection = options?.maxSelection ?? 9;
+  const maxSelection = Number.isFinite(requestedMaxSelection)
+    ? Math.max(1, Math.floor(requestedMaxSelection))
+    : 1;
   const crop = options?.crop;
   const allowsMultipleSelection = crop
     ? false

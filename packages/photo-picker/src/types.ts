@@ -4,6 +4,20 @@ export type PhotoAlbumMediaType = 'photo' | 'video';
 export type PhotoAlbumOpenMediaType = PhotoAlbumMediaType | 'all';
 export type PickerSource = 'android-photo-picker' | 'android-open-document';
 
+export interface PickerBackend {
+  source: PickerSource;
+  action: string;
+}
+
+export type PhotoPickerNativeErrorCode =
+  | 'PICKER_BUSY'
+  | 'PICKER_LAUNCH_FAILED'
+  | 'PICKER_SELECTION_LIMIT_UNSUPPORTED';
+
+export interface PhotoPickerNativeError extends Error {
+  code: PhotoPickerNativeErrorCode;
+}
+
 export interface PhotoAlbumCropOptions {
   aspect?: [number, number];
   shape?: 'rect' | 'circle';
@@ -68,6 +82,8 @@ export interface PhotoPickerOptions {
 export interface PhotoPickerResult {
   cancelled: boolean;
   assets: PhotoAlbumItem[];
+  source?: PickerSource;
+  action?: string;
 }
 
 export interface PhotoAlbumUiTexts {
