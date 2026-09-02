@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/photo-album-picker",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Photo album picker for Expo / React Native with grid picker, preview and crop flow.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

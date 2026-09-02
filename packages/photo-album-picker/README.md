@@ -27,7 +27,7 @@ pnpm add @gaozh1024/photo-album-picker
 - Expo SDK 54：`expo-image` 3.x、`expo-image-manipulator` 14.x、`expo-media-library` 18.x
 - Expo SDK 55：Expo SDK 55 package line，例如 `expo-image` 55.x、`expo-image-manipulator` 55.x、`expo-media-library` 55.x
 
-当前 npm 包版本：`0.4.0`
+当前 npm 包版本：`0.4.1`
 
 ### 必需依赖
 
@@ -46,7 +46,7 @@ pnpm add react-native-zoom-toolkit
 ### 推荐安装示例
 
 ```bash
-pnpm add @gaozh1024/photo-album-picker@^0.4.0
+pnpm add @gaozh1024/photo-album-picker@^0.4.1
 pnpm add @gaozh1024/rn-kit @react-navigation/native
 npx expo install @shopify/flash-list expo-image expo-image-manipulator expo-media-library
 npx expo install react-native-safe-area-context react-native-gesture-handler react-native-reanimated

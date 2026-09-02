@@ -1,5 +1,11 @@
 # @gaozh1024/rn-kit
 
+## 0.6.6
+
+### Patch Changes
+
+- Refresh the package release metadata and generated distribution artifacts for the current rn-kit framework baseline.
+
 ## 0.6.5
 
 ### Patch Changes

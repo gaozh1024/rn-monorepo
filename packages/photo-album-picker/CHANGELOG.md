@@ -1,5 +1,12 @@
 # @gaozh1024/photo-album-picker
 
+## 0.4.1
+
+### Patch Changes
+
+- Improve the album selection toolbar with configurable colors, cancel/complete visibility, selected-count styling, and preview navigation controls.
+- Add video preview playback support and keep the Expo SDK 54/55 dependency guidance aligned with the current package baseline.
+
 ## 0.4.0
 
 ### Minor Changes
