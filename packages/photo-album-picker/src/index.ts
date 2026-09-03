@@ -25,6 +25,12 @@ export {
   formatPhotoAlbumText,
 } from './utils/photoAlbumFlow';
 
+export {
+  hasMediaAccess,
+  MEDIA_PERMISSION_TYPES,
+  resolveMediaAccessPrivileges,
+} from './utils/mediaAccess';
+
 export type {
   MediaPickerRouteNames,
   PhotoAlbumItem,
@@ -48,6 +54,7 @@ export type {
 } from './types';
 
 export type {
+  PhotoAlbumAccessPrivileges,
   PhotoAlbumPaginationDebugInfo,
   UsePhotoAlbumOptions,
   UsePhotoAlbumReturn,

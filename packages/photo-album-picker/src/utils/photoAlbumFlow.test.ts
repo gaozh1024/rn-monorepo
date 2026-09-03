@@ -175,6 +175,13 @@ describe('photoAlbumFlow', () => {
       });
     });
 
+    it('includes copy for valid limited media access', () => {
+      const { texts } = resolvePhotoAlbumUiConfig();
+
+      expect(texts.limitedAccessTitle).toBe('仅显示已允许访问的照片和视频');
+      expect(texts.limitedAccessManageButton).toBe('管理照片');
+    });
+
     it('merges custom texts, theme and permission config over defaults', () => {
       expect(
         resolvePhotoAlbumUiConfig({

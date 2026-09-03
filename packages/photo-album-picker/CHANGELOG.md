@@ -1,5 +1,13 @@
 # @gaozh1024/photo-album-picker
 
+## 0.4.2
+
+### Patch Changes
+
+- Treat Android 14+ limited photo and video access as valid media access, keeping the custom album grid available for the system-approved media set.
+- Request and inspect only photo and video permissions, add a system media-access management entry, and surface recoverable native permission or media-query errors.
+- Add a limited-access banner and per-thumbnail fallback so unreadable media no longer unloads the entire picker screen.
+
 ## 0.4.1
 
 ### Patch Changes

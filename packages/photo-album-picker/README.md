@@ -27,7 +27,13 @@ pnpm add @gaozh1024/photo-album-picker
 - Expo SDK 54：`expo-image` 3.x、`expo-image-manipulator` 14.x、`expo-media-library` 18.x
 - Expo SDK 55：Expo SDK 55 package line，例如 `expo-image` 55.x、`expo-image-manipulator` 55.x、`expo-media-library` 55.x
 
-当前 npm 包版本：`0.4.1`
+当前 npm 包版本：`0.4.2`
+
+### Android 14/15 有限访问
+
+在 Android 14/15 和 iOS 有限图库访问场景中，用户选择“仅允许访问所选照片和视频”后，组件会继续显示自定义网格，但仅显示系统已允许访问的媒体。相册顶部会出现“仅显示已允许访问的照片和视频”提示，用户可点击“管理照片”打开系统范围管理器。
+
+有限访问是有效授权，不会退回权限失败页。只有系统返回 `none` 或权限查询失败时，组件才会停止读取媒体库并显示可重试错误或权限页。权限请求始终只包含 `photo` 和 `video`，不会请求音频权限。
 
 ### 必需依赖
 
@@ -46,7 +52,7 @@ pnpm add react-native-zoom-toolkit
 ### 推荐安装示例
 
 ```bash
-pnpm add @gaozh1024/photo-album-picker@^0.4.1
+pnpm add @gaozh1024/photo-album-picker@^0.4.2
 pnpm add @gaozh1024/rn-kit @react-navigation/native
 npx expo install @shopify/flash-list expo-image expo-image-manipulator expo-media-library
 npx expo install react-native-safe-area-context react-native-gesture-handler react-native-reanimated
@@ -372,6 +378,10 @@ function ChatToolbar() {
 - `permissionCheckError`
 - `loadPhotosError`
 - `loadMorePhotosError`
+- `limitedAccessTitle`
+- `limitedAccessDescription`
+- `limitedAccessManageButton`
+- `limitedAccessManageError`
 
 支持的 `theme` 字段：
 

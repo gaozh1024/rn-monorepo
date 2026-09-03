@@ -83,6 +83,7 @@
 - [rn-kit 0.5.5 Release Notes](./release-notes/rn-kit-0.5.5.md)
 - [rn-kit 0.5.3 Release Notes](./release-notes/rn-kit-0.5.3.md)
 - [rn-kit 0.5.2 Release Notes](./release-notes/rn-kit-0.5.2.md)
+- [photo-album-picker 0.4.2 Release Notes](./release-notes/photo-album-picker-0.4.2.md)
 - [photo-album-picker 0.4.1 Release Notes](./release-notes/photo-album-picker-0.4.1.md)
 - [photo-album-picker 0.4.0 Release Notes](./release-notes/photo-album-picker-0.4.0.md)
 - [aliyun-push 0.2.0 Release Notes](./release-notes/aliyun-push-0.2.0.md)

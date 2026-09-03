@@ -6,6 +6,7 @@ import {
   getPermissionsAsync,
   getAssetsAsync,
   getAssetInfoAsync,
+  presentPermissionsPickerAsync,
   PermissionStatus,
   MediaTypeValue,
   SortByValue,
@@ -15,6 +16,14 @@ import {
   DEFAULT_PHOTO_ALBUM_PERMISSION_CONFIG,
   DEFAULT_PHOTO_ALBUM_UI_TEXTS,
 } from '../utils/photoAlbumFlow';
+import {
+  hasMediaAccess,
+  MEDIA_PERMISSION_TYPES,
+  resolveMediaAccessPrivileges,
+} from '../utils/mediaAccess';
+import type { PhotoAlbumAccessPrivileges } from '../utils/mediaAccess';
+
+export type { PhotoAlbumAccessPrivileges } from '../utils/mediaAccess';
 
 const MAX_CURSOR_STALL_RETRIES = 2;
 const MAX_PAGE_SIZE_MULTIPLIER = 4;
@@ -76,10 +85,14 @@ export interface UsePhotoAlbumReturn {
   permissionStatus: PermissionStatus | null;
   /** 系统是否还允许再次弹出权限申请框 */
   permissionCanAskAgain: boolean | null;
+  /** 当前可访问的媒体库范围 */
+  accessPrivileges: PhotoAlbumAccessPrivileges | null;
   /** 错误信息 */
   error: Error | null;
   /** 请求权限 */
   requestPermission: () => Promise<boolean>;
+  /** 管理系统已允许访问的照片和视频范围 */
+  manageLimitedAccess: () => Promise<void>;
   /** 加载更多 */
   loadMore: () => Promise<void>;
   /** 刷新列表 */
@@ -127,6 +140,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
   const [hasMore, setHasMore] = useState(true);
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus | null>(null);
   const [permissionCanAskAgain, setPermissionCanAskAgain] = useState<boolean | null>(null);
+  const [accessPrivileges, setAccessPrivileges] = useState<PhotoAlbumAccessPrivileges | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [selectedIds, setSelectedIdsState] = useState<string[]>([]);
   const [paginationDebugInfo, setPaginationDebugInfo] = useState<PhotoAlbumPaginationDebugInfo>({
@@ -150,6 +164,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
   const pageCountRef = useRef(0);
   const stallCountRef = useRef(0);
   const photoIdsRef = useRef<Set<string>>(new Set());
+  const hasMediaAccessRef = useRef(false);
 
   const mergeUniqueAssets = useCallback((prev: PhotoAlbumItem[], next: PhotoAlbumItem[]) => {
     if (prev.length === 0) return next;
@@ -168,10 +183,14 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
   }, []);
 
   const applyPermissionResponse = useCallback((response: MediaLibraryPermissionResponse) => {
+    const privileges = resolveMediaAccessPrivileges(response);
+    hasMediaAccessRef.current = hasMediaAccess(response);
+
     if (!mountedRef.current) return;
 
     setPermissionStatus(response.status);
     setPermissionCanAskAgain(response.canAskAgain ?? null);
+    setAccessPrivileges(privileges);
   }, []);
 
   const getUiText = useCallback(
@@ -225,20 +244,20 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
    */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const currentPermission = await getPermissionsAsync();
+      const currentPermission = await getPermissionsAsync(false, [...MEDIA_PERMISSION_TYPES]);
       applyPermissionResponse(currentPermission);
 
-      if (currentPermission.status === 'granted') return true;
+      if (hasMediaAccess(currentPermission)) return true;
 
       if (currentPermission.canAskAgain === false) {
         await handleBlockedPermission();
         return false;
       }
 
-      const nextPermission = await requestPermissionsAsync();
+      const nextPermission = await requestPermissionsAsync(false, [...MEDIA_PERMISSION_TYPES]);
       applyPermissionResponse(nextPermission);
 
-      if (nextPermission.status === 'granted') return true;
+      if (hasMediaAccess(nextPermission)) return true;
 
       if (nextPermission.canAskAgain === false) {
         await handleBlockedPermission();
@@ -246,6 +265,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
 
       return false;
     } catch (err) {
+      hasMediaAccessRef.current = false;
       setError(
         err instanceof Error ? err : new Error(uiTexts?.permissionRequestError ?? '请求权限失败')
       );
@@ -258,10 +278,11 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
    */
   const checkPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const currentPermission = await getPermissionsAsync();
+      const currentPermission = await getPermissionsAsync(false, [...MEDIA_PERMISSION_TYPES]);
       applyPermissionResponse(currentPermission);
-      return currentPermission.status === 'granted';
+      return hasMediaAccess(currentPermission);
     } catch (err) {
+      hasMediaAccessRef.current = false;
       setError(
         err instanceof Error ? err : new Error(uiTexts?.permissionCheckError ?? '检查权限失败')
       );
@@ -279,7 +300,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
   }, []);
 
   const logPagination = useCallback((message: string, payload: Record<string, unknown>) => {
-    if (!__DEV__) return;
+    if (typeof __DEV__ === 'undefined' || !__DEV__) return;
     console.log('[PhotoAlbumPagination]', message, payload);
   }, []);
 
@@ -304,7 +325,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
             ...(fileSize !== undefined ? { fileSize } : {}),
           };
         } catch (err) {
-          if (__DEV__) {
+          if (typeof __DEV__ !== 'undefined' && __DEV__) {
             console.debug('[PhotoAlbum] video-asset-info:unavailable', {
               id: item.id,
               message: err instanceof Error ? err.message : 'asset info unavailable',
@@ -321,6 +342,10 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
   const fetchPhotos = useCallback(
     async (after?: string, first: number = initialLoadCount) => {
       try {
+        if (!hasMediaAccessRef.current) {
+          throw new Error(uiTexts?.permissionCheckError ?? '检查权限失败');
+        }
+
         const result = await getAssetsAsync({
           first,
           after,
@@ -415,7 +440,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
    * 初始加载
    */
   const loadInitial = useCallback(async () => {
-    if (isFetchingRef.current) return;
+    if (isFetchingRef.current || !hasMediaAccessRef.current) return;
 
     isFetchingRef.current = true;
     setInitialLoading(true);
@@ -441,7 +466,7 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
    * 加载更多
    */
   const loadMore = useCallback(async () => {
-    if (isFetchingRef.current || !hasMoreRef.current) return;
+    if (isFetchingRef.current || !hasMoreRef.current || !hasMediaAccessRef.current) return;
 
     isFetchingRef.current = true;
     setLoadingMore(true);
@@ -508,6 +533,9 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
    * 刷新列表
    */
   const refresh = useCallback(async () => {
+    const hasPermission = await checkPermission();
+    if (!hasPermission) return;
+
     endCursorRef.current = undefined;
     hasMoreRef.current = true;
     setHasMore(true);
@@ -515,7 +543,22 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     stallCountRef.current = 0;
     photoIdsRef.current = new Set();
     await loadInitial();
-  }, [loadInitial]);
+  }, [checkPermission, loadInitial]);
+
+  const manageLimitedAccess = useCallback(async () => {
+    try {
+      setError(null);
+      await presentPermissionsPickerAsync(['photo', 'video']);
+      await refresh();
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.debug('[PhotoAlbum] limited-access:manage-failed', {
+          message: err instanceof Error ? err.message : 'permission picker unavailable',
+        });
+      }
+      setError(new Error(getUiText('limitedAccessManageError')));
+    }
+  }, [getUiText, refresh]);
 
   useEffect(() => {
     const handleAppStateChange = async (state: AppStateStatus) => {
@@ -599,8 +642,10 @@ export function usePhotoAlbum(options: UsePhotoAlbumOptions = {}): UsePhotoAlbum
     hasMore,
     permissionStatus,
     permissionCanAskAgain,
+    accessPrivileges,
     error,
     requestPermission,
+    manageLimitedAccess,
     loadMore,
     refresh,
     toggleSelection,

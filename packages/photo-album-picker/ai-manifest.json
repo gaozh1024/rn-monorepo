@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/photo-album-picker",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "role": "feature-package",
   "summary": "Photo album picker package for Expo or React Native apps with grid selection, fullscreen preview, and optional crop flow.",
   "entrypoints": [

@@ -198,6 +198,7 @@ interface PhotoGridItemProps {
   index: number;
   itemSize: number;
   spacing: number;
+  isDark: boolean;
   isSelected: boolean;
   selectedIndex: number;
   showSelectedCount: boolean;
@@ -211,6 +212,7 @@ const PhotoGridItem = React.memo(function PhotoGridItem({
   index,
   itemSize,
   spacing,
+  isDark,
   isSelected,
   selectedIndex,
   showSelectedCount,
@@ -218,6 +220,12 @@ const PhotoGridItem = React.memo(function PhotoGridItem({
   onToggleSelect,
   renderSelectedOverlay,
 }: PhotoGridItemProps) {
+  const [thumbnailFailed, setThumbnailFailed] = React.useState(false);
+
+  React.useEffect(() => {
+    setThumbnailFailed(false);
+  }, [item.id]);
+
   return (
     <View
       style={[
@@ -229,14 +237,28 @@ const PhotoGridItem = React.memo(function PhotoGridItem({
         },
       ]}
     >
-      <Image
-        source={{ uri: item.uri }}
-        style={styles.photoImage}
-        contentFit="cover"
-        transition={0}
-        cachePolicy="disk"
-        recyclingKey={`grid-${item.id}`}
-      />
+      {thumbnailFailed ? (
+        <View
+          style={[
+            styles.thumbnailFallback,
+            {
+              backgroundColor: isDark ? mediaPickerColors.slate[800] : mediaPickerColors.slate[100],
+            },
+          ]}
+        >
+          <Icon name="broken-image" size={24} color={mediaPickerColors.slate[400]} />
+        </View>
+      ) : (
+        <Image
+          source={{ uri: item.uri }}
+          style={styles.photoImage}
+          contentFit="cover"
+          transition={0}
+          cachePolicy="disk"
+          recyclingKey={`grid-${item.id}`}
+          onError={() => setThumbnailFailed(true)}
+        />
+      )}
 
       <Pressable onPress={() => onPress(item, index)} style={StyleSheet.absoluteFill} />
 
@@ -306,6 +328,7 @@ export function PhotoAlbumGrid({
   onSelectionChange,
   onPermissionDenied,
   onLoadingChange,
+  onError,
   renderSelectedOverlay,
   renderToolbar,
 }: PhotoAlbumGridProps) {
@@ -332,8 +355,10 @@ export function PhotoAlbumGrid({
     hasMore,
     permissionStatus,
     permissionCanAskAgain,
+    accessPrivileges,
     error,
     requestPermission,
+    manageLimitedAccess,
     loadMore,
     refresh,
     toggleSelection,
@@ -396,6 +421,10 @@ export function PhotoAlbumGrid({
   React.useEffect(() => {
     onSelectionChange?.(selectedPhotos);
   }, [selectedPhotos, onSelectionChange]);
+
+  React.useEffect(() => {
+    if (error) onError?.(error);
+  }, [error, onError]);
 
   // 计算每个 item 的尺寸（正方形，铺满宽度）
   const itemSize = useMemo(() => {
@@ -580,6 +609,7 @@ export function PhotoAlbumGrid({
           index={index}
           itemSize={itemSize}
           spacing={spacing}
+          isDark={isDark}
           isSelected={selectedIdSet.has(item.id)}
           selectedIndex={selectedIndexMap.get(item.id) || 0}
           showSelectedCount={showSelectedCount}
@@ -592,6 +622,7 @@ export function PhotoAlbumGrid({
     [
       itemSize,
       spacing,
+      isDark,
       selectedIdSet,
       selectedIndexMap,
       showSelectedCount,
@@ -734,6 +765,22 @@ export function PhotoAlbumGrid({
   /**
    * 权限请求界面
    */
+  if (error) {
+    return (
+      <Center style={styles.errorContainer}>
+        <Icon name="error-outline" size={48} color={mediaPickerColors.error.DEFAULT} />
+        <AppText size="md" style={{ marginTop: 12, color: mediaPickerColors.slate[500] }}>
+          {error.message}
+        </AppText>
+        <AppPressable onPress={() => void refresh()} style={styles.retryButton}>
+          <AppText size="md" style={{ color: mediaPickerColors.primary[500] }}>
+            {resolvedUiConfig.texts.retryButton}
+          </AppText>
+        </AppPressable>
+      </Center>
+    );
+  }
+
   if (permissionStatus === null) {
     return (
       <View style={styles.container}>
@@ -748,7 +795,7 @@ export function PhotoAlbumGrid({
     );
   }
 
-  if (permissionStatus !== 'granted') {
+  if (permissionStatus !== 'granted' || accessPrivileges === 'none') {
     const shouldOpenSettings = permissionCanAskAgain === false;
     const permissionButtonText = shouldOpenSettings
       ? resolvedUiConfig.texts.permissionOpenSettingsButton
@@ -810,24 +857,53 @@ export function PhotoAlbumGrid({
     );
   }
 
-  if (error) {
-    return (
-      <Center style={styles.errorContainer}>
-        <Icon name="error-outline" size={48} color={mediaPickerColors.error.DEFAULT} />
-        <AppText size="md" style={{ marginTop: 12, color: mediaPickerColors.slate[500] }}>
-          {error.message}
-        </AppText>
-        <AppPressable onPress={refresh} style={styles.retryButton}>
-          <AppText size="md" style={{ color: mediaPickerColors.primary[500] }}>
-            {resolvedUiConfig.texts.retryButton}
-          </AppText>
-        </AppPressable>
-      </Center>
-    );
-  }
-
   return (
     <View style={styles.container}>
+      {accessPrivileges === 'limited' ? (
+        <View
+          style={[
+            styles.limitedAccessBanner,
+            {
+              backgroundColor: isDark ? mediaPickerColors.slate[800] : mediaPickerColors.slate[100],
+              borderBottomColor: isDark
+                ? mediaPickerColors.slate[700]
+                : mediaPickerColors.slate[200],
+            },
+          ]}
+        >
+          <View style={styles.limitedAccessContent}>
+            <Icon name="verified-user" size={18} color={mediaPickerColors.primary[500]} />
+            <View style={styles.limitedAccessCopy}>
+              <AppText
+                size="sm"
+                weight="semibold"
+                style={{
+                  color: isDark ? mediaPickerColors.slate[100] : mediaPickerColors.slate[700],
+                }}
+              >
+                {resolvedUiConfig.texts.limitedAccessTitle}
+              </AppText>
+              <AppText
+                size="xs"
+                style={{
+                  color: isDark ? mediaPickerColors.slate[400] : mediaPickerColors.slate[500],
+                }}
+              >
+                {resolvedUiConfig.texts.limitedAccessDescription}
+              </AppText>
+            </View>
+          </View>
+          <AppPressable
+            onPress={() => void manageLimitedAccess()}
+            style={styles.limitedAccessAction}
+          >
+            <AppText size="sm" weight="semibold" style={{ color: mediaPickerColors.primary[500] }}>
+              {resolvedUiConfig.texts.limitedAccessManageButton}
+            </AppText>
+          </AppPressable>
+        </View>
+      ) : null}
+
       {initialLoading && photos.length === 0 ? (
         <View style={styles.loadingContainer}>
           <PhotoAlbumGridPlaceholder
@@ -842,6 +918,7 @@ export function PhotoAlbumGrid({
 
       {/* 照片网格 */}
       <FlashList
+        style={styles.grid}
         data={photos}
         renderItem={renderItem}
         keyExtractor={item => item.id}
@@ -1053,6 +1130,38 @@ const styles = StyleSheet.create({
   photoImage: {
     width: '100%',
     height: '100%',
+  },
+  thumbnailFallback: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: mediaPickerColors.slate[100],
+  },
+  grid: {
+    flex: 1,
+  },
+  limitedAccessBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  limitedAccessContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  limitedAccessCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  limitedAccessAction: {
+    flexShrink: 1,
+    paddingVertical: 4,
   },
   selectedOverlay: {
     ...StyleSheet.absoluteFillObject,

@@ -84,6 +84,14 @@ export interface PhotoAlbumUiTexts {
   loadPhotosError?: string;
   /** 加载更多失败提示 */
   loadMorePhotosError?: string;
+  /** 有限相册访问提示标题 */
+  limitedAccessTitle?: string;
+  /** 有限相册访问提示说明 */
+  limitedAccessDescription?: string;
+  /** 管理有限相册访问范围的操作文案 */
+  limitedAccessManageButton?: string;
+  /** 打开系统媒体访问管理器失败提示 */
+  limitedAccessManageError?: string;
 }
 
 export interface PhotoAlbumUiTheme {
@@ -292,6 +300,8 @@ export interface PhotoAlbumGridProps extends PhotoAlbumOptions {
   onSelectionChange?: (selectedPhotos: PhotoAlbumItem[]) => void;
   /** 权限被拒绝回调 */
   onPermissionDenied?: () => void;
+  /** 相册权限、媒体读取或访问范围管理失败回调 */
+  onError?: (error: Error) => void;
   /** 加载状态变更回调 */
   onLoadingChange?: (loading: boolean) => void;
   /** 自定义渲染选中遮罩 */

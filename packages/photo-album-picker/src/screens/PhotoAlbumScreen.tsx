@@ -147,6 +147,12 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
     navigation?.goBack();
   }, [callbackId, navigation]);
 
+  const handlePickerError = React.useCallback((error: Error) => {
+    console.warn('[PhotoAlbum] picker:error', {
+      message: error.message,
+    });
+  }, []);
+
   React.useEffect(() => {
     return () => {
       clearPhotoAlbumCompleteCallback(callbackId);
@@ -216,6 +222,7 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
           // 可以在这里显示提示或跳转设置
           console.log('权限被拒绝');
         }}
+        onError={handlePickerError}
       />
     </AppScreen>
   );

@@ -53,6 +53,10 @@ export const DEFAULT_PHOTO_ALBUM_UI_TEXTS: Required<PhotoAlbumUiTexts> = {
   permissionCheckError: '检查权限失败',
   loadPhotosError: '加载照片失败',
   loadMorePhotosError: '加载更多照片失败',
+  limitedAccessTitle: '仅显示已允许访问的照片和视频',
+  limitedAccessDescription: '你可以管理照片访问范围，选择更多照片或视频。',
+  limitedAccessManageButton: '管理照片',
+  limitedAccessManageError: '无法管理照片访问范围，请稍后重试',
 };
 export const DEFAULT_PHOTO_ALBUM_UI_THEME: Required<PhotoAlbumUiTheme> = {
   permissionButtonBackgroundColor: mediaPickerColors.primary[500],
