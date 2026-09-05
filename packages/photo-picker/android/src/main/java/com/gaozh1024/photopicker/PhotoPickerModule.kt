@@ -143,7 +143,10 @@ class PhotoPickerModule : Module() {
   }
 
   private fun validateSelectionLimit(options: PhotoPickerContractOptions, backend: PickerBackend) {
-    if (!options.allowsMultiple || options.maxSelection <= 1 || backend.source != "android-photo-picker") return
+    if (!options.allowsMultipleSelection ||
+      options.maxSelection <= 1 ||
+      backend.source != "android-photo-picker"
+    ) return
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
 
     val systemLimit = MediaStore.getPickImagesMaxLimit()
