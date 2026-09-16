@@ -153,10 +153,15 @@ export function SwipeActionRow({
     translateX.value = withTiming(target, { duration: DEFAULT_TIMING_DURATION });
   }, [actionTotalWidth, canSwipe, isOpen, shouldAnimate, translateX]);
 
+  // .runOnJS(true)：本包经 tsup/esbuild 打包，函数体内的 'worklet' 指令会被剥掉，
+  // 回调实际只能跑在 JS 线程。不显式声明的话，RNGH 每个挂载的 GestureDetector
+  // 都会在 DEV 下刷一条 "None of the callbacks in the gesture are worklets" 警告
+  // （流水列表每行一个 SwipeActionRow，一次几十条）。
   const gesture = useMemo(
     () =>
       Gesture.Pan()
         .enabled(canSwipe)
+        .runOnJS(true)
         .activeOffsetX([-8, 8])
         .onUpdate(event => {
           const min = -actionTotalWidth - (shouldAnimate ? overshoot : 0);

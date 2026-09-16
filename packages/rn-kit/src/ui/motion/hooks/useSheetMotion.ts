@@ -198,7 +198,13 @@ export function useSheetMotion({
   );
 
   const gesture = useMemo(() => {
-    const pan = Gesture.Pan().enabled(visible && closeOnSwipe);
+    // .runOnJS(true)：tsup/esbuild 打包会剥掉函数体内的 'worklet' 指令（下方回调里
+    // 写了也不会生效），回调实际跑在 JS 线程。显式声明既消除 RNGH 的 DEV 警告
+    // （PageDrawer / BottomSheetModal 每次挂载各一条），也把运行线程固定下来，
+    // 避免未来构建链路变化导致线程漂移。
+    const pan = Gesture.Pan()
+      .enabled(visible && closeOnSwipe)
+      .runOnJS(true);
 
     if (placement === 'bottom') {
       pan.activeOffsetY([6, Number.MAX_SAFE_INTEGER]);
