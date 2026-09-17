@@ -1,6 +1,8 @@
 package com.gaozh1024.photopicker
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
+import androidx.activity.result.contract.ActivityResultContracts
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -121,12 +123,54 @@ class PhotoPickerBehaviorTest {
       VendorModeCapability("photo", false, VendorModeState.SUPPORTED, 1),
       VendorModeCapability("photo", true, VendorModeState.UNKNOWN, null),
       VendorModeCapability("video", false, VendorModeState.UNSUPPORTED, null),
-    ))
+    ), { _, _, _ -> Intent(Intent.ACTION_PICK) })
     assertNotNull(adapter.verifiedCapability("photo", false))
     assertNull(adapter.verifiedCapability("photo", true))
     assertNull(adapter.verifiedCapability("video", false))
     assertNull(adapter.verifiedCapability("video", true))
     assertEquals("post-validation", adapter.modes[1].selectionLimit)
+  }
+
+  @Test
+  fun registryDelegatesToSelectedAdapterAndNormalizesSingleSelection() {
+    val adapter = VendorGalleryAdapter("test-gallery", Intent.ACTION_GET_CONTENT, { _, _, _ -> true }, listOf(
+      VendorModeCapability("video", false, VendorModeState.SUPPORTED, 1),
+      VendorModeCapability("video", true, VendorModeState.SUPPORTED, null),
+    ), { media, multiple, max ->
+      Intent(Intent.ACTION_GET_CONTENT).setPackage("test.gallery").apply {
+        type = "$media/*"
+        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
+        putExtra("limit", max)
+      }
+    })
+    val registry = VendorGalleryRegistry(listOf(adapter))
+    for (max in listOf(1, 4)) {
+      val backend = PickerBackend(PhotoPickerContract.BACKEND_VENDOR_GALLERY, adapter.action, adapter.id)
+      val intent = PhotoPickerContract(registry).createIntent(context, options("video", max, true, backend))
+      assertEquals("test.gallery", intent.`package`)
+      assertEquals("video/*", intent.type)
+      assertEquals(max > 1, intent.getBooleanExtra(Intent.EXTRA_ALLOW_MULTIPLE, false))
+      assertEquals(max, intent.getIntExtra("limit", 0))
+    }
+    for (id in listOf(null, "missing")) {
+      assertThrows(IllegalArgumentException::class.java) { registry.createIntent(id, "video", true, 2) }
+    }
+    assertThrows(IllegalArgumentException::class.java) { registry.createIntent(adapter.id, "photo", false, 1) }
+    assertThrows(IllegalArgumentException::class.java) { VendorGalleryRegistry(listOf(adapter, adapter)) }
+  }
+
+  @Test
+  fun registryFiltersModesBeforeMatchingAndKeepsAllEligibleAdapters() {
+    val unknown = VendorGalleryAdapter("unknown", Intent.ACTION_PICK, { _, _, _ ->
+      throw AssertionError("Unverified modes must not be probed")
+    }, listOf(VendorModeCapability("video", true, VendorModeState.UNKNOWN, null)), { _, _, _ -> Intent(Intent.ACTION_PICK) })
+    val supported = unknown.copy(id = "first", modes = listOf(VendorModeCapability("video", true, VendorModeState.SUPPORTED, null)), matches = { _, media, multiple -> media == "video" && multiple })
+    val unavailable = supported.copy(id = "unavailable", matches = { _, _, _ -> false })
+    val second = supported.copy(id = "second")
+    val registry = VendorGalleryRegistry(listOf(unknown, unavailable, supported, second))
+    assertEquals(listOf("first", "second"), registry.resolveAllVerified(context, "video", true).map { it.first.id })
+    assertTrue(registry.resolveAllVerified(context, "photo", true).isEmpty())
+    assertThrows(IllegalArgumentException::class.java) { registry.createIntent("unknown", "video", true, 2) }
   }
 
   @Test
@@ -278,6 +322,143 @@ class PhotoPickerBehaviorTest {
     assertEquals(PhotoPickerContractResult.Cancelled(vendor), contract.parseResult(options(backend = vendor), Activity.RESULT_CANCELED, null))
   }
 
+  @Test
+  fun absentStandardPickerDoesNotBecomePhotoCandidate() {
+    assertNull(PhotoPickerContract.probeStandardBackend(context, "photo"))
+    assertTrue(plan("system", false).isEmpty())
+    assertEquals(listOf(document), plan("system", true).map { field(it, "backend") })
+  }
+
+  @Test
+  @Config(sdk = [33])
+  fun platformProbeClassifiesActualAction() {
+    assertEquals(PickerBackend(PhotoPickerContract.BACKEND_STANDARD, MediaStore.ACTION_PICK_IMAGES), PhotoPickerContract.probeStandardBackend(context, "all"))
+  }
+
+  @Test
+  fun oemProbeAndPlanReportFallbackAndPreservePreference() {
+    registerSystemFallback()
+    registerGallery()
+    val fallback = PickerBackend(PhotoPickerContract.BACKEND_SYSTEM_FALLBACK, ActivityResultContracts.PickVisualMedia.ACTION_SYSTEM_FALLBACK_PICK_IMAGES)
+    assertEquals(fallback, PhotoPickerContract.probeStandardBackend(context, "photo"))
+    assertEquals(listOf(fallback, vendor, document), plan("auto", true).map { field(it, "backend") })
+    assertEquals(listOf(vendor, fallback), plan("gallery", false).map { field(it, "backend") })
+    assertEquals(listOf(fallback), plan("system", false).map { field(it, "backend") })
+    val contract = PhotoPickerContract()
+    val input = options(backend = fallback)
+    assertEquals(fallback.action, contract.createIntent(context, input).action)
+    assertEquals(PhotoPickerContractResult.Cancelled(fallback), contract.parseResult(input, Activity.RESULT_CANCELED, null))
+  }
+
+  @Test
+  fun finalIntentRejectsUnauthorizedDocumentFallbackForEveryStandardSource() {
+    for (source in listOf(PhotoPickerContract.BACKEND_STANDARD, PhotoPickerContract.BACKEND_SYSTEM_FALLBACK, PhotoPickerContract.BACKEND_OPEN_DOCUMENT)) {
+      for (multiple in listOf(false, true)) {
+        val contract = PhotoPickerContract()
+        val input = options(max = 4, multiple = multiple, backend = PickerBackend(source, MediaStore.ACTION_PICK_IMAGES))
+        assertEquals(Intent.ACTION_OPEN_DOCUMENT, contract.createIntent(context, input).action)
+        assertThrows(ActivityNotFoundException::class.java) { contract.createIntent(context, input.copy(allowDocumentFallback = false)) }
+        assertEquals(PhotoPickerContractResult.Cancelled(vendor), contract.parseResult(options(backend = vendor), Activity.RESULT_CANCELED, null))
+      }
+    }
+  }
+
+  @Test
+  fun requestCarriesFallbackAuthorizationThroughToContract() {
+    registerSystemFallback()
+    val module = PhotoPickerModule()
+    val normalized = normalize(mapOf("android" to mapOf("allowDocumentFallback" to false)))
+    val candidate = plan("system", false).first()
+    val request = module.javaClass.declaredMethods.first { it.name == "buildRequest" }.apply { isAccessible = true }.invoke(module, normalized, candidate)
+    val input = request.javaClass.getDeclaredMethod("toContractOptions").apply { isAccessible = true }.invoke(request) as PhotoPickerContractOptions
+    assertFalse(input.allowDocumentFallback)
+    shadowOf(context.packageManager).setResolveInfosForIntent(Intent(ActivityResultContracts.PickVisualMedia.ACTION_SYSTEM_FALLBACK_PICK_IMAGES), emptyList())
+    assertThrows(ActivityNotFoundException::class.java) { PhotoPickerContract().createIntent(context, input) }
+  }
+
+  @Test
+  fun oemPickerPreservesMediaAndSelectionModes() {
+    registerSystemFallback()
+    for (media in listOf("photo", "video", "all")) {
+      val backend = requireNotNull(PhotoPickerContract.probeStandardBackend(context, media))
+      for (multiple in listOf(false, true)) {
+        val intent = PhotoPickerContract().createIntent(context, options(media, 4, multiple, backend))
+        assertEquals(ActivityResultContracts.PickVisualMedia.ACTION_SYSTEM_FALLBACK_PICK_IMAGES, intent.action)
+        assertEquals("com.example.systempicker", intent.component?.packageName)
+        assertEquals(when (media) { "photo" -> "image/*"; "video" -> "video/*"; else -> null }, intent.type)
+        val maxExtra = ActivityResultContracts.PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX
+        assertEquals(multiple, intent.hasExtra(maxExtra))
+        if (multiple) assertEquals(4, intent.getIntExtra(maxExtra, 0))
+      }
+    }
+  }
+
+  @Test
+  @Config(sdk = [33])
+  fun platformPickerTakesPriorityOverOemPicker() {
+    registerSystemFallback()
+    val backend = requireNotNull(PhotoPickerContract.probeStandardBackend(context, "video"))
+    assertEquals(PhotoPickerContract.BACKEND_STANDARD, backend.source)
+    assertEquals(MediaStore.ACTION_PICK_IMAGES, PhotoPickerContract().createIntent(context, options("video", 4, true, backend)).action)
+  }
+
+  @Test
+  fun oemResultDoesNotClaimVerifiedNativeLimit() {
+    registerSystemFallback()
+    val module = PhotoPickerModule()
+    val normalized = normalize(mapOf("mediaType" to "photo"))
+    val candidate = plan("system", false).first()
+    val request = module.javaClass.declaredMethods.first { it.name == "buildRequest" }.apply { isAccessible = true }.invoke(module, normalized, candidate)
+    val backend = field(candidate, "backend") as PickerBackend
+    val result = module.javaClass.declaredMethods.first { it.name == "backendInfoMap" }.apply { isAccessible = true }.invoke(module, request, backend) as Map<*, *>
+    assertEquals("post-validation", result["selectionLimit"])
+    assertEquals(false, result["orderedSelectionGuaranteed"])
+  }
+
+  @Test
+  fun orderedSelectionIsForwardedToOemPicker() {
+    registerSystemFallback()
+    assertOrderedSelection(ActivityResultContracts.PickVisualMedia.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER)
+  }
+
+  @Test
+  @Config(sdk = [35])
+  fun orderedSelectionIsForwardedToPlatformPicker() {
+    assertOrderedSelection(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER)
+  }
+
+  private fun assertOrderedSelection(extra: String) {
+    val backend = requireNotNull(PhotoPickerContract.probeStandardBackend(context, "photo"))
+    for (ordered in listOf(false, true)) {
+      val intent = PhotoPickerContract().createIntent(context, options(max = 4, multiple = true, backend = backend).copy(orderedSelection = ordered))
+      assertTrue(intent.hasExtra(extra))
+      assertEquals(ordered, intent.getBooleanExtra(extra, !ordered))
+    }
+  }
+
+  private fun plan(preference: String, allowDocumentFallback: Boolean): List<*> {
+    val normalized = normalize(mapOf("mediaType" to "photo", "android" to mapOf("preference" to preference, "allowDocumentFallback" to allowDocumentFallback)))
+    return PhotoPickerModule::class.java.declaredMethods.first { it.name == "resolvePlan" }.apply { isAccessible = true }
+      .invoke(PhotoPickerModule(), normalized, context) as List<*>
+  }
+
+  private fun registerSystemFallback() {
+    val info = ResolveInfo().apply {
+      activityInfo = ActivityInfo().apply {
+        packageName = "com.example.systempicker"
+        name = "com.example.systempicker.PickerActivity"
+        enabled = true
+        exported = true
+        applicationInfo = ApplicationInfo().apply {
+          packageName = "com.example.systempicker"
+          flags = ApplicationInfo.FLAG_SYSTEM
+          enabled = true
+        }
+      }
+    }
+    shadowOf(context.packageManager).setResolveInfosForIntent(Intent(ActivityResultContracts.PickVisualMedia.ACTION_SYSTEM_FALLBACK_PICK_IMAGES), listOf(info))
+  }
+
   private val galleryModes = listOf("photo" to false, "photo" to true, "video" to false, "video" to true)
 
   private fun assertNoGalleryModesResolve() {
@@ -329,6 +510,6 @@ class PhotoPickerBehaviorTest {
     }
   }
 
-  private fun field(value: Any, name: String): Any? =
-    value.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(value)
+  private fun field(value: Any?, name: String): Any? =
+    requireNotNull(value).javaClass.getDeclaredField(name).apply { isAccessible = true }.get(value)
 }

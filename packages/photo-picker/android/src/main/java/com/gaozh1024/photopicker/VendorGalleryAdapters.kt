@@ -45,9 +45,9 @@ internal data class VendorModeCapability(
 internal data class VendorGalleryAdapter(
   val id: String,
   val action: String,
-  /** Device condition the adapter matches on (package-level, never Activity class names). */
   val matches: (Context, String, Boolean) -> Boolean,
   val modes: List<VendorModeCapability>,
+  val createIntent: (String, Boolean, Int) -> Intent,
 ) {
   /**
    * Exact mode match; returns null when the requested (mediaType, mode) is not
@@ -56,6 +56,38 @@ internal data class VendorGalleryAdapter(
   fun verifiedCapability(mediaType: String, multiple: Boolean): VendorModeCapability? {
     return modes.firstOrNull {
       it.mediaType == mediaType && it.multiple == multiple && it.state == VendorModeState.SUPPORTED
+    }
+  }
+}
+
+internal class VendorGalleryRegistry(adapters: List<VendorGalleryAdapter>) {
+  private val adapters = adapters.toList()
+
+  init {
+    require(this.adapters.all { it.id.isNotBlank() })
+    require(this.adapters.map { it.id }.distinct().size == this.adapters.size)
+  }
+
+  fun resolveAllVerified(
+    context: Context,
+    mediaType: String,
+    multiple: Boolean,
+  ): List<Pair<VendorGalleryAdapter, VendorModeCapability>> = adapters.mapNotNull { adapter ->
+    adapter.verifiedCapability(mediaType, multiple)?.takeIf {
+      adapter.matches(context, mediaType, multiple)
+    }?.let { adapter to it }
+  }
+
+  fun createIntent(id: String?, mediaType: String, allowsMultiple: Boolean, maxSelection: Int): Intent {
+    require(maxSelection > 0)
+    val adapter = requireNotNull(adapters.firstOrNull { it.id == id }) { "Unknown vendor adapter: $id" }
+    val multiple = allowsMultiple && maxSelection > 1
+    val capability = requireNotNull(adapter.verifiedCapability(mediaType, multiple)) {
+      "Unsupported vendor mode: $id/$mediaType/$multiple"
+    }
+    val limit = if (multiple) capability.verifiedMaxSelection?.let { minOf(maxSelection, it) } ?: maxSelection else 1
+    return adapter.createIntent(mediaType, multiple, limit).also {
+      require(it.action == adapter.action) { "Vendor adapter action mismatch: $id" }
     }
   }
 }
@@ -71,9 +103,10 @@ internal object VendorGalleryAdapters {
       VendorModeCapability("video", multiple = false, VendorModeState.SUPPORTED, verifiedMaxSelection = null),
       VendorModeCapability("video", multiple = true, VendorModeState.SUPPORTED, verifiedMaxSelection = null),
     ),
+    createIntent = { mediaType, multiple, _ -> createHuaweiPickIntent(mediaType, multiple) },
   )
 
-  private val ALL = listOf(HUAWEI_GALLERY)
+  val registry = VendorGalleryRegistry(listOf(HUAWEI_GALLERY))
 
   /**
    * Returns the verified capability for this exact request, or null when no
@@ -86,11 +119,7 @@ internal object VendorGalleryAdapters {
     mediaType: String,
     multiple: Boolean,
   ): Pair<VendorGalleryAdapter, VendorModeCapability>? {
-    return ALL.firstNotNullOfOrNull { adapter ->
-      adapter.verifiedCapability(mediaType, multiple)?.takeIf {
-        adapter.matches(context, mediaType, multiple)
-      }?.let { adapter to it }
-    }
+    return registry.resolveAllVerified(context, mediaType, multiple).firstOrNull()
   }
 
   /**

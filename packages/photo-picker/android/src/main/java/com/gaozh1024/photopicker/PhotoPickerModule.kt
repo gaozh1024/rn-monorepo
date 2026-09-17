@@ -207,6 +207,7 @@ class PhotoPickerModule : Module() {
     val accentColor: Long?,
     val defaultTab: String?,
     val orderedSelection: Boolean,
+    val allowDocumentFallback: Boolean,
   ) {
     fun toContractOptions(): PhotoPickerContractOptions = PhotoPickerContractOptions(
       mediaType = mediaType,
@@ -216,6 +217,7 @@ class PhotoPickerModule : Module() {
       accentColor = accentColor,
       defaultTab = defaultTab,
       orderedSelection = orderedSelection,
+      allowDocumentFallback = allowDocumentFallback,
     )
   }
 
@@ -230,6 +232,7 @@ class PhotoPickerModule : Module() {
       accentColor = normalized.accentColor,
       defaultTab = normalized.defaultTab,
       orderedSelection = normalized.orderedSelection,
+      allowDocumentFallback = normalized.allowDocumentFallback,
     )
   }
 
@@ -296,16 +299,12 @@ class PhotoPickerModule : Module() {
    * vendor mode is unknown skips the vendor adapter entirely instead of being
    * silently downgraded to single-select or a different media type.
    */
-  private fun resolvePlan(normalized: NormalizedOptions): List<Candidate> {
+  private fun resolvePlan(normalized: NormalizedOptions, context: Context = this.context): List<Candidate> {
     val document = Candidate(PickerBackend(PhotoPickerContract.BACKEND_OPEN_DOCUMENT, Intent.ACTION_OPEN_DOCUMENT))
-    val standard = if (standardPhotoPickerAvailable()) {
-      Candidate(PickerBackend(PhotoPickerContract.BACKEND_STANDARD, MediaStore.ACTION_PICK_IMAGES))
-    } else {
-      null
-    }
-    val vendor = VendorGalleryAdapters
-      .resolveVerified(context, normalized.mediaType, normalized.allowsMultipleSelection)
-      ?.let { (adapter, capability) ->
+    val standard = PhotoPickerContract.probeStandardBackend(context, normalized.mediaType)?.let { Candidate(it) }
+    val vendors = VendorGalleryAdapters.registry
+      .resolveAllVerified(context, normalized.mediaType, normalized.allowsMultipleSelection)
+      .map { (adapter, capability) ->
         Candidate(
           PickerBackend(PhotoPickerContract.BACKEND_VENDOR_GALLERY, adapter.action, adapter.id),
           capability,
@@ -314,19 +313,13 @@ class PhotoPickerModule : Module() {
 
     val ordered: List<Candidate> = when (normalized.preference) {
       "system" -> listOfNotNull(standard) + document
-      "gallery" -> listOfNotNull(vendor, standard) + document
-      else -> listOfNotNull(standard, vendor) + document
+      "gallery" -> vendors + listOfNotNull(standard) + document
+      else -> listOfNotNull(standard) + vendors + document
     }
     // The document picker participates only when the caller allows that fallback.
     return ordered
-      .distinctBy { it.backend.source }
+      .distinctBy { it.backend }
       .filter { it.backend.source != PhotoPickerContract.BACKEND_OPEN_DOCUMENT || normalized.allowDocumentFallback }
-  }
-
-  private fun standardPhotoPickerAvailable(): Boolean {
-    // Context variant: covers the platform picker and OEM fallback pickers,
-    // matching what the AndroidX standard chain would actually do.
-    return ActivityResultContracts.PickVisualMedia.isPhotoPickerAvailable(context)
   }
 
   private fun launchFailure(candidate: Candidate, message: String, error: Exception): PickerException {
@@ -403,8 +396,7 @@ class PhotoPickerModule : Module() {
       PhotoPickerContract.BACKEND_STANDARD -> if (isFrameworkPickerAvailable()) "native" else "post-validation"
       PhotoPickerContract.BACKEND_VENDOR_GALLERY ->
         request.vendorCapability?.selectionLimit ?: "post-validation"
-      PhotoPickerContract.BACKEND_OPEN_DOCUMENT -> "post-validation"
-      else -> "native"
+      else -> "post-validation"
     }
     val orderedSelectionGuaranteed =
       backend.source == PhotoPickerContract.BACKEND_STANDARD &&

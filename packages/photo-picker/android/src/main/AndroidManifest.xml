@@ -3,6 +3,9 @@
     <intent>
       <action android:name="android.provider.action.PICK_IMAGES" />
     </intent>
+    <intent>
+      <action android:name="androidx.activity.result.contract.action.PICK_IMAGES" />
+    </intent>
     <!-- Minimal package visibility for the verified vendor gallery adapter
          (huawei-gallery). Never request QUERY_ALL_PACKAGES here. -->
     <package android:name="com.huawei.photos" />

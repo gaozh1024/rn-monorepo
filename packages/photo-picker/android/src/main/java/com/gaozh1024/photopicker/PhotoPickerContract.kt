@@ -1,5 +1,6 @@
 package com.gaozh1024.photopicker
 
+import android.content.ActivityNotFoundException
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -40,6 +41,7 @@ internal data class PhotoPickerContractOptions(
   val accentColor: Long? = null,
   val defaultTab: String? = null,
   val orderedSelection: Boolean = false,
+  val allowDocumentFallback: Boolean = true,
 ) : Serializable
 
 internal sealed class PhotoPickerContractResult {
@@ -64,19 +66,25 @@ internal sealed class PhotoPickerContractResult {
  * Intent that actually got created, so `source` never claims `android-photo-picker`
  * when the request silently degraded to the document picker.
  */
-internal class PhotoPickerContract : AppContextActivityResultContract<PhotoPickerContractOptions, PhotoPickerContractResult> {
+internal class PhotoPickerContract(
+  private val vendorRegistry: VendorGalleryRegistry = VendorGalleryAdapters.registry,
+) : AppContextActivityResultContract<PhotoPickerContractOptions, PhotoPickerContractResult> {
   // The module guarantees a single in-flight picker request, so keeping the
   // backend classified during createIntent for parseResult is safe.
   private var classifiedBackend: PickerBackend? = null
 
   override fun createIntent(context: Context, input: PhotoPickerContractOptions): Intent {
+    classifiedBackend = null
     val intent = when (input.backend.source) {
       BACKEND_VENDOR_GALLERY -> createVendorGalleryIntent(input)
       BACKEND_OPEN_DOCUMENT -> createOpenDocumentIntent(input)
       else -> createStandardIntent(context, input)
     }
+    if (intent.action == Intent.ACTION_OPEN_DOCUMENT && !input.allowDocumentFallback) {
+      throw ActivityNotFoundException("Document fallback is disabled for this request")
+    }
     classifiedBackend = when (input.backend.source) {
-      BACKEND_STANDARD -> classifyStandardIntent(input, intent)
+      BACKEND_STANDARD, BACKEND_SYSTEM_FALLBACK -> classifyStandardIntent(intent)
       else -> input.backend
     }
     return intent
@@ -121,6 +129,7 @@ internal class PhotoPickerContract : AppContextActivityResultContract<PhotoPicke
       else -> ActivityResultContracts.PickVisualMedia.ImageAndVideo
     }
     val builder = PickVisualMediaRequest.Builder().setMediaType(mediaType)
+      .setOrderedSelection(input.orderedSelection)
     input.defaultTab?.let { tab ->
       builder.setDefaultTab(
         if (tab == "albums") {
@@ -145,10 +154,11 @@ internal class PhotoPickerContract : AppContextActivityResultContract<PhotoPicke
   }
 
   private fun createVendorGalleryIntent(input: PhotoPickerContractOptions): Intent {
-    require(input.backend.vendorAdapterId == "huawei-gallery")
-    return VendorGalleryAdapters.createHuaweiPickIntent(
+    return vendorRegistry.createIntent(
+      input.backend.vendorAdapterId,
       input.mediaType,
-      input.allowsMultipleSelection && input.maxSelection > 1,
+      input.allowsMultipleSelection,
+      input.maxSelection,
     )
   }
 
@@ -172,21 +182,27 @@ internal class PhotoPickerContract : AppContextActivityResultContract<PhotoPicke
     return intent
   }
 
-  private fun classifyStandardIntent(input: PhotoPickerContractOptions, intent: Intent): PickerBackend {
-    val source = when (intent.action) {
-      MediaStore.ACTION_PICK_IMAGES -> BACKEND_STANDARD
-      Intent.ACTION_OPEN_DOCUMENT -> BACKEND_OPEN_DOCUMENT
-      ActivityResultContracts.PickVisualMedia.ACTION_SYSTEM_FALLBACK_PICK_IMAGES -> BACKEND_SYSTEM_FALLBACK
-      else -> input.backend.source
-    }
-    return PickerBackend(source, intent.action ?: input.backend.action, input.backend.vendorAdapterId)
-  }
-
   companion object {
     const val BACKEND_STANDARD = "android-photo-picker"
     const val BACKEND_SYSTEM_FALLBACK = "android-system-fallback"
     const val BACKEND_VENDOR_GALLERY = "android-vendor-gallery"
     const val BACKEND_OPEN_DOCUMENT = "android-open-document"
+
+    fun probeStandardBackend(context: Context, mediaType: String): PickerBackend? {
+      val input = PhotoPickerContractOptions(mediaType, 1, false, PickerBackend(BACKEND_STANDARD, MediaStore.ACTION_PICK_IMAGES))
+      val intent = PhotoPickerContract().createStandardIntent(context, input)
+      return classifyStandardIntent(intent).takeUnless { it.source == BACKEND_OPEN_DOCUMENT }
+    }
+
+    private fun classifyStandardIntent(intent: Intent): PickerBackend {
+      val source = when (intent.action) {
+        MediaStore.ACTION_PICK_IMAGES -> BACKEND_STANDARD
+        Intent.ACTION_OPEN_DOCUMENT -> BACKEND_OPEN_DOCUMENT
+        ActivityResultContracts.PickVisualMedia.ACTION_SYSTEM_FALLBACK_PICK_IMAGES -> BACKEND_SYSTEM_FALLBACK
+        else -> throw ActivityNotFoundException("Unknown standard picker action: ${intent.action}")
+      }
+      return PickerBackend(source, requireNotNull(intent.action))
+    }
 
     fun systemPickImagesMaxLimit(): Int =
       if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
