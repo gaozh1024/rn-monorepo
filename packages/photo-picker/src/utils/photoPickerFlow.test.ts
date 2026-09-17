@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { PickerBackend, PhotoPickerNativeErrorCode, PhotoPickerResult } from '../types';
+import type {
+  PickerBackend,
+  PickerSource,
+  PhotoPickerNativeErrorCode,
+  PhotoPickerResult,
+} from '../types';
 import { createCroppedPhotoAlbumItem, normalizeOpenOptions } from './photoPickerFlow';
+import {
+  accentColorLuminance,
+  parseAccentColor,
+  validatePickerOptions,
+} from './pickerOptionsValidation';
 
 describe('photo picker options', () => {
   it('defaults to mixed media multi-select with a maximum of nine items', () => {
@@ -46,6 +56,38 @@ describe('photo picker options', () => {
       allowsMultipleSelection: false,
     });
   });
+
+  it('passes split photo and video entries through the route normalization unchanged', () => {
+    // Photo entry with one remaining slot: single-select, gallery preference.
+    expect(
+      normalizeOpenOptions({
+        mediaType: 'photo',
+        maxSelection: 1,
+        allowsMultipleSelection: false,
+        android: { preference: 'gallery', allowDocumentFallback: true },
+      } as never)
+    ).toMatchObject({
+      mediaType: 'photo',
+      maxSelection: 1,
+      allowsMultipleSelection: false,
+      android: { preference: 'gallery', allowDocumentFallback: true },
+    });
+
+    // Video entry with multiple remaining slots: multi-select request.
+    expect(
+      normalizeOpenOptions({
+        mediaType: 'video',
+        maxSelection: 3,
+        allowsMultipleSelection: true,
+        android: { preference: 'gallery' },
+      } as never)
+    ).toMatchObject({
+      mediaType: 'video',
+      maxSelection: 3,
+      allowsMultipleSelection: true,
+      android: { preference: 'gallery' },
+    });
+  });
 });
 
 describe('picker result contract', () => {
@@ -85,13 +127,88 @@ describe('picker result contract', () => {
       'PICKER_BUSY',
       'PICKER_LAUNCH_FAILED',
       'PICKER_SELECTION_LIMIT_UNSUPPORTED',
+      'PICKER_INVALID_OPTIONS',
+      'PICKER_UNAVAILABLE',
+      'PICKER_SELECTION_LIMIT_EXCEEDED',
+      'PICKER_UNSUPPORTED_MEDIA',
+      'PICKER_READ_FAILED',
+      'PICKER_CACHE_FAILED',
+      'PICKER_INTERRUPTED',
     ];
 
-    expect(errorCodes).toEqual([
-      'PICKER_BUSY',
-      'PICKER_LAUNCH_FAILED',
-      'PICKER_SELECTION_LIMIT_UNSUPPORTED',
-    ]);
+    expect(errorCodes).toHaveLength(10);
+  });
+});
+
+describe('picker option validation', () => {
+  it('rejects non-integer, zero, and negative maxSelection before reaching native', () => {
+    for (const maxSelection of [3.9, 0, -2, Number.NaN]) {
+      expect(() => validatePickerOptions({ maxSelection })).toThrowError(/maxSelection/);
+      try {
+        validatePickerOptions({ maxSelection });
+      } catch (error) {
+        expect((error as { code?: string }).code).toBe('PICKER_INVALID_OPTIONS');
+      }
+    }
+  });
+
+  it('normalizes defaults for a plain pickMedia call', () => {
+    const { nativeOptions, jsIgnoredUiOptions } = validatePickerOptions();
+    expect(nativeOptions).toMatchObject({
+      mediaType: 'all',
+      maxSelection: 1,
+      allowsMultipleSelection: false,
+      cacheMode: 'copy',
+      android: { preference: 'auto', allowDocumentFallback: true },
+    });
+    expect(nativeOptions.nativeUi.accentColor).toBeUndefined();
+    expect(jsIgnoredUiOptions).toEqual([]);
+  });
+
+  it('rejects malformed accent colors and drops too-dark ones as ignored', () => {
+    expect(() => parseAccentColor('red')).toThrowError(/accentColor/);
+    expect(() => parseAccentColor('#12345')).toThrowError(/accentColor/);
+    // Maroon (#800000) has luminance ~0.046, far below the 0.5 platform floor.
+    expect(accentColorLuminance('#800000')).toBeLessThan(0.5);
+    expect(parseAccentColor('#800000')).toEqual({ ignored: true });
+    // Gold (#FFD700) passes the luminance floor.
+    expect(accentColorLuminance('#FFD700')).toBeGreaterThanOrEqual(0.5);
+    expect(parseAccentColor('#FFD700')).toEqual({ color: 0xffd700, ignored: false });
+  });
+
+  it('drops a dark accent color at the options level and records it as ignored', () => {
+    const { nativeOptions, jsIgnoredUiOptions } = validatePickerOptions({
+      nativeUi: { accentColor: '#800000', defaultTab: 'albums', orderedSelection: true },
+    });
+    expect(nativeOptions.nativeUi.accentColor).toBeUndefined();
+    expect(nativeOptions.nativeUi.defaultTab).toBe('albums');
+    expect(nativeOptions.nativeUi.orderedSelection).toBe(true);
+    expect(jsIgnoredUiOptions).toEqual(['accentColor']);
+  });
+
+  it('rejects unknown preference, mediaType, cacheMode, and defaultTab values', () => {
+    expect(() => validatePickerOptions({ android: { preference: 'kimi' as 'auto' } })).toThrowError(
+      /preference/
+    );
+    expect(() => validatePickerOptions({ mediaType: 'file' as 'all' })).toThrowError(/mediaType/);
+    expect(() => validatePickerOptions({ cacheMode: 'reference' as 'copy' })).toThrowError(
+      /cacheMode/
+    );
+    expect(() => validatePickerOptions({ nativeUi: { defaultTab: 'albums' } })).not.toThrow();
+    expect(() =>
+      validatePickerOptions({ nativeUi: { defaultTab: 'grid' as 'photos' } })
+    ).toThrowError(/defaultTab/);
+  });
+
+  it('keeps the new backend sources part of the PickerSource union', () => {
+    const sources: PickerSource[] = [
+      'android-photo-picker',
+      'android-system-fallback',
+      'android-vendor-gallery',
+      'android-open-document',
+      'ios-phpicker',
+    ];
+    expect(new Set(sources).size).toBe(5);
   });
 });
 

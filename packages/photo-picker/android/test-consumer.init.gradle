@@ -1,0 +1,13 @@
+def sourceDirectory = initscript.sourceFile.parentFile.canonicalFile
+
+gradle.settingsEvaluated { settings ->
+  if (settings.findProject(':app') == null) {
+    return
+  }
+  def picker = settings.findProject(':gaozh1024-photo-picker')
+  if (picker == null) {
+    throw new GradleException('Consumer must autolink @gaozh1024/photo-picker')
+  }
+  picker.projectDir = sourceDirectory
+  println("photo-picker current source: ${picker.projectDir}")
+}

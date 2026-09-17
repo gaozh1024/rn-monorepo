@@ -120,6 +120,8 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
         maxSelection: options.maxSelection,
         allowsMultipleSelection: options.allowsMultipleSelection,
         cacheMode: 'copy',
+        android: options.android,
+        nativeUi: options.nativeUi,
       });
       if (result.cancelled) {
         close();
