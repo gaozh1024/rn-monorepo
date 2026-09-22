@@ -190,3 +190,22 @@ describe('isPhotoPickerNativeError', () => {
     expect(isPhotoPickerNativeError({ code: 'SOME_OTHER_ERROR' })).toBe(false);
   });
 });
+
+describe('selection limit bounds', () => {
+  it.each(['ios', 'android'] as const)(
+    'rejects unsafe limits before native calls on %s',
+    async platform => {
+      Platform.OS = platform;
+      for (const maxSelection of [1e20, Number.MAX_SAFE_INTEGER + 1, Infinity, -Infinity]) {
+        expect(() => pickMedia({ maxSelection })).toThrowError(
+          expect.objectContaining({ code: 'PICKER_INVALID_OPTIONS' })
+        );
+        await expect(getCapabilities({ maxSelection })).rejects.toMatchObject({
+          code: 'PICKER_INVALID_OPTIONS',
+        });
+      }
+      expect(nativeModule.pickMedia).not.toHaveBeenCalled();
+      expect(nativeModule.getCapabilities).not.toHaveBeenCalled();
+    }
+  );
+});

@@ -5,7 +5,11 @@ import type {
   PhotoPickerNativeErrorCode,
   PhotoPickerResult,
 } from '../types';
-import { createCroppedPhotoAlbumItem, normalizeOpenOptions } from './photoPickerFlow';
+import {
+  createCroppedPhotoAlbumItem,
+  getPhotoPickerAssetUris,
+  normalizeOpenOptions,
+} from './photoPickerFlow';
 import {
   accentColorLuminance,
   parseAccentColor,
@@ -209,6 +213,32 @@ describe('picker option validation', () => {
       'ios-phpicker',
     ];
     expect(new Set(sources).size).toBe(5);
+  });
+});
+
+describe('rejected media batches', () => {
+  it('collects every copied URI once for cache release', () => {
+    expect(
+      getPhotoPickerAssetUris([
+        {
+          id: 'one',
+          uri: 'file:///one',
+          localUri: 'file:///one',
+          mediaType: 'photo',
+          width: 1,
+          height: 1,
+        },
+        {
+          id: 'two',
+          uri: 'file:///two',
+          localUri: 'file:///two-copy',
+          mediaType: 'video',
+          width: 1,
+          height: 1,
+        },
+        { id: 'three', uri: 'file:///two-copy', mediaType: 'photo', width: 1, height: 1 },
+      ])
+    ).toEqual(['file:///one', 'file:///two', 'file:///two-copy']);
   });
 });
 

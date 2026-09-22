@@ -1,14 +1,15 @@
 import React from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MEDIA_PICKER_ROUTES } from '../constants';
 import {
   clearPhotoAlbumCompleteCallback,
   getPhotoAlbumCompleteCallback,
 } from '../internal/photoPickerCallbackRegistry';
-import { pickMedia } from '../native';
+import { pickMedia, releaseMedia } from '../native';
 import type { MediaPickerRouteNames, PhotoAlbumItem, PhotoAlbumScreenProps } from '../types';
 import {
   formatPhotoPickerText,
+  getPhotoPickerAssetUris,
   normalizeOpenOptions,
   resolvePhotoPickerUiConfig,
 } from '../utils/photoPickerFlow';
@@ -65,7 +66,7 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
   }, [callbackId, navigation]);
 
   const complete = React.useCallback(
-    (assets: PhotoAlbumItem[]) => {
+    async (assets: PhotoAlbumItem[]) => {
       const overLimitVideo =
         options.maxVideoDuration == null
           ? undefined
@@ -75,8 +76,8 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
             );
 
       if (overLimitVideo) {
-        Alert.alert(
-          uiConfig.texts.durationLimitAlertTitle,
+        await releaseMedia(getPhotoPickerAssetUris(assets)).catch(() => undefined);
+        setErrorMessage(
           formatPhotoPickerText(uiConfig.texts.durationLimitAlertMessage, {
             maxDuration: options.maxVideoDuration!,
           })
@@ -93,7 +94,7 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
           quality: options.quality,
           callbackId,
           routeNames,
-          uiConfig: options.uiConfig,
+          uiConfig,
         });
         return;
       }
@@ -102,14 +103,7 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
       clearPhotoAlbumCompleteCallback(callbackId);
       navigation?.goBack();
     },
-    [
-      callbackId,
-      navigation,
-      options,
-      routeNames,
-      uiConfig.texts.durationLimitAlertMessage,
-      uiConfig.texts.durationLimitAlertTitle,
-    ]
+    [callbackId, navigation, options, routeNames, uiConfig.texts.durationLimitAlertMessage]
   );
 
   const openPicker = React.useCallback(async () => {
@@ -127,7 +121,7 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
         close();
         return;
       }
-      complete(result.assets);
+      await complete(result.assets);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : uiConfig.texts.openAlbumError);
     }
@@ -157,7 +151,7 @@ export function PhotoAlbumScreen({ route, navigation }: PhotoAlbumScreenProps) {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#3b82f6" />
+      {!errorMessage ? <ActivityIndicator size="large" color="#3b82f6" /> : null}
       <Text style={styles.title}>
         {errorMessage ? uiConfig.texts.openAlbumError : uiConfig.texts.albumTitle}
       </Text>

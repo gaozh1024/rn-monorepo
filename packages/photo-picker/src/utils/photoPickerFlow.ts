@@ -72,6 +72,16 @@ export function formatPhotoPickerText(
   return template.replace(/\{(\w+)\}/g, (_, key: string) => String(variables[key] ?? ''));
 }
 
+export function getPhotoPickerAssetUris(assets: PhotoAlbumItem[]) {
+  return [
+    ...new Set(
+      assets.flatMap(
+        asset => [asset.uri, asset.localUri, asset.originalUri].filter(Boolean) as string[]
+      )
+    ),
+  ];
+}
+
 export function createCroppedPhotoAlbumItem(
   photo: PhotoAlbumItem,
   manipulated: { uri: string; width: number; height: number },

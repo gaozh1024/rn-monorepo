@@ -12,7 +12,9 @@ import android.content.pm.ResolveInfo
 import android.net.Uri
 import android.provider.MediaStore
 import expo.modules.kotlin.exception.CodedException
+import java.io.File
 import java.lang.reflect.InvocationTargetException
+import java.util.UUID
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -171,6 +173,42 @@ class PhotoPickerBehaviorTest {
     assertEquals(listOf("first", "second"), registry.resolveAllVerified(context, "video", true).map { it.first.id })
     assertTrue(registry.resolveAllVerified(context, "photo", true).isEmpty())
     assertThrows(IllegalArgumentException::class.java) { registry.createIntent("unknown", "video", true, 2) }
+  }
+
+  @Test
+  fun releaseMediaOnlyAcceptsRegularFilesInDirectUuidDirectories() {
+    val root = File.createTempFile("photo-picker-root", "").apply {
+      delete()
+      mkdirs()
+    }
+    val uuidDirectory = File(root, UUID.randomUUID().toString()).apply { mkdirs() }
+    val valid = File(uuidDirectory, "media.jpg").apply { writeText("media") }
+    val nested = File(uuidDirectory, "nested").apply { mkdirs() }
+    val nestedFile = File(nested, "media.jpg").apply { writeText("media") }
+    val nonUuidDirectory = File(root, "not-a-uuid").apply { mkdirs() }
+    val nonUuidFile = File(nonUuidDirectory, "media.jpg").apply { writeText("media") }
+    val directory = File(root, UUID.randomUUID().toString()).apply { mkdirs() }
+    val siblingRoot = File(root.parentFile, "${root.name}-sibling").apply { mkdirs() }
+    val siblingFile = File(siblingRoot, "${UUID.randomUUID()}${File.separator}media.jpg").apply {
+      parentFile?.mkdirs()
+      writeText("media")
+    }
+
+    try {
+      val method = PhotoPickerModule::class.java.getDeclaredMethod("isReleasableMediaFile", File::class.java, File::class.java).apply {
+        isAccessible = true
+      }
+      fun releasable(file: File): Boolean = method.invoke(PhotoPickerModule(), file, root) as Boolean
+
+      assertTrue(releasable(valid))
+      assertFalse(releasable(nestedFile))
+      assertFalse(releasable(nonUuidFile))
+      assertFalse(releasable(directory))
+      assertFalse(releasable(siblingFile))
+    } finally {
+      root.deleteRecursively()
+      siblingRoot.deleteRecursively()
+    }
   }
 
   @Test

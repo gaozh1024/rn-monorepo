@@ -1,4 +1,5 @@
 import AVFoundation
+import Darwin
 import ExpoModulesCore
 import ImageIO
 import os.log
@@ -105,17 +106,26 @@ public final class PhotoPickerModule: Module {
     }
 
     AsyncFunction("releaseMedia") { (uris: [String]) in
-      let root = self.pickerCacheDirectory.resolvingSymlinksInPath().path
+      let manager = FileManager.default
+      let root = self.pickerCacheDirectory.resolvingSymlinksInPath().standardizedFileURL
       for uriString in uris {
         guard let url = URL(string: uriString), url.isFileURL else { continue }
-        let file = url.resolvingSymlinksInPath()
-        guard file.path.hasPrefix(root) else { continue }
-        try? FileManager.default.removeItem(at: file)
-        // Best-effort cleanup of the per-item UUID directory created by
-        // materialization; the call fails harmlessly when it is not empty.
+        let file = url.standardizedFileURL
         let parent = file.deletingLastPathComponent()
-        if parent.path != root {
-          try? FileManager.default.removeItem(at: parent)
+        guard UUID(uuidString: parent.lastPathComponent) != nil,
+              parent.deletingLastPathComponent().resolvingSymlinksInPath().standardizedFileURL.path == root.path,
+              let parentAttributes = try? manager.attributesOfItem(atPath: parent.path),
+              parentAttributes[.type] as? FileAttributeType == .typeDirectory,
+              let fileAttributes = try? manager.attributesOfItem(atPath: file.path),
+              fileAttributes[.type] as? FileAttributeType == .typeRegular
+        else { continue }
+        do {
+          try manager.removeItem(at: file)
+          _ = parent.withUnsafeFileSystemRepresentation { path in
+            path.map { rmdir($0) } ?? -1
+          }
+        } catch {
+          continue
         }
       }
     }
@@ -487,7 +497,8 @@ public final class PhotoPickerModule: Module {
     else { return (0, 0) }
     let width = properties[kCGImagePropertyPixelWidth] as? Int ?? 0
     let height = properties[kCGImagePropertyPixelHeight] as? Int ?? 0
-    return (width, height)
+    let orientation = properties[kCGImagePropertyOrientation] as? Int ?? 1
+    return (5...8).contains(orientation) ? (height, width) : (width, height)
   }
 
   private func readVideoMetadata(_ url: URL) async -> (width: Int, height: Int, durationMs: Int?) {
@@ -626,13 +637,13 @@ private struct PickerRequest {
 
     if let rawMaxSelection = options?["maxSelection"] {
       let value = (rawMaxSelection as? NSNumber)?.doubleValue ?? -1
-      if value.truncatingRemainder(dividingBy: 1) != 0 || value < 1 {
+      guard let maxSelection = Int(exactly: value), maxSelection > 0 else {
         throw pickerException(
           "PICKER_INVALID_OPTIONS",
           "maxSelection must be a positive integer, received \(value)"
         )
       }
-      self.requestedMaxSelection = Int(value)
+      self.requestedMaxSelection = maxSelection
     } else {
       self.requestedMaxSelection = 1
     }

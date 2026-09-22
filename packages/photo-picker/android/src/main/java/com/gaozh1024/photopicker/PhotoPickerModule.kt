@@ -164,7 +164,7 @@ class PhotoPickerModule : Module() {
       val root = pickerCacheDirectory.canonicalFile
       uris.forEach { uriString ->
         val file = uriString.toFileOrNull() ?: return@forEach
-        if (file.canonicalFile.path.startsWith(root.path)) {
+        if (isReleasableMediaFile(file, root)) {
           file.delete()
         }
       }
@@ -639,6 +639,16 @@ class PhotoPickerModule : Module() {
   private fun sha256(value: String): String {
     val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray())
     return digest.joinToString("") { byte -> "%02x".format(byte) }
+  }
+
+  private fun isReleasableMediaFile(file: File, root: File): Boolean {
+    val canonicalFile = runCatching { file.canonicalFile }.getOrNull() ?: return false
+    if (!canonicalFile.isFile) return false
+    val canonicalRoot = runCatching { root.canonicalFile }.getOrNull() ?: return false
+    val parent = canonicalFile.parentFile ?: return false
+    if (parent.parentFile?.canonicalFile != canonicalRoot) return false
+    if (parent.name != runCatching { UUID.fromString(parent.name).toString() }.getOrNull()) return false
+    return canonicalFile.path.startsWith(canonicalRoot.path + File.separator)
   }
 
   private fun String.toFileOrNull(): File? {

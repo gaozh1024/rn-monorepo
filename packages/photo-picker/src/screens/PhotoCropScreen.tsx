@@ -9,8 +9,13 @@ import {
   clearPhotoAlbumCompleteCallback,
   getPhotoAlbumCompleteCallback,
 } from '../internal/photoPickerCallbackRegistry';
+import { releaseMedia } from '../native';
 import type { PhotoCropScreenProps } from '../types';
-import { createCroppedPhotoAlbumItem, resolvePhotoPickerUiConfig } from '../utils/photoPickerFlow';
+import {
+  createCroppedPhotoAlbumItem,
+  getPhotoPickerAssetUris,
+  resolvePhotoPickerUiConfig,
+} from '../utils/photoPickerFlow';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HEADER_ROW_HEIGHT = 48;
@@ -53,9 +58,28 @@ export function PhotoCropScreen({ route, navigation }: PhotoCropScreenProps) {
   const cropOptions = route?.params?.crop;
   const callbackId = route?.params?.callbackId;
   const uiConfig = React.useMemo(
-    () => resolvePhotoPickerUiConfig(route?.params?.uiConfig),
+    () =>
+      resolvePhotoPickerUiConfig({
+        ...route?.params?.uiConfig,
+        texts: {
+          ...route?.params?.uiConfig?.texts,
+        },
+      }),
     [route?.params?.uiConfig]
   );
+  const originalPhotoUris = React.useMemo(
+    () => (photo ? getPhotoPickerAssetUris([photo]) : []),
+    [photo]
+  );
+  const cleanedRef = React.useRef(false);
+  const cleanup = React.useCallback(async () => {
+    if (cleanedRef.current) return;
+    cleanedRef.current = true;
+    clearPhotoAlbumCompleteCallback(callbackId);
+    if (originalPhotoUris.length > 0) {
+      await releaseMedia(originalPhotoUris).catch(() => undefined);
+    }
+  }, [callbackId, originalPhotoUris]);
   const quality = route?.params?.quality ?? cropOptions?.quality ?? 1;
   const aspect = cropOptions?.aspect ?? ([1, 1] as [number, number]);
   const isCircleCrop = cropOptions?.shape === 'circle';
@@ -102,10 +126,10 @@ export function PhotoCropScreen({ route, navigation }: PhotoCropScreenProps) {
     [closing, navigation]
   );
 
-  const handleCancel = React.useCallback(() => {
-    clearPhotoAlbumCompleteCallback(callbackId);
-    closeFlow();
-  }, [callbackId, closeFlow]);
+  const handleCancel = React.useCallback(async () => {
+    await cleanup();
+    closeFlow(2);
+  }, [cleanup, closeFlow]);
 
   const handleConfirm = React.useCallback(async () => {
     if (!photo || !cropRef.current || saving) return;
@@ -118,14 +142,22 @@ export function PhotoCropScreen({ route, navigation }: PhotoCropScreenProps) {
       });
       const croppedPhoto = createCroppedPhotoAlbumItem(photo, manipulated, cropOptions);
       getPhotoAlbumCompleteCallback(callbackId)?.([croppedPhoto]);
-      clearPhotoAlbumCompleteCallback(callbackId);
+      await cleanup();
       closeFlow(2);
     } catch (error) {
+      await cleanup();
       console.error('[photo-picker] crop failed', error);
     } finally {
       setSaving(false);
     }
-  }, [callbackId, closeFlow, cropOptions, photo, quality, saving]);
+  }, [callbackId, cleanup, closeFlow, cropOptions, photo, quality, saving]);
+
+  React.useEffect(
+    () => () => {
+      void cleanup();
+    },
+    [cleanup]
+  );
 
   if (!photo) {
     return (

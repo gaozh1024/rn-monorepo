@@ -85,10 +85,10 @@ export function validatePickerOptions(options: PhotoPickerOptions = {}): Normali
     );
   }
   if (maxSelection !== undefined) {
-    if (!Number.isInteger(maxSelection) || maxSelection < 1) {
+    if (!Number.isSafeInteger(maxSelection) || maxSelection < 1) {
       throw createPickerError(
         'PICKER_INVALID_OPTIONS',
-        `maxSelection must be a positive integer, received: ${String(maxSelection)}`
+        `maxSelection must be a positive safe integer, received: ${String(maxSelection)}`
       );
     }
   }
