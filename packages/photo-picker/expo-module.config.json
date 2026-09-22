@@ -1,6 +1,9 @@
 {
-  "platforms": ["android"],
+  "platforms": ["android", "ios"],
   "android": {
     "modules": ["com.gaozh1024.photopicker.PhotoPickerModule"]
+  },
+  "ios": {
+    "modules": ["PhotoPickerModule"]
   }
 }

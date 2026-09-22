@@ -32,9 +32,10 @@ type PhotoPickerNativeModule = {
 };
 
 function getNativeModule(): PhotoPickerNativeModule {
-  if (Platform.OS !== 'android') {
+  if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
     throw new Error(
-      '@gaozh1024/photo-picker currently provides the native system picker on Android only.'
+      `@gaozh1024/photo-picker provides the native system picker on Android and iOS; ` +
+        `"${Platform.OS}" is not supported.`
     );
   }
 
@@ -42,7 +43,7 @@ function getNativeModule(): PhotoPickerNativeModule {
     return requireNativeModule<PhotoPickerNativeModule>('PhotoPickerModule');
   } catch {
     throw new Error(
-      'PhotoPickerModule is unavailable. Rebuild the Android app after installing @gaozh1024/photo-picker.'
+      'PhotoPickerModule is unavailable. Rebuild the app after installing @gaozh1024/photo-picker.'
     );
   }
 }
@@ -78,8 +79,8 @@ export async function getCapabilities(
   options: PhotoPickerOptions = {}
 ): Promise<PickerCapabilities> {
   const { nativeOptions } = validatePickerOptions(options);
-  if (Platform.OS !== 'android') {
-    // No backend is implemented on this platform yet; report that honestly
+  if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
+    // No backend is implemented on this platform; report that honestly
     // instead of throwing so callers can branch on `available`.
     return {
       available: false,

@@ -11,8 +11,8 @@ export type PhotoAlbumOpenMediaType = PhotoAlbumMediaType | 'all';
  *   fallback picker action.
  * - `android-vendor-gallery`: a verified vendor gallery adapter (Huawei only).
  * - `android-open-document`: the document picker fallback.
- * - `ios-phpicker`: reserved for the planned iOS PHPicker backend (not
- *   implemented yet; never returned at runtime today).
+ * - `ios-phpicker`: the iOS `PHPickerViewController` backend (iOS 14+,
+ *   permissionless like the Android Photo Picker).
  */
 export type PickerSource =
   | 'android-photo-picker'

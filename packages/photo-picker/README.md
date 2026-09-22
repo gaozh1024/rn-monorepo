@@ -1,6 +1,6 @@
 # @gaozh1024/photo-picker
 
-Permissionless Android system media selection for Expo and React Native.
+Permissionless system media selection for Expo and React Native on Android and iOS.
 
 ## 0.2.1 split-entry notes
 
@@ -30,7 +30,8 @@ This release implements the backend strategy described in
 `docs/photo-picker-upgrade-design.md` (phases A + B). Compatibility-sensitive changes:
 
 - `PickerSource` adds `android-system-fallback`, `android-vendor-gallery`, and `ios-phpicker`
-  (the iOS value is reserved; no iOS backend ships yet). Classify by the backend that
+  (the iOS value was reserved in 0.2.0; the PHPicker backend ships in the release that adds
+  iOS support). Classify by the backend that
   actually handled the request, not the requested one.
 - New error codes join the contract: `PICKER_INVALID_OPTIONS`, `PICKER_UNAVAILABLE`,
   `PICKER_SELECTION_LIMIT_EXCEEDED`, `PICKER_UNSUPPORTED_MEDIA`, `PICKER_READ_FAILED`,
@@ -89,6 +90,20 @@ The package does not declare or request `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL
 
 The Android 14 limited-library permission flow is intentionally out of scope for this API. A future library-access capability must be a separate permission and MediaStore API; it must not change the meaning of `pickMedia()`.
 
+## iOS behavior
+
+On iOS the module presents `PHPickerViewController` (iOS 14+; the pod targets iOS 15.1). Like the Android Photo Picker, PHPicker is permissionless: the app does not need `NSPhotoLibraryUsageDescription`, no media permission is requested, and the package never enumerates the device library.
+
+- Results report `source: 'ios-phpicker'` and `action: 'PHPickerViewController'`; the `backend` diagnostics shape, asset keys, and `PICKER_*` error codes match Android.
+- `mediaType` maps to PHPicker filters (`photo` → images, `video` → videos, `all` → images + videos). Multi-select uses PHPicker's native `selectionLimit`, so `selectionLimit` is reported as `native` and there is no system cap to clamp against; an over-limit return is still post-validated and rejected with `PICKER_SELECTION_LIMIT_EXCEEDED`.
+- Cancellation resolves with `{cancelled: true, assets: []}` (PHPicker reports cancellation as an empty selection).
+- `nativeUi.orderedSelection` is honored on iOS 15+ multi-select sessions and reported under `appliedUiOptions`. `nativeUi.accentColor` and `nativeUi.defaultTab` are Android-only concepts; when provided they are reported under `ignoredUiOptions` on iOS.
+- Assets are identified by their Photos `localIdentifier`. Only one picker session can be in flight; a concurrent request rejects with `PICKER_BUSY`.
+- Selected media is copied into `Library/Caches/photo-picker/<uuid>/` and returned as `file://` URIs, preserving the original format (`loadFileRepresentation`); images without a file representation are re-encoded as PNG (with alpha) or JPEG. `releaseMedia()` deletes the cached files (idempotent, path-checked against the cache root); `clearPickerCache()` removes the whole directory.
+- Reading a provider item that fails maps to `PICKER_READ_FAILED`, disk failures to `PICKER_CACHE_FAILED`, and materialization is all-or-nothing with cleanup, matching the Android semantics.
+
+After installing or updating the package on iOS, run `pod install` (or `npx expo prebuild`) and rebuild the app.
+
 ## Usage
 
 ```tsx
@@ -145,7 +160,7 @@ A failed selection/materialization is all-or-nothing: the request never resolves
 
 ## Native rebuild requirement
 
-The package contains native Android code. After installing or updating it, rebuild and reinstall the Android application; an OTA JavaScript update cannot install or replace the native module.
+The package contains native Android and iOS code. After installing or updating it, rebuild and reinstall the application (on iOS run `pod install` / `npx expo prebuild` first); an OTA JavaScript update cannot install or replace the native module.
 
 ```sh
 pnpm --dir packages/photo-picker test
@@ -178,5 +193,6 @@ Before release, verify on real devices:
 4. `getCapabilities()` matches the backend that actually opens on each device, and `android.preference="system"` bypasses vendor adapters.
 5. 华为：分别验证照片单选/多选、视频单选/多选，确认实际组件属于 `com.huawei.photos`，返回 `source=android-vendor-gallery`、`vendorAdapterId=huawei-gallery`；检查数量、MIME、读取、缓存、视频时长和预览。另测上限为 2 时选择 3 项、取消、图库不可用和 `all` 混选。
 6. The app's merged manifest contains no media-read permission added by this package, and no runtime media permission prompt appears.
+7. iOS 15+ device: PHPicker opens without any photo permission prompt, `source` is `ios-phpicker` and `action` is `PHPickerViewController`. Verify photo single/multi-select, video selection (duration/durationMs populated), ordered selection, cancel, repeated taps (`PICKER_BUSY`), and that `releaseMedia`/`clearPickerCache` remove files under `Library/Caches/photo-picker/`.
 
 Record the device model, Android version, selected backend, action, and error code for every failure. Do not use the appearance of a limited-library banner as proof of this package's `pickMedia()` behavior; limited-library support is a separate future capability.
