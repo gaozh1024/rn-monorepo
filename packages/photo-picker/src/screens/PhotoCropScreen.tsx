@@ -71,15 +71,31 @@ export function PhotoCropScreen({ route, navigation }: PhotoCropScreenProps) {
     () => (photo ? getPhotoPickerAssetUris([photo]) : []),
     [photo]
   );
-  const cleanedRef = React.useRef(false);
-  const cleanup = React.useCallback(async () => {
-    if (cleanedRef.current) return;
-    cleanedRef.current = true;
+  const disposedRef = React.useRef(false);
+  const originalCleanedRef = React.useRef(false);
+  const outputReleasedRef = React.useRef(false);
+  const outputUriRef = React.useRef<string | undefined>(undefined);
+  const phaseRef = React.useRef<'active' | 'delivering' | 'delivered' | 'closed'>('active');
+  const cleanupOriginal = React.useCallback(async () => {
+    if (originalCleanedRef.current) return;
+    originalCleanedRef.current = true;
     clearPhotoAlbumCompleteCallback(callbackId);
     if (originalPhotoUris.length > 0) {
       await releaseMedia(originalPhotoUris).catch(() => undefined);
     }
   }, [callbackId, originalPhotoUris]);
+  const releaseOutput = React.useCallback(async () => {
+    const uri = outputUriRef.current;
+    if (!uri || outputReleasedRef.current || phaseRef.current === 'delivered') return;
+    outputReleasedRef.current = true;
+    await releaseMedia([uri]).catch(() => undefined);
+  }, []);
+  const cleanup = React.useCallback(async () => {
+    if (phaseRef.current === 'delivered') return;
+    disposedRef.current = true;
+    phaseRef.current = 'closed';
+    await Promise.all([cleanupOriginal(), releaseOutput()]);
+  }, [cleanupOriginal, releaseOutput]);
   const quality = route?.params?.quality ?? cropOptions?.quality ?? 1;
   const aspect = cropOptions?.aspect ?? ([1, 1] as [number, number]);
   const isCircleCrop = cropOptions?.shape === 'circle';
@@ -132,7 +148,7 @@ export function PhotoCropScreen({ route, navigation }: PhotoCropScreenProps) {
   }, [cleanup, closeFlow]);
 
   const handleConfirm = React.useCallback(async () => {
-    if (!photo || !cropRef.current || saving) return;
+    if (!photo || !cropRef.current || saving || phaseRef.current !== 'active') return;
     setSaving(true);
     try {
       const result = cropRef.current.crop();
@@ -140,17 +156,28 @@ export function PhotoCropScreen({ route, navigation }: PhotoCropScreenProps) {
         compress: quality,
         format: SaveFormat.JPEG,
       });
+      outputUriRef.current = manipulated.uri;
+      if (disposedRef.current || phaseRef.current !== 'active') {
+        await releaseOutput();
+        return;
+      }
       const croppedPhoto = createCroppedPhotoAlbumItem(photo, manipulated, cropOptions);
-      getPhotoAlbumCompleteCallback(callbackId)?.([croppedPhoto]);
-      await cleanup();
+      const callback = getPhotoAlbumCompleteCallback(callbackId);
+      if (!callback) throw new Error('Photo picker callback is unavailable');
+      phaseRef.current = 'delivering';
+      clearPhotoAlbumCompleteCallback(callbackId);
+      callback([croppedPhoto]);
+      phaseRef.current = 'delivered';
+      await cleanupOriginal();
       closeFlow(2);
     } catch (error) {
-      await cleanup();
+      phaseRef.current = 'closed';
+      await Promise.all([cleanupOriginal(), releaseOutput()]);
       console.error('[photo-picker] crop failed', error);
     } finally {
       setSaving(false);
     }
-  }, [callbackId, cleanup, closeFlow, cropOptions, photo, quality, saving]);
+  }, [callbackId, cleanupOriginal, closeFlow, cropOptions, photo, quality, releaseOutput, saving]);
 
   React.useEffect(
     () => () => {

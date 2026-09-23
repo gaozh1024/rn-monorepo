@@ -281,8 +281,15 @@ describe('PhotoCropScreen', () => {
     expect(releaseMedia).toHaveBeenCalledTimes(1);
   });
 
-  it('裁剪异常时释放原始资源并清理回调', async () => {
-    vi.mocked(manipulateAsync).mockRejectedValue(new Error('crop failed'));
+  it('裁剪异常时释放原始资源和未交付输出并清理回调', async () => {
+    vi.mocked(manipulateAsync).mockResolvedValue({
+      uri: 'file:///cropped.jpg',
+      width: 100,
+      height: 100,
+    });
+    onComplete.mockImplementation(() => {
+      throw new Error('callback failed');
+    });
     await act(async () => {
       tree = create(
         <PhotoCropScreen route={{ params: { photo, callbackId } }} navigation={navigation} />
@@ -291,9 +298,73 @@ describe('PhotoCropScreen', () => {
 
     await press('完成');
 
-    expect(releaseMedia).toHaveBeenCalledExactlyOnceWith([photo.uri]);
+    expect(releaseMedia).toHaveBeenCalledWith([photo.uri]);
+    expect(releaseMedia).toHaveBeenCalledWith(['file:///cropped.jpg']);
+    expect(releaseMedia).toHaveBeenCalledTimes(2);
     expect(getPhotoAlbumCompleteCallback(callbackId)).toBeUndefined();
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('取消后异步返回的裁剪输出会被释放且不会回调', async () => {
+    let resolveManipulate!: (result: { uri: string; width: number; height: number }) => void;
+    vi.mocked(manipulateAsync).mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveManipulate = resolve;
+        })
+    );
+    await act(async () => {
+      tree = create(
+        <PhotoCropScreen route={{ params: { photo, callbackId } }} navigation={navigation} />
+      );
+    });
+
+    const confirmButton = tree!.root
+      .findAllByType(Pressable)
+      .find(node => node.findAllByType(Text).some(text => text.props.children === '完成'));
+    expect(confirmButton).toBeDefined();
+    confirmButton!.props.onPress();
+    await act(async () => undefined);
+    await press('×');
+    expect(getPhotoAlbumCompleteCallback(callbackId)).toBeUndefined();
+
+    await act(async () => {
+      resolveManipulate({ uri: 'file:///late-cropped.jpg', width: 100, height: 100 });
+    });
+
     expect(onComplete).not.toHaveBeenCalled();
+    expect(releaseMedia).toHaveBeenCalledWith(['file:///late-cropped.jpg']);
+    expect(releaseMedia).toHaveBeenCalledTimes(2);
+  });
+
+  it('卸载后异步返回的裁剪输出会被释放', async () => {
+    let resolveManipulate!: (result: { uri: string; width: number; height: number }) => void;
+    vi.mocked(manipulateAsync).mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveManipulate = resolve;
+        })
+    );
+    await act(async () => {
+      tree = create(
+        <PhotoCropScreen route={{ params: { photo, callbackId } }} navigation={navigation} />
+      );
+    });
+
+    const confirmButton = tree!.root
+      .findAllByType(Pressable)
+      .find(node => node.findAllByType(Text).some(text => text.props.children === '完成'));
+    expect(confirmButton).toBeDefined();
+    confirmButton!.props.onPress();
+    await act(async () => undefined);
+    await act(async () => tree?.unmount());
+    await act(async () => {
+      resolveManipulate({ uri: 'file:///unmounted-cropped.jpg', width: 100, height: 100 });
+    });
+
+    expect(onComplete).not.toHaveBeenCalled();
+    expect(releaseMedia).toHaveBeenCalledWith(['file:///unmounted-cropped.jpg']);
+    expect(releaseMedia).toHaveBeenCalledTimes(2);
   });
 
   it('卸载时释放原始资源并清理回调', async () => {
