@@ -99,7 +99,7 @@ function App() {
 - [移动端软件开发架构说明](./docs/01-入门指南/移动端软件开发架构说明.md) - 项目初始化、架构分层与框架使用总览
 - [框架文档](./packages/rn-kit/README.md) - `@gaozh1024/rn-kit` 详细使用文档
 - [语音包文档](./packages/aliyun-speech/README.md) - `@gaozh1024/aliyun-speech` 使用说明
-- [相册包文档](./packages/photo-album-picker/README.md) - `@gaozh1024/photo-album-picker` 使用说明
+- [相册包文档](./packages/photo-picker/README.md) - `@gaozh1024/photo-picker` 使用说明
 - [推送包文档](./packages/aliyun-push/README.md) - `@gaozh1024/aliyun-push` 使用说明
 - [热更新包文档](./packages/hot-updater/README.md) - `@gaozh1024/hot-updater` 使用说明
 - [公共 API 清单](./docs/02-架构设计/公共API清单.md) - 稳定 API 与类型入口
@@ -141,7 +141,7 @@ monorepo-rn/
 ├── packages/
 │   ├── rn-kit/              # 统一框架包 (@gaozh1024/rn-kit)
 │   ├── aliyun-speech/      # 阿里云语音转文字包 (@gaozh1024/aliyun-speech)
-│   ├── photo-album-picker/ # 相册选择包 (@gaozh1024/photo-album-picker)
+│   ├── photo-picker/       # 相册选择包 (@gaozh1024/photo-picker)
 │   ├── aliyun-push/        # 阿里云移动推送包 (@gaozh1024/aliyun-push)
 │   └── hot-updater/        # OTA 热更新包 (@gaozh1024/hot-updater)
 ├── docs/               # 文档

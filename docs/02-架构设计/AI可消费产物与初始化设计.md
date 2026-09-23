@@ -78,7 +78,6 @@ ai/
   overrides/
     rn-kit.json
     aliyun-speech.json
-    photo-album-picker.json
     aliyun-push.json
     hot-updater.json
     expo-starter.json
@@ -105,8 +104,6 @@ packages/rn-kit/AI_USAGE.md
 packages/rn-kit/ai-manifest.json
 packages/aliyun-speech/AI_USAGE.md
 packages/aliyun-speech/ai-manifest.json
-packages/photo-album-picker/AI_USAGE.md
-packages/photo-album-picker/ai-manifest.json
 packages/aliyun-push/AI_USAGE.md
 packages/aliyun-push/ai-manifest.json
 packages/hot-updater/AI_USAGE.md
@@ -226,7 +223,7 @@ templates/expo-starter/ai-manifest.json
 - API 能力优先 `createAPI`
 - 稳定公共 API 以 [公共 API 清单](./公共API清单.md) 为准
 
-#### `@gaozh1024/photo-album-picker`
+#### `@gaozh1024/photo-picker`
 
 必须明确：
 
@@ -282,7 +279,7 @@ Project: Panther Expo Framework Monorepo
 
 Primary packages:
 - @gaozh1024/rn-kit
-- @gaozh1024/photo-album-picker
+- @gaozh1024/photo-picker
 - @gaozh1024/aliyun-speech
 - @gaozh1024/aliyun-push
 - @gaozh1024/hot-updater
@@ -656,7 +653,7 @@ templates/expo-starter/src/recipes/
 - `rn-kit-minimal-bootstrap`
 - `rn-kit-theme-toggle`
 - `rn-kit-create-api-auth`
-- `photo-album-picker-basic`
+- `photo-picker-basic`
 - `aliyun-speech-basic`
 - `aliyun-push-provider`
 - `hot-updater-basic`
@@ -704,7 +701,6 @@ schema 示例见：
 ```text
 ai/overrides/rn-kit.json
 ai/overrides/aliyun-speech.json
-ai/overrides/photo-album-picker.json
 ai/overrides/aliyun-push.json
 ai/overrides/hot-updater.json
 ai/overrides/expo-starter.json

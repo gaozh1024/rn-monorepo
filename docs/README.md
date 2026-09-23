@@ -2,14 +2,14 @@
 
 ## 📦 包文档
 
-| 包                            | 描述               | 链接                                               |
-| ----------------------------- | ------------------ | -------------------------------------------------- |
-| @gaozh1024/rn-kit             | 统一框架包         | [README](../packages/rn-kit/README.md)             |
-| @gaozh1024/rn-observatory     | 应用观测 SDK       | [README](../packages/rn-observatory/README.md)     |
-| @gaozh1024/aliyun-speech      | 阿里云语音转文字包 | [README](../packages/aliyun-speech/README.md)      |
-| @gaozh1024/photo-album-picker | 相册选择包         | [README](../packages/photo-album-picker/README.md) |
-| @gaozh1024/aliyun-push        | 阿里云移动推送包   | [README](../packages/aliyun-push/README.md)        |
-| @gaozh1024/hot-updater        | OTA 热更新包       | [README](../packages/hot-updater/README.md)        |
+| 包                        | 描述               | 链接                                           |
+| ------------------------- | ------------------ | ---------------------------------------------- |
+| @gaozh1024/rn-kit         | 统一框架包         | [README](../packages/rn-kit/README.md)         |
+| @gaozh1024/rn-observatory | 应用观测 SDK       | [README](../packages/rn-observatory/README.md) |
+| @gaozh1024/aliyun-speech  | 阿里云语音转文字包 | [README](../packages/aliyun-speech/README.md)  |
+| @gaozh1024/photo-picker   | 相册选择包         | [README](../packages/photo-picker/README.md)   |
+| @gaozh1024/aliyun-push    | 阿里云移动推送包   | [README](../packages/aliyun-push/README.md)    |
+| @gaozh1024/hot-updater    | OTA 热更新包       | [README](../packages/hot-updater/README.md)    |
 
 ---
 
@@ -83,9 +83,6 @@
 - [rn-kit 0.5.5 Release Notes](./release-notes/rn-kit-0.5.5.md)
 - [rn-kit 0.5.3 Release Notes](./release-notes/rn-kit-0.5.3.md)
 - [rn-kit 0.5.2 Release Notes](./release-notes/rn-kit-0.5.2.md)
-- [photo-album-picker 0.4.2 Release Notes](./release-notes/photo-album-picker-0.4.2.md)
-- [photo-album-picker 0.4.1 Release Notes](./release-notes/photo-album-picker-0.4.1.md)
-- [photo-album-picker 0.4.0 Release Notes](./release-notes/photo-album-picker-0.4.0.md)
 - [aliyun-push 0.2.0 Release Notes](./release-notes/aliyun-push-0.2.0.md)
 - [aliyun-push 0.1.3 Release Notes](./release-notes/aliyun-push-0.1.3.md)
 - [aliyun-push 0.1.2 Release Notes](./release-notes/aliyun-push-0.1.2.md)
@@ -98,15 +95,12 @@
 - [rn-kit 0.4.19 Release Notes](./release-notes/rn-kit-0.4.19.md)
 - [rn-kit 0.4.18 Release Notes](./release-notes/rn-kit-0.4.18.md)
 - [expo-starter 0.2.15 Release Notes](./release-notes/expo-starter-0.2.15.md)
-- [photo-album-picker 0.3.0 Release Notes](./release-notes/photo-album-picker-0.3.0.md)
 - [hot-updater 0.1.1 Release Notes](./release-notes/hot-updater-0.1.1.md)
 - [hot-updater 0.1.0 Release Notes](./release-notes/hot-updater-0.1.0.md)
 - [aliyun-push 0.1.1 Release Notes](./release-notes/aliyun-push-0.1.1.md)
 - [expo-starter 0.2.14 Release Notes](./release-notes/expo-starter-0.2.14.md)
-- [photo-album-picker 0.2.0 Release Notes](./release-notes/photo-album-picker-0.2.0.md)
 - [aliyun-push 0.1.0 Release Notes](./release-notes/aliyun-push-0.1.0.md)
 - [aliyun-speech 0.1.0 Release Notes](./release-notes/aliyun-speech-0.1.0.md)
-- [photo-album-picker 0.1.0 Release Notes](./release-notes/photo-album-picker-0.1.0.md)
 - [expo-starter 0.2.13 Release Notes](./release-notes/expo-starter-0.2.13.md)
 - [expo-starter 0.2.12 Release Notes](./release-notes/expo-starter-0.2.12.md)
 - [expo-starter 0.2.11 Release Notes](./release-notes/expo-starter-0.2.11.md)

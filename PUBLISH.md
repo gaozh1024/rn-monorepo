@@ -4,7 +4,7 @@
 
 - `@gaozh1024/rn-kit`
 - `@gaozh1024/aliyun-speech`
-- `@gaozh1024/photo-album-picker`
+- `@gaozh1024/photo-picker`
 - `@gaozh1024/aliyun-push`
 - `@gaozh1024/hot-updater`
 - `@gaozh1024/expo-starter`
@@ -25,9 +25,9 @@ pnpm --dir packages/rn-kit test
 pnpm --dir packages/rn-kit build
 pnpm --dir packages/aliyun-speech typecheck
 pnpm --dir packages/aliyun-speech build
-pnpm --dir packages/photo-album-picker test
-pnpm --dir packages/photo-album-picker typecheck
-pnpm --dir packages/photo-album-picker build
+pnpm --dir packages/photo-picker test
+pnpm --dir packages/photo-picker typecheck
+pnpm --dir packages/photo-picker build
 pnpm --dir packages/aliyun-push typecheck
 pnpm --dir packages/aliyun-push build
 pnpm --dir packages/hot-updater test
@@ -46,7 +46,7 @@ npm pack --dry-run
 cd ../aliyun-speech
 npm pack --dry-run
 
-cd ../photo-album-picker
+cd ../photo-picker
 npm pack --dry-run
 
 cd ../aliyun-push
@@ -68,7 +68,7 @@ npm_config_cache=/tmp/npm-cache npm pack --dry-run
 cd ../aliyun-speech
 npm_config_cache=/tmp/npm-cache npm pack --dry-run
 
-cd ../photo-album-picker
+cd ../photo-picker
 npm_config_cache=/tmp/npm-cache npm pack --dry-run
 
 cd ../aliyun-push
@@ -110,7 +110,7 @@ pnpm --dir packages/aliyun-push pack --pack-destination /tmp/aliyun-push-pack
 
 1. `packages/rn-kit/package.json` 版本号
 2. `packages/aliyun-speech/package.json` 版本号（若本次涉及语音包）
-3. `packages/photo-album-picker/package.json` 版本号（若本次涉及相册包）
+3. `packages/photo-picker/package.json` 版本号（若本次涉及相册包）
 4. `packages/aliyun-push/package.json` 版本号（若本次涉及推送包）
 5. `packages/hot-updater/package.json` 版本号（若本次涉及 OTA 包）
 6. `templates/expo-starter/package.json` 版本号
@@ -120,7 +120,7 @@ pnpm --dir packages/aliyun-push pack --pack-destination /tmp/aliyun-push-pack
 
 推荐顺序：
 
-- 先确定 `rn-kit` / `aliyun-speech` / `photo-album-picker` / `aliyun-push` / `hot-updater` 版本
+- 先确定 `rn-kit` / `aliyun-speech` / `photo-picker` / `aliyun-push` / `hot-updater` 版本
 - 再同步模板依赖版本（如有）
 - 再补文档与 release notes
 - 如果走 CI 发布，确保 `.github/workflows/release.yml` 指向当前 monorepo 的真实包与 `changeset publish`
@@ -195,7 +195,7 @@ npm publish --access public
 ### 3.4 发布相册包
 
 ```bash
-cd ../photo-album-picker
+cd ../photo-picker
 npm publish --access public
 ```
 
@@ -239,7 +239,7 @@ pnpm add @gaozh1024/aliyun-speech
 相册包：
 
 ```bash
-pnpm add @gaozh1024/photo-album-picker
+pnpm add @gaozh1024/photo-picker
 ```
 
 推送包：
@@ -271,7 +271,7 @@ npm publish --tag beta --access public
 cd ../aliyun-speech
 npm publish --tag beta --access public
 
-cd ../photo-album-picker
+cd ../photo-picker
 npm publish --tag beta --access public
 
 cd ../aliyun-push
@@ -288,7 +288,7 @@ npm publish --tag beta --access public
 ```bash
 npm view @gaozh1024/rn-kit versions --json | grep beta
 npm view @gaozh1024/aliyun-speech versions --json | grep beta
-npm view @gaozh1024/photo-album-picker versions --json | grep beta
+npm view @gaozh1024/photo-picker versions --json | grep beta
 npm view @gaozh1024/aliyun-push versions --json | grep beta
 npm view @gaozh1024/hot-updater versions --json | grep beta
 ```
@@ -298,7 +298,7 @@ npm view @gaozh1024/hot-updater versions --json | grep beta
 ```bash
 pnpm add @gaozh1024/rn-kit@beta
 pnpm add @gaozh1024/aliyun-speech@beta
-pnpm add @gaozh1024/photo-album-picker@beta
+pnpm add @gaozh1024/photo-picker@beta
 pnpm add @gaozh1024/aliyun-push@beta
 pnpm add @gaozh1024/hot-updater@beta
 ```
@@ -333,7 +333,7 @@ pnpm yalc:push
 
 - [ ] 版本号已更新
 - [ ] release notes 已补充
-- [ ] 框架 / 语音包 / 相册包 / 推送包 / 模板 README 已同步
+- [ ] 框架 / 语音包 / 相册包 / 推送包 / 热更新包 / 模板 README 已同步
 - [ ] `typecheck / test / build / lint` 已通过
 - [ ] `npm pack --dry-run` 已检查
 - [ ] 模板对 `rn-kit` 的依赖版本已同步

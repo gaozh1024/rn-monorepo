@@ -11,7 +11,6 @@ const packageTargets = [
   { id: 'rn-kit', dir: 'packages/rn-kit' },
   { id: 'rn-observatory', dir: 'packages/rn-observatory' },
   { id: 'aliyun-speech', dir: 'packages/aliyun-speech' },
-  { id: 'photo-album-picker', dir: 'packages/photo-album-picker' },
   { id: 'aliyun-push', dir: 'packages/aliyun-push' },
   { id: 'hot-updater', dir: 'packages/hot-updater' },
   { id: 'expo-starter', dir: 'templates/expo-starter' },
