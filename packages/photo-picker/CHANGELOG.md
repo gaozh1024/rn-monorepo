@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1
+
+### Patch Changes
+
+- Fix Android and iOS cache cleanup boundaries and keep cleanup idempotent across picker and crop flows.
+- Release unowned crop outputs on cancellation, unmount, late async results, crop failures, and callback failures while preserving successfully delivered output files.
+- Validate oversized `maxSelection` values safely and keep crop-page UI configuration consistent with merged route options.
+- Replace the removed duplicate `photo-album-picker` package with `photo-picker` in workspace, release, AI artifact, and documentation references.
+
 ## 0.3.0
 
 ### Minor Changes

@@ -83,6 +83,8 @@ npm_config_cache=/tmp/npm-cache npm pack --dry-run
 
 ## 2. 版本同步原则
 
+`@gaozh1024/photo-picker` 当前版本为 `0.3.1`。本次版本变更聚焦于缓存安全、裁剪资源生命周期、参数边界和仓库包迁移；发布前应重点执行该包的测试、类型检查、构建和 `npm pack --dry-run`。
+
 推荐优先使用 changeset 管理版本，而不是手工只改单个 `package.json`：
 
 ```bash

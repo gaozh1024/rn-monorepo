@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/photo-picker",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Permissionless system photo picker for Expo / React Native (Android Photo Picker and iOS PHPicker) with review and crop flow.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
