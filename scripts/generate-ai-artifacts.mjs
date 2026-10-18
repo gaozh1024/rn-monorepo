@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import prettier from 'prettier';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,7 +10,6 @@ const repoRoot = path.resolve(__dirname, '..');
 
 const packageTargets = [
   { id: 'rn-kit', dir: 'packages/rn-kit' },
-  { id: 'rn-observatory', dir: 'packages/rn-observatory' },
   { id: 'aliyun-speech', dir: 'packages/aliyun-speech' },
   { id: 'aliyun-push', dir: 'packages/aliyun-push' },
   { id: 'hot-updater', dir: 'packages/hot-updater' },
@@ -75,23 +75,6 @@ function docsForTarget(target) {
     docs.push('TAILWIND_SETUP.md');
   }
 
-  if (target.id === 'rn-observatory') {
-    docs.push(
-      'MOBILE_INTEGRATION.md',
-      'docs/app-usage-guide.md',
-      'docs/event-taxonomy.md',
-      'docs/analytics-schema.md',
-      'docs/analytics-tracking-template.md',
-      'docs/device-info-recipes.md',
-      'docs/native-crash-adapters.md',
-      'docs/native-crash-bridge-template.md',
-      'docs/release-integration.md',
-      'docs/expo-eas-release-template.md',
-      'docs/react-native-cli-release-template.md',
-      'docs/maintainer-governance.md',
-    );
-  }
-
   if (target.id === 'hot-updater') {
     docs.push('docs/integration.md', 'docs/manifest-spec.md');
   }
@@ -112,7 +95,9 @@ function buildManifest(target) {
     entrypoints: entrypointsForPackage(pkg),
     installation: {
       packageManagerCommand:
-        override.role === 'template' ? `npx create-expo-app@latest my-app --template ${pkg.name}` : `pnpm add ${pkg.name}`,
+        override.role === 'template'
+          ? `npx create-expo-app@latest my-app --template ${pkg.name}`
+          : `pnpm add ${pkg.name}`,
       projectTypes: projectTypesForPackage(pkg, override.role),
       peerDependencies: pkg.peerDependencies || {},
     },
@@ -153,12 +138,16 @@ function renderAiUsage(target) {
     '',
     '## Minimal Working Example',
     ...toBullets(
-      (override.canonicalExamples || []).slice(0, 2).map(example => `${example.name}: ${example.path}`),
+      (override.canonicalExamples || [])
+        .slice(0, 2)
+        .map(example => `${example.name}: ${example.path}`)
     ),
     '',
     '## Canonical Patterns',
     ...toBullets(
-      manifest.stableApis.map(api => `Prefer the stable public API \`${api}\` when it matches the use case.`),
+      manifest.stableApis.map(
+        api => `Prefer the stable public API \`${api}\` when it matches the use case.`
+      )
     ),
     '',
     '## Anti-Patterns',
@@ -226,27 +215,51 @@ function stableStringify(value) {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
 
-function writeOrCheck(relativePath, content, checkMode, mismatches) {
+// Generated artifacts are committed, and the pre-commit hook runs `prettier --write` over
+// `*.md` / `*.json`. If the generator emitted unformatted text, the commit would rewrite the
+// files and CI's byte-comparing `ai:check` would fail on every release. Formatting here — with
+// the repo's own Prettier config — keeps generator output and committed output byte-identical.
+async function formatArtifact(relativePath, content) {
   const absolutePath = path.join(repoRoot, relativePath);
+  const config = (await prettier.resolveConfig(absolutePath)) || {};
+  return prettier.format(content, { ...config, filepath: absolutePath });
+}
+
+async function writeOrCheck(relativePath, content, checkMode, mismatches, { format = true } = {}) {
+  const absolutePath = path.join(repoRoot, relativePath);
+  const nextContent = format ? await formatArtifact(relativePath, content) : content;
   const current = fs.existsSync(absolutePath) ? fs.readFileSync(absolutePath, 'utf8') : null;
 
   if (checkMode) {
-    if (current !== content) mismatches.push(relativePath);
+    if (current !== nextContent) mismatches.push(relativePath);
     return;
   }
 
   fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
-  fs.writeFileSync(absolutePath, content);
+  fs.writeFileSync(absolutePath, nextContent);
 }
 
-export function generateArtifacts({ check = false } = {}) {
+export async function generateArtifacts({ check = false } = {}) {
   const mismatches = [];
 
-  writeOrCheck('llms.txt', renderLlmsTxt(packageTargets), check, mismatches);
+  // llms.txt has no Prettier parser, so it is written verbatim.
+  await writeOrCheck('llms.txt', renderLlmsTxt(packageTargets), check, mismatches, {
+    format: false,
+  });
 
   for (const target of packageTargets) {
-    writeOrCheck(path.join(target.dir, 'AI_USAGE.md'), renderAiUsage(target), check, mismatches);
-    writeOrCheck(path.join(target.dir, 'ai-manifest.json'), stableStringify(buildManifest(target)), check, mismatches);
+    await writeOrCheck(
+      path.join(target.dir, 'AI_USAGE.md'),
+      renderAiUsage(target),
+      check,
+      mismatches
+    );
+    await writeOrCheck(
+      path.join(target.dir, 'ai-manifest.json'),
+      stableStringify(buildManifest(target)),
+      check,
+      mismatches
+    );
   }
 
   return mismatches;
@@ -256,7 +269,7 @@ const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
 
 if (invokedPath === __filename) {
   const checkMode = process.argv.includes('--check');
-  const mismatches = generateArtifacts({ check: checkMode });
+  const mismatches = await generateArtifacts({ check: checkMode });
 
   if (checkMode) {
     if (mismatches.length > 0) {

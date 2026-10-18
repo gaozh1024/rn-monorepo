@@ -32,14 +32,24 @@ jobs:
       - name: Verify release
         run: pnpm verify:release
 
+      # `changeset publish` publishes every non-private package whose local version is missing
+      # from the registry, and it ignores `.changeset/config.json`'s `ignore` list. The scope
+      # gate requires every unpublished package to be either the tagged version (published now)
+      # or an explicit entry in release/holds.json (deliberately deferred), so a pending package
+      # cannot be swept into this release by accident.
+      - name: Check publish scope
+        run: pnpm check:publish-scope --from-tag "$GITHUB_REF_NAME"
+
+      - name: Publish to npm
+        run: pnpm check:publish-scope --from-tag "$GITHUB_REF_NAME" --publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Created after publishing on purpose: a failed publish must not leave behind a GitHub
+      # Release that looks like the version shipped.
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
-
-      - name: Publish to npm
-        run: pnpm exec changeset publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

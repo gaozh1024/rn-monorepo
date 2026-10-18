@@ -770,6 +770,7 @@ vi.mock('react-native-gesture-handler', () => {
   const createPanGesture = () => {
     const chain = {
       enabled: vi.fn(() => chain),
+      runOnJS: vi.fn(() => chain),
       activeOffsetX: vi.fn(() => chain),
       activeOffsetY: vi.fn(() => chain),
       onUpdate: vi.fn(() => chain),

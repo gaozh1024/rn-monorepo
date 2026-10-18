@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/rn-kit",
-  "version": "0.6.6",
+  "version": "0.7.0",
   "description": "Panther Expo Framework - All-in-one React Native framework",
   "bin": {
     "rn-kit": "./bin/rn-kit.js"
@@ -49,11 +49,11 @@
   },
   "peerDependencies": {
     "@expo/vector-icons": ">=15 <16",
-    "expo": ">=54 <56",
-    "expo-image": ">=3 <56",
-    "expo-linear-gradient": ">=15 <56",
+    "expo": ">=54 <58",
+    "expo-image": ">=3 <58",
+    "expo-linear-gradient": ">=15 <58",
     "react": ">=19.1.0 <20",
-    "react-native": ">=0.81 <0.84",
+    "react-native": ">=0.81 <0.87",
     "react-native-gesture-handler": ">=2.0.0 <3",
     "react-native-reanimated": ">=4.1 <5",
     "react-native-safe-area-context": ">=4.0.0 <6",

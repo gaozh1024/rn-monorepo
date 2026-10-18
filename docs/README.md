@@ -2,14 +2,13 @@
 
 ## 📦 包文档
 
-| 包                        | 描述               | 链接                                           |
-| ------------------------- | ------------------ | ---------------------------------------------- |
-| @gaozh1024/rn-kit         | 统一框架包         | [README](../packages/rn-kit/README.md)         |
-| @gaozh1024/rn-observatory | 应用观测 SDK       | [README](../packages/rn-observatory/README.md) |
-| @gaozh1024/aliyun-speech  | 阿里云语音转文字包 | [README](../packages/aliyun-speech/README.md)  |
-| @gaozh1024/photo-picker   | 相册选择包         | [README](../packages/photo-picker/README.md)   |
-| @gaozh1024/aliyun-push    | 阿里云移动推送包   | [README](../packages/aliyun-push/README.md)    |
-| @gaozh1024/hot-updater    | OTA 热更新包       | [README](../packages/hot-updater/README.md)    |
+| 包                       | 描述               | 链接                                          |
+| ------------------------ | ------------------ | --------------------------------------------- |
+| @gaozh1024/rn-kit        | 统一框架包         | [README](../packages/rn-kit/README.md)        |
+| @gaozh1024/aliyun-speech | 阿里云语音转文字包 | [README](../packages/aliyun-speech/README.md) |
+| @gaozh1024/photo-picker  | 相册选择包         | [README](../packages/photo-picker/README.md)  |
+| @gaozh1024/aliyun-push   | 阿里云移动推送包   | [README](../packages/aliyun-push/README.md)   |
+| @gaozh1024/hot-updater   | OTA 热更新包       | [README](../packages/hot-updater/README.md)   |
 
 ---
 
@@ -67,6 +66,8 @@
 - [expo-starter 0.3.1 Release Notes](./release-notes/expo-starter-0.3.1.md)
 - [expo-starter 0.3.0 Release Notes](./release-notes/expo-starter-0.3.0.md)
 - [expo-starter 0.2.17 Release Notes](./release-notes/expo-starter-0.2.17.md)
+- [rn-kit 0.7.0 Release Notes](./release-notes/rn-kit-0.7.0.md)
+- [rn-kit 0.7.0 Publish Checklist](./release-notes/publish-checklist-rn-kit-0.7.0-2026-10-18.md)
 - [rn-kit 0.6.6 Release Notes](./release-notes/rn-kit-0.6.6.md)
 - [rn-kit 0.6.5 Release Notes](./release-notes/rn-kit-0.6.5.md)
 - [rn-kit 0.6.5 Publish Checklist](./release-notes/publish-checklist-rn-kit-0.6.5-2026-07-13.md)
