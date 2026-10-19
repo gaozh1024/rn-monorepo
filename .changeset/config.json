@@ -6,5 +6,6 @@
   "linked": [],
   "access": "public",
   "baseBranch": "main",
-  "updateInternalDependencies": "patch"
+  "updateInternalDependencies": "patch",
+  "ignore": ["@gaozh1024/hot-updater", "@gaozh1024/expo-starter"]
 }

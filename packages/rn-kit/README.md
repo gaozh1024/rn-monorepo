@@ -52,10 +52,10 @@ npx expo install @expo/vector-icons expo-linear-gradient
 npx expo install expo-image react-native-worklets react-native-svg
 ```
 
-`react-native-worklets` 的版本必须跟随宿主 Expo SDK：Expo SDK 54 通常使用 `0.5.x`，Expo SDK 55 通常使用 `0.7.x`。不要手动混装另一条 SDK 线的 worklets 版本。
+`react-native-worklets` 的版本必须跟随宿主 Expo SDK：Expo SDK 54 通常使用 `0.5.x`，Expo SDK 55 通常使用 `0.7.x`；SDK 56 及以上请以 `npx expo install` 解析出的版本为准。不要手动混装另一条 SDK 线的 worklets 版本。
 
-> 注意：**Expo SDK 54 对应 React Native 0.81，Expo SDK 55 对应 React Native 0.83。**
-> 如果你的项目还在 React Native 0.79，通常对应 Expo SDK 53 一档，建议先停留在旧版 `rn-kit` 或单独验证。
+> 注意：**Expo SDK 54 / 55 / 56 / 57 分别对应 React Native 0.81 / 0.83 / 0.85 / 0.86。**
+> 如果你的项目还在 React Native 0.79，通常对应 Expo SDK 53 一档，不在 `0.7.x` 的支持范围内，建议先停留在旧版 `rn-kit` 或单独验证。
 
 #### 非 Expo / 手动安装
 
@@ -69,14 +69,18 @@ npm install react-native-svg
 
 #### 当前兼容性范围
 
-`0.6.x` 当前将 peerDependencies 扩展到 Expo SDK 54 + 55，避免旧项目被迫升级，同时支持新项目基线：
+`0.7.x` 将 peerDependencies 范围扩展到 Expo SDK 54 – 57，既保留 SDK 54 老项目，也覆盖 SDK 57 新基线：
 
-- `expo`: `>=54 <56`
-- `react-native`: `>=0.81 <0.84`
+- `expo`: `>=54 <58`
+- `react-native`: `>=0.81 <0.87`
 - `react`: `>=19.1.0 <20`
+- `expo-image`: `>=3 <58`
+- `expo-linear-gradient`: `>=15 <58`
 - `react-native-reanimated`: `>=4.1 <5`
 - `react-native-worklets`: `>=0.5 <1`（由宿主 Expo SDK 决定具体版本）
 - `react-native-svg`: `>=15 <16`
+
+> 验证状态：本版基线为 **Expo SDK 55 / RN 0.83**（typecheck、测试、构建均通过）。SDK 54 仍在下界范围内但本版未重新复验；SDK 56 / 57 已纳入范围，尚无真机证据（SDK 57 的真机回归安排在 `0.7.0` 发布后补做）。遇到问题请提交 issue。
 
 如果你在 Expo 项目中安装依赖，建议顺序是：
 
@@ -88,7 +92,7 @@ npx expo install react-native-worklets react-native-svg
 npm install @gaozh1024/rn-kit
 ```
 
-如果你是 Expo SDK 54 老项目，可以升级到 `rn-kit >=0.6.0`，但应继续保留 SDK 54 的原生依赖版本，并用 `npx expo install --check` 校验。不要为了升级 `rn-kit` 而把 `expo-image`、`react-native-reanimated`、`react-native-worklets` 等原生包单独升到 SDK 55 线。
+如果你是 Expo SDK 54 老项目，可以直接升级到 `rn-kit >=0.7.0`（peer 下界仍是 SDK 54），并继续保留 SDK 54 的原生依赖版本，用 `npx expo install --check` 校验。不要为了升级 `rn-kit` 而把 `expo-image`、`react-native-reanimated`、`react-native-worklets` 等原生包单独升到更高 SDK 线。
 
 > 从 `rn-kit 0.4.6` 开始，`AppImage` 基于 `expo-image` 实现。
 > **新建模板项目通常已内置，无需重复安装；旧项目升级到 `rn-kit >= 0.4.6` 时，请执行 `npx expo install expo-image`。**

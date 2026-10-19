@@ -1,0 +1,11 @@
+{
+  "$comment": "Packages whose version bump is already on main but whose publish is deliberately deferred. scripts/check-publish-scope.mjs requires every unpublished workspace package to be either a publish target or an entry here, so nothing can be swept into a release silently. Delete the entry in the release that finally publishes it — a stale entry fails the gate.",
+  "holds": [
+    {
+      "package": "@gaozh1024/photo-picker",
+      "version": "0.3.1",
+      "reason": "0.3.1 已备好（release note / CHANGELOG / dist 齐备），但 rn-kit 0.7.0 只发单包；待其独立发版时删除本条目",
+      "since": "2026-10-18"
+    }
+  ]
+}

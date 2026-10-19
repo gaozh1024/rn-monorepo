@@ -1,5 +1,12 @@
 # @gaozh1024/rn-kit
 
+## 0.7.0
+
+### Minor Changes
+
+- peerDependencies 放宽：`expo` / `react-native` / `expo-image` / `expo-linear-gradient` 上限提高，无 breaking。
+- 收编 `bf35abe` runOnJS 手势修复（随构建产物带出，源码行为与 0.6.6+patch 一致）。
+
 ## 0.6.6
 
 ### Patch Changes

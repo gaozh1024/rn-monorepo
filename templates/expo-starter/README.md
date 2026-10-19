@@ -216,7 +216,7 @@ release 脚本会生成 `observatory-release.json`，并在设置 `APP_OBSERVATO
 2. 使用 `npx expo install ...` 安装原生依赖
 3. 再安装 `@gaozh1024/rn-kit`
 
-模板当前默认用法与 `rn-kit 0.6.x` 对齐，推荐保持下面这套根接入方式：
+模板当前默认用法与 `rn-kit 0.7.x` 对齐，推荐保持下面这套根接入方式：
 
 - 统一由 `src/root/providers.tsx` 包裹 `AppProvider`
 - 通过 `lightTheme` / `darkTheme` + `isDark` 做受控主题切换
@@ -238,7 +238,7 @@ release 脚本会生成 `observatory-release.json`，并在设置 `APP_OBSERVATO
 补充说明：
 
 - 当前模板已经默认安装 `expo-image`，新建项目后可直接使用 `AppImage`
-- Expo SDK 54 老项目可以升级到 `rn-kit >=0.6.0`，但应继续保留 SDK 54 原生依赖版本，并执行 `npx expo install --check`
+- Expo SDK 54 老项目可以升级到 `rn-kit >=0.7.0`（peer 下界仍是 SDK 54），并继续保留 SDK 54 原生依赖版本，执行 `npx expo install --check` 校验
 - 只有把 `rn-kit >= 0.4.6` 接入到旧项目时，才需要手动执行 `npx expo install expo-image`
 
 ## 本地测试模板
