@@ -598,3 +598,16 @@ git push -u origin release/rn-kit-0.7.0
 ```
 
 PR 合并 → 切回 main 过 tag 双断言 → `git tag v0.7.0 && git push origin v0.7.0` → CI（verify → scope gate → 仅发 rn-kit）→ 第 11 步 Post-publish → 第 12 步 revert `ignore` 小 PR。
+
+### ✅ 发布执行与 Post-publish 验证（2026-10-19 实测）
+
+| 步骤 | 结果                                                                                                                                                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10   | PR #2 合并 main（merge commit `6e2061d`，第一父 `ed1952b`、第二父 `1b31ee5`）；tag 双断言通过；`v0.7.0` 推送触发 CI                                                                                                             |
+| 11a  | npm 上线（tag 推送后 20s 内可见）：`@gaozh1024/rn-kit@0.7.0`，`latest` → 0.7.0                                                                                                                                                  |
+| 11b  | peer 四字段与目标一致：`expo >=54 <58`、`react-native >=0.81 <0.87`、`expo-image >=3 <58`、`expo-linear-gradient >=15 <58`                                                                                                      |
+| 11c  | 无连带发布：photo-picker 0.3.0 / hot-updater 0.2.0 / expo-starter 0.3.2 / aliyun-push 0.2.0 / aliyun-speech 0.2.0 全部未动（发布范围门禁按设计生效）                                                                            |
+| 11d  | tarball 核验：22 文件，README.md 在包内且兼容段为新范围（`>=54 <58` / `>=0.81 <0.87`，无 0.6.x 残留）；dist 四产物 + d.ts 齐全。注：registry 版本元数据的 `readme` 字段为空属 npm 已废弃该字段，包页面从 tarball 解析，不受影响 |
+| 12   | `.changeset/config.json` 的临时 `ignore` 已清空（`chore/remove-changeset-ignore` 分支）；`release/holds.json` 的 photo-picker 条目保留（0.3.1 仍待发）                                                                          |
+
+遗留：① GitHub Release 页面未逐一核验（匿名 API 查不到，可能私有仓）；② SDK 57 真机回归（mobile 侧按 38 号文档）；③ 模板 `^0.7.0` 与第二批包（aliyun-push / aliyun-speech / hot-updater / photo-picker 的 peer 放宽）待 SDK 57 升级时另行发版。
