@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/expo-starter",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Expo starter template based on @gaozh1024/rn-kit",
   "main": "index.js",
   "files": [
@@ -44,8 +44,7 @@
     "test": "node --test",
     "ota:prepare": "node node_modules/@gaozh1024/hot-updater/scripts/prepare-release.mjs",
     "ota:filemeta": "node node_modules/@gaozh1024/hot-updater/scripts/print-file-meta.mjs",
-    "ota:manifest": "node node_modules/@gaozh1024/hot-updater/scripts/build-manifest.mjs",
-    "observatory:publish:android": "node scripts/publish-observatory-release.mjs --platform android"
+    "ota:manifest": "node node_modules/@gaozh1024/hot-updater/scripts/build-manifest.mjs"
   },
   "publishConfig": {
     "access": "public"
@@ -64,7 +63,6 @@
   "dependencies": {
     "@expo/vector-icons": "~15.1.1",
     "@gaozh1024/rn-kit": "^0.7.0",
-    "@gaozh1024/rn-observatory": "^0.6.1",
     "@react-native-masked-view/masked-view": "~0.3.2",
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/native": "^7.1.33",

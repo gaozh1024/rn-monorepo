@@ -24,8 +24,7 @@ Canonical Expo starter template for Panther-based apps, showing the recommended 
 - For tab root screens rendered under MainTabs, use AppScreen bottom={false} if a tab page uses AppScreen; BottomTabBar owns the bottom safe-area inset.
 - Use src/recipes/stream-sse.ts as the canonical reference for Expo fetch based SSE streaming.
 - Use src/recipes/segmented-tabs.tsx as the canonical reference for page-local animated status/category switching.
-- Use src/recipes/observatory-navigation.tsx as the canonical reference for rn-observatory screen tracking integration.
-- Use package.json scripts plus templates/expo-starter/scripts/\*.mjs as the canonical reference for env switching, release builds, web exports, OTA manifest generation, and observatory sourcemap publishing.
+- Use package.json scripts plus templates/expo-starter/scripts/\*.mjs as the canonical reference for env switching, release builds, web exports, and OTA manifest generation.
 
 ## Install Prerequisites
 
@@ -68,7 +67,7 @@ Canonical Expo starter template for Panther-based apps, showing the recommended 
 ## Compatibility Baseline
 
 - The current template baseline targets Expo SDK 55 and React Native 0.83.
-- The template includes default scripts for expo run, web export, Android release builds, OTA preparation, and rn-observatory sourcemap publishing.
+- The template includes default scripts for expo run, web export, Android release builds, and OTA preparation.
 - The template is a reference implementation, not an API surface.
 - Storage, linking, app bootstrap, and observability wiring are intentionally shown in real files rather than abstract docs alone.
 

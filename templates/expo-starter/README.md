@@ -119,7 +119,7 @@ pnpm start
 
 ### 常用脚本
 
-模板默认带一组可直接复制到业务项目的脚本，覆盖环境切换、本地运行、Web export、Android release、OTA manifest 和 rn-observatory sourcemap 发布。
+模板默认带一组可直接复制到业务项目的脚本，覆盖环境切换、本地运行、Web export、Android release 和 OTA manifest。
 
 ```bash
 pnpm env:dev
@@ -133,7 +133,6 @@ pnpm android:release:staging
 pnpm android:release:prod
 pnpm ota:prepare
 pnpm ota:manifest
-pnpm observatory:publish:android
 ```
 
 默认 env 文件是无敏感信息的占位示例：
@@ -144,8 +143,6 @@ pnpm observatory:publish:android
 
 `env:dev` / `env:server` 会复制到 `.env.local`，而 `.env.local` 已被 `.gitignore` 忽略。接入真实项目时，请把 `EXPO_PUBLIC_API_BASE_URL` 等值替换成项目自己的地址。
 
-release 脚本会生成 `observatory-release.json`，并在设置 `APP_OBSERVATORY_AUTO_PUBLISH=true` 且提供 app-observatory 后端地址和管理员认证时自动创建 release / 上传 sourcemap。默认不会联网上传。
-
 ## AI / Recipe 参考
 
 模板内新增了一组最小参考文件，放在 [`src/recipes/`](./src/recipes/)：
@@ -155,7 +152,6 @@ release 脚本会生成 `observatory-release.json`，并在设置 `APP_OBSERVATO
 - `api-auth.ts`：带 token 头、脱敏 observability 的 API 工厂模式
 - `stream-sse.ts`：基于 `expo/fetch` 与 `rn-kit` 流式 API 的 SSE 请求示例
 - `segmented-tabs.tsx`：页面内筛选 / 分类切换的滑块式 `SegmentedTabs` 示例
-- `observatory-navigation.tsx`：`rn-observatory + rn-kit + React Navigation` 自动页面埋点接入示例
 
 这些文件不会自动参与模板运行时，只作为可复制、可被 AI 直接引用的参考实现存在。
 
@@ -465,11 +461,7 @@ export function LoginAction() {
 
 模板当前默认就是这套接法，因此升级到 `rn-kit ^0.5.4` 时不需要额外改业务页面的根初始化方式；优先保持 `AppProvider -> AppProviders -> RootApp` 这一层级即可。
 
-如果业务准备接入 `@gaozh1024/rn-observatory`，并且希望自动上报 `screen_view`，可以参考：
-
-- `src/recipes/observatory-navigation.tsx`
-
-推荐方式是把 `AppObservatoryProvider` 和 `createNavigationObservatoryTracker(...)` 放在根装配层，而不是每个页面手工调用 `trackScreen()`。
+如需接入应用观测（screen_view 自动上报等），参考 `@gaozh1024/rn-observatory` 自己的文档单独接入——模板不再内置该依赖与示例。
 
 框架会在开发环境下提供：
 
