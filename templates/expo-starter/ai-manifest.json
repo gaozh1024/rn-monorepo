@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/expo-starter",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "role": "template",
   "summary": "Canonical Expo starter template for Panther-based apps, showing the recommended project structure, provider layout, navigation, storage wiring, and theme usage.",
   "entrypoints": [

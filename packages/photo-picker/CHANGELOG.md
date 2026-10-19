@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+
+### Minor Changes
+
+- 放宽 peer 依赖以支持 Expo 57 / React Native 0.86（吾滴 SDK 55→57 升级前置，与 rn-kit 0.7.0 同一轮兼容性扩展）：
+  - aliyun-push：`expo` 放宽至 `>=54 <58`，`react-native` 放宽至 `>=0.81 <0.87`，依赖 `@expo/config-plugins` 放宽至 `>=54 <58`
+  - hot-updater：`react-native` 放宽至 `>=0.81 <0.87`
+  - photo-picker：`expo-modules-core` 放宽至 `>=55 <58`，`expo-image` / `expo-image-manipulator` 放宽至 `<58`，`react-native` 放宽至 `>=0.81 <0.87`
+
+  仅 peer/依赖范围扩展，无运行时代码变更；SDK 57 真机验证随吾滴侧 M2/M3 里程碑进行。
+
 ## 0.3.1
 
 ### Patch Changes

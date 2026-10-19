@@ -50,7 +50,10 @@
 
 版本发布记录：
 
+- [photo-picker 0.4.0 Release Notes](./release-notes/photo-picker-0.4.0.md)
 - [photo-picker 0.3.1 Release Notes](./release-notes/photo-picker-0.3.1.md)
+- [aliyun-push 0.3.0 Release Notes](./release-notes/aliyun-push-0.3.0.md)
+- [hot-updater 0.3.0 Release Notes](./release-notes/hot-updater-0.3.0.md)
 - [rn-observatory 0.6.1 Release Notes](./release-notes/rn-observatory-0.6.1.md)
 - [rn-observatory 0.6.0 Release Notes](./release-notes/rn-observatory-0.6.0.md)
 - [rn-observatory 0.5.2 Release Notes](./release-notes/rn-observatory-0.5.2.md)
