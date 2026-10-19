@@ -62,7 +62,7 @@ Aliyun real-time speech-to-text package with protocol core, headless hook, and o
 ## Compatibility Baseline
 
 - The default recorder implementation is based on @siteed/audio-studio and expo-audio.
-- Current package peer dependencies target Expo >=54 <56 and React Native >=0.81 <0.84.
+- Current package peer dependencies target Expo >=54 <58 and React Native >=0.81 <0.87.
 - Use the host Expo SDK's expo-audio version from expo install.
 - The package is designed with a headless-first boundary: protocol core, hook, then optional UI.
 

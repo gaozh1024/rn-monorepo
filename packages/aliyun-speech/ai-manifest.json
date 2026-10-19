@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/aliyun-speech",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "role": "feature-package",
   "summary": "Aliyun real-time speech-to-text package with protocol core, headless hook, and optional default UI for Expo or React Native apps.",
   "entrypoints": [
@@ -21,10 +21,10 @@
     "projectTypes": ["expo", "react-native"],
     "peerDependencies": {
       "@siteed/audio-studio": ">=3 <4",
-      "expo": ">=54 <56",
-      "expo-audio": ">=1 <56",
+      "expo": ">=54 <58",
+      "expo-audio": ">=1 <58",
       "react": ">=19.1.0 <20",
-      "react-native": ">=0.81 <0.84"
+      "react-native": ">=0.81 <0.87"
     }
   },
   "recommendedUsage": {
@@ -45,7 +45,7 @@
   ],
   "compatibilityNotes": [
     "The default recorder implementation is based on @siteed/audio-studio and expo-audio.",
-    "Current package peer dependencies target Expo >=54 <56 and React Native >=0.81 <0.84.",
+    "Current package peer dependencies target Expo >=54 <58 and React Native >=0.81 <0.87.",
     "Use the host Expo SDK's expo-audio version from expo install.",
     "The package is designed with a headless-first boundary: protocol core, hook, then optional UI."
   ],

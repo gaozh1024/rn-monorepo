@@ -1,9 +1,5 @@
 {
   "$comment": "Declares the CURRENT publish batch for scripts/check-publish-scope.mjs (--plan). CI tags only trigger the run; the publish set comes from `targets`, and only tags listed in `tags` may trigger it. Clear `targets` (and `tags`) right after the batch is published — a stale plan makes every later release run fail on 'version already exists'. The counterpart for deliberately-deferred packages is release/holds.json.",
-  "targets": [
-    "@gaozh1024/aliyun-push@0.3.0",
-    "@gaozh1024/hot-updater@0.3.0",
-    "@gaozh1024/photo-picker@0.4.0"
-  ],
-  "tags": ["v0.3.0"]
+  "targets": [],
+  "tags": []
 }

@@ -50,6 +50,7 @@
 
 版本发布记录：
 
+- [aliyun-speech 0.3.0 Release Notes](./release-notes/aliyun-speech-0.3.0.md)
 - [photo-picker 0.4.0 Release Notes](./release-notes/photo-picker-0.4.0.md)
 - [photo-picker 0.3.1 Release Notes](./release-notes/photo-picker-0.3.1.md)
 - [aliyun-push 0.3.0 Release Notes](./release-notes/aliyun-push-0.3.0.md)
