@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/aliyun-push",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "role": "integration-plugin",
   "summary": "Aliyun mobile push integration package with runtime service APIs, React provider, and Expo config plugin support.",
   "entrypoints": [
@@ -31,9 +31,9 @@
     "projectTypes": ["expo", "react-native"],
     "peerDependencies": {
       "aliyun-react-native-push": ">=1 <2",
-      "expo": ">=54 <56",
+      "expo": ">=54 <58",
       "react": ">=19.1.0 <20",
-      "react-native": ">=0.81 <0.84"
+      "react-native": ">=0.81 <0.87"
     }
   },
   "recommendedUsage": {

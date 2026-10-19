@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/expo-starter",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Expo starter template based on @gaozh1024/rn-kit",
   "main": "index.js",
   "files": [
@@ -75,7 +75,7 @@
     "expo-secure-store": "~55.0.14",
     "expo-status-bar": "~55.0.6",
     "expo-system-ui": "~55.0.18",
-    "@gaozh1024/hot-updater": "^0.2.0",
+    "@gaozh1024/hot-updater": "^0.3.0",
     "nativewind": "^4.2.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",

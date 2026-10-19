@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/hot-updater",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "role": "feature-package",
   "summary": "OTA hot update helper package for business apps, built around manifest fetch, update orchestration, provider hooks, and release helpers.",
   "entrypoints": [
@@ -23,7 +23,7 @@
       "@gaozh1024/rn-kit": ">=0.4.20",
       "@hot-updater/react-native": ">=0.28 <0.31",
       "react": ">=19.1.0 <20",
-      "react-native": ">=0.81 <0.84"
+      "react-native": ">=0.81 <0.87"
     }
   },
   "recommendedUsage": {

@@ -2,10 +2,10 @@
   "$comment": "Packages whose version bump is already on main but whose publish is deliberately deferred. scripts/check-publish-scope.mjs requires every unpublished workspace package to be either a publish target or an entry here, so nothing can be swept into a release silently. Delete the entry in the release that finally publishes it — a stale entry fails the gate.",
   "holds": [
     {
-      "package": "@gaozh1024/photo-picker",
-      "version": "0.3.1",
-      "reason": "0.3.1 已备好（release note / CHANGELOG / dist 齐备），但 rn-kit 0.7.0 只发单包；待其独立发版时删除本条目",
-      "since": "2026-10-18"
+      "package": "@gaozh1024/expo-starter",
+      "version": "0.3.3",
+      "reason": "0.3.3 发布另行处理；本次只发 aliyun-push/hot-updater/photo-picker 三包的 Expo 57 peer 放宽。模板内 hot-updater 范围 ^0.3.0 随下个模板版本自然带出",
+      "since": "2026-10-19"
     }
   ]
 }
