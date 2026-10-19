@@ -35,6 +35,8 @@ function parseArgs(argv) {
   const options = {
     expect: [],
     fromTag: null,
+    plan: null,
+    requireTag: null,
     registry: DEFAULT_REGISTRY,
     publish: false,
     dryRun: false,
@@ -46,6 +48,11 @@ function parseArgs(argv) {
     else if (arg.startsWith('--expect=')) options.expect.push(arg.slice('--expect='.length));
     else if (arg === '--from-tag') options.fromTag = argv[(i += 1)];
     else if (arg.startsWith('--from-tag=')) options.fromTag = arg.slice('--from-tag='.length);
+    else if (arg === '--plan') options.plan = argv[(i += 1)];
+    else if (arg.startsWith('--plan=')) options.plan = arg.slice('--plan='.length);
+    else if (arg === '--require-tag') options.requireTag = argv[(i += 1)];
+    else if (arg.startsWith('--require-tag='))
+      options.requireTag = arg.slice('--require-tag='.length);
     else if (arg === '--registry') options.registry = argv[(i += 1)];
     else if (arg.startsWith('--registry=')) options.registry = arg.slice('--registry='.length);
     else if (arg === '--publish') options.publish = true;
@@ -54,10 +61,46 @@ function parseArgs(argv) {
       fail(`未知参数：${arg}`, [
         '用法：node scripts/check-publish-scope.mjs --expect <name@version> [--publish] [--dry-run]',
         '      node scripts/check-publish-scope.mjs --from-tag v0.7.0 [--publish]',
+        '      node scripts/check-publish-scope.mjs --plan release/plan.json --require-tag v0.3.0 [--publish]',
       ]);
   }
 
   return options;
+}
+
+// A plan file declares the WHOLE publish batch in one place: CI tags trigger the run, but the
+// publish set comes from the plan, so a single run can ship several differently-versioned
+// packages without the gate ever accepting an undeclared package.
+function readPlan(planFile) {
+  const file = path.resolve(repoRoot, planFile);
+  if (!fs.existsSync(file)) fail(`plan 文件不存在：${planFile}`);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    fail(`${planFile} 不是合法 JSON`, [String(error?.message || error)]);
+  }
+
+  const targets = parsed?.targets;
+  if (!Array.isArray(targets) || !targets.length) {
+    fail(`${planFile} 缺少非空的 targets 数组`, [
+      'targets 应形如 ["@gaozh1024/pkg@1.2.3", ...]；发布完成后清空 targets。',
+    ]);
+  }
+  for (const target of targets) {
+    // Scoped names contain '@' (e.g. @gaozh1024/pkg@1.2.3), so split on the LAST '@'.
+    const at = target.lastIndexOf('@');
+    const version = at > 0 ? target.slice(at + 1) : '';
+    if (at <= 0 || !target.slice(0, at) || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+      fail(`${planFile} 的 targets 含非法条目`, [JSON.stringify(target)]);
+    }
+  }
+  if (parsed?.tags != null && !Array.isArray(parsed.tags)) {
+    fail(`${planFile} 的 tags 应为数组`);
+  }
+
+  return { targets: targets.map(item => item.trim()), tags: parsed?.tags ?? [] };
 }
 
 function readHolds() {
@@ -158,15 +201,34 @@ function diffSets(actual, expected) {
 const options = parseArgs(process.argv.slice(2));
 const projects = readWorkspaceProjects();
 
-if (!options.expect.length && !options.fromTag) {
-  fail('必须通过 --expect 或 --from-tag 指定本次发布目标', [
+if (!options.expect.length && !options.fromTag && !options.plan) {
+  fail('必须通过 --expect、--from-tag 或 --plan 指定本次发布目标', [
     '例：--expect @gaozh1024/rn-kit@0.7.0',
   ]);
 }
+if (options.requireTag && !options.plan) {
+  fail('--require-tag 需要配合 --plan 使用', ['tag 白名单声明在 plan 文件的 tags 数组里。']);
+}
 
-const expected = options.fromTag
-  ? expectedFromTag(options.fromTag, projects)
-  : options.expect.filter(Boolean).map(item => item.trim());
+let plan = null;
+if (options.plan) {
+  plan = readPlan(options.plan);
+  if (options.requireTag && !plan.tags.includes(options.requireTag)) {
+    fail(`tag ${options.requireTag} 不在 ${options.plan} 的 tags 白名单中`, [
+      `plan.tags：${plan.tags.join(', ') || '（空）'}`,
+      '若确要用该 tag 触发本次发布，先把 tag 名加进 plan 文件的 tags 数组。',
+    ]);
+  }
+}
+
+let expected;
+if (plan) {
+  expected = plan.targets;
+} else if (options.fromTag) {
+  expected = expectedFromTag(options.fromTag, projects);
+} else {
+  expected = options.expect.filter(Boolean).map(item => item.trim());
+}
 
 if (!expected.length) {
   fail(`未能解析出任何发布目标（tag：${options.fromTag ?? 'n/a'}）`, [
@@ -181,6 +243,15 @@ if (doubled.length) {
   fail(`同一个包不能同时出现在 --expect 与 ${HOLDS_FILE} 中：${doubled.join(', ')}`);
 }
 
+const unknownTargets = expected.filter(
+  target => !projects.some(project => `${project.name}@${project.version}` === target)
+);
+if (unknownTargets.length) {
+  fail(`发布目标在 workspace 中不存在（或版本不匹配）：${unknownTargets.join(', ')}`, [
+    'plan/expect 里的 name@version 必须与 workspace package.json 完全一致。',
+  ]);
+}
+
 const states = await Promise.all(projects.map(project => probeRegistry(options.registry, project)));
 const unpublished = projects
   .filter((_, index) => states[index] === 'unpublished')
@@ -188,6 +259,7 @@ const unpublished = projects
 const { extra, missing } = diffSets(unpublished, [...expected, ...heldTargets]);
 
 console.log(`registry：${options.registry}`);
+if (plan) console.log(`plan 文件：${options.plan}（tags：${plan.tags.join(', ') || '（无）'}）`);
 console.log(
   `workspace 非私有包：${projects.length} 个（已发布 ${projects.length - unpublished.length} 个）`
 );
