@@ -34,14 +34,15 @@ jobs:
 
       # `changeset publish` publishes every non-private package whose local version is missing
       # from the registry, and it ignores `.changeset/config.json`'s `ignore` list. The scope
-      # gate requires every unpublished package to be either the tagged version (published now)
-      # or an explicit entry in release/holds.json (deliberately deferred), so a pending package
-      # cannot be swept into this release by accident.
+      # gate requires every unpublished package to be either declared in release/plan.json
+      # (published now) or an explicit entry in release/holds.json (deliberately deferred), so
+      # a pending package cannot be swept into this release by accident. The plan file also
+      # lets one tag ship several differently-versioned packages in a single run.
       - name: Check publish scope
-        run: pnpm check:publish-scope --from-tag "$GITHUB_REF_NAME"
+        run: pnpm check:publish-scope --plan release/plan.json --require-tag "$GITHUB_REF_NAME"
 
       - name: Publish to npm
-        run: pnpm check:publish-scope --from-tag "$GITHUB_REF_NAME" --publish
+        run: pnpm check:publish-scope --plan release/plan.json --require-tag "$GITHUB_REF_NAME" --publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
