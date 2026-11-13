@@ -251,7 +251,8 @@ export const hotUpdater = createOssHotUpdater({
 - 自动识别平台 `ios` / `android`
 - 默认渠道优先读取 `HotUpdater.getChannel()`
 - manifest 地址规则：
-  - `{manifestBaseURL}/{platform}/{channel}.json`
+  - 优先：`{manifestBaseURL}/{platform}/{channel}/{appVersion}.json`
+  - 兼容回退：`{manifestBaseURL}/{platform}/{channel}.json`（仅接受 appVersion 与当前原生版本一致的 manifest）
 - manifest 请求建议加 cache-buster，避免固定路径 JSON 被缓存
 - `release.disabled === true` 时客户端不会下载该 release，可用于临时下线异常 OTA
 - 日志统一走 `hot-updater` namespace，可刷入业务 logger 浮层

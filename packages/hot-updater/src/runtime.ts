@@ -532,20 +532,31 @@ export function createHotUpdater(options: CreateHotUpdaterOptions) {
 
 export function createOssHotUpdater(options: CreateOssHotUpdaterOptions) {
   const baseURL = options.manifestBaseURL.replace(/\/+$/, '');
+  const appVersion = resolveAppVersion(options.appVersion);
 
   return createHotUpdater({
-    appVersion: options.appVersion,
+    appVersion,
     defaultChannel: options.defaultChannel,
     getChannel: options.getChannel,
     texts: options.texts,
     getManifest: async ({ platform, channel, requestHeaders }) => {
-      const manifestUrl = `${baseURL}/${platform}/${channel}.json?t=${Date.now()}`;
-      return fetchJsonManifest(manifestUrl, {
+      const manifestUrl = `${baseURL}/${platform}/${channel}/${appVersion}.json?t=${Date.now()}`;
+      let manifest = await fetchJsonManifest(manifestUrl, {
         ...(options.requestHeaders ?? {}),
         ...(requestHeaders ?? {}),
       });
+      if (manifest === null) {
+        const legacyUrl = `${baseURL}/${platform}/${channel}.json?t=${Date.now()}`;
+        manifest = await fetchJsonManifest(legacyUrl, {
+          ...(options.requestHeaders ?? {}),
+          ...(requestHeaders ?? {}),
+        });
+        if (manifest !== null && manifest.release?.appVersion !== appVersion) return null;
+      }
+      return manifest;
     },
-    describeManifestSource: ({ platform, channel }) => `${baseURL}/${platform}/${channel}.json`,
+    describeManifestSource: ({ platform, channel }) =>
+      `${baseURL}/${platform}/${channel}/${appVersion}.json`,
   });
 }
 

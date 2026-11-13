@@ -130,11 +130,11 @@ async function main() {
 
   const buildResult = await buildPlugin.build({ platform });
   const sourceBuildPath = buildResult?.buildPath ?? tempBuildPath;
-  const actualBundleId = buildResult?.bundleId;
-
-  await ensureFileExists(path.join(sourceBuildPath, 'BUNDLE_ID'));
+  const bundleIdPath = path.join(sourceBuildPath, 'BUNDLE_ID');
+  await ensureFileExists(bundleIdPath);
+  const actualBundleId = (await readFile(bundleIdPath, 'utf8')).trim();
   if (!actualBundleId) {
-    throw new Error('Failed to resolve actual bundleId from build result.');
+    throw new Error('Failed to resolve actual bundleId from BUNDLE_ID.');
   }
 
   if (requestedBundleId && requestedBundleId !== actualBundleId) {
@@ -181,11 +181,11 @@ async function main() {
         bundle: finalBundlePath,
         manifest: manifestPath,
         bundleUrl,
-        manifestUrl: `${manifestBaseURL.replace(/\/+$/, '')}/${platform}/${channel}.json`,
+        manifestUrl: `${manifestBaseURL.replace(/\/+$/, '')}/${platform}/${channel}/${appVersion}.json`,
         requestedBundleId,
         actualBundleId,
         bundleObjectKey: `bundles/${platform}/${channel}/${actualBundleId}.zip`,
-        manifestObjectKey: `manifest/${platform}/${channel}.json`,
+        manifestObjectKey: `manifest/${platform}/${channel}/${appVersion}.json`,
         builtBy: buildPlugin.name,
         sha256: meta.sha256,
         size: meta.size,

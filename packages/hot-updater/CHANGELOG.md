@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+### Minor Changes
+
+- 按 App 原生版本读取 OTA manifest，并保留旧路径兼容回退。manifest 404 现在表示无生效更新；打包产物的 bundleId 统一读取真实 BUNDLE_ID 文件，避免与 manifest 分叉。
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@gaozh1024/hot-updater",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "OTA hot update helpers for Expo / React Native with manifest resolution, launch orchestration, provider hooks, and release scripts.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

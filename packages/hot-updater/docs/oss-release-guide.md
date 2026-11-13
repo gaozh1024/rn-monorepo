@@ -35,7 +35,9 @@ bundles/
 - 客户端最终请求的地址规则固定为：
 
 ```text
-{manifestBaseURL}/{platform}/{channel}.json
+{manifestBaseURL}/{platform}/{channel}/{appVersion}.json
+
+旧路径 `{manifestBaseURL}/{platform}/{channel}.json` 仅作为兼容回退。
 ```
 
 示例：
@@ -120,7 +122,7 @@ npx expo run:android --variant release
 
 ## 缓存建议
 
-- `manifest/<platform>/<channel>.json`
+- `manifest/<platform>/<channel>/<appVersion>.json`
   - 建议 `no-cache`
   - 客户端请求建议追加 cache-buster
 - `bundles/<platform>/<channel>/<actualBundleId>.zip`

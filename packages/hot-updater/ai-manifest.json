@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@gaozh1024/hot-updater",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "role": "feature-package",
   "summary": "OTA hot update helper package for business apps, built around manifest fetch, update orchestration, provider hooks, and release helpers.",
   "entrypoints": [

@@ -5,7 +5,9 @@
 默认路径规则：
 
 ```text
-{manifestBaseURL}/{platform}/{channel}.json
+{manifestBaseURL}/{platform}/{channel}/{appVersion}.json
+
+旧客户端可继续使用 `{manifestBaseURL}/{platform}/{channel}.json`；新客户端只在该路径 404 时回退，并校验 appVersion 一致。
 ```
 
 示例：

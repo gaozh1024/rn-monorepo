@@ -167,6 +167,10 @@ export async function fetchJsonManifest(url: string, requestHeaders?: Record<str
     },
   });
 
+  if (response.status === 404) {
+    return null;
+  }
+
   if (!response.ok) {
     throw new Error(`Manifest 请求失败: ${response.status}`);
   }

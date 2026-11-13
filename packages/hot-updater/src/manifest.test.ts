@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { compareVersion, resolveUpdateDecisionFromManifest } from './manifest';
+import { describe, expect, it, vi } from 'vitest';
+import { compareVersion, fetchJsonManifest, resolveUpdateDecisionFromManifest } from './manifest';
 import type { HotUpdaterCheckParams, OtaManifest } from './types';
 
 const params: HotUpdaterCheckParams = {
@@ -112,5 +112,25 @@ describe('resolveUpdateDecisionFromManifest', () => {
 
     expect(decision.reason).toBe('update-available');
     expect(decision.update?.shouldForceUpdate).toBe(false);
+  });
+});
+
+describe('fetchJsonManifest', () => {
+  it('returns null for a missing manifest', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('', { status: 404 }))
+    );
+    await expect(fetchJsonManifest('https://example.com/missing.json')).resolves.toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps other HTTP errors as failures', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('', { status: 500 }))
+    );
+    await expect(fetchJsonManifest('https://example.com/error.json')).rejects.toThrow('500');
+    vi.unstubAllGlobals();
   });
 });
